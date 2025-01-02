@@ -15,7 +15,8 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.hopeadler.MotoSavemb"
     },
     "web": {
       "bundler": "metro",
@@ -32,10 +33,27 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
+      ],
+      [
+        "@rnmapbox/maps",
+        [
+          {
+            "RNMapboxMapsDownloadToken": "sk.eyJ1IjoiaG9wZWFkbGVyIiwiYSI6ImNtNWNicjFtcjI0Ym4yc3FyeHpweGVma2MifQ.31e7OcW36KpivxgB0YC7yg",
+            "RNMapboxMapsVersion": "11.0.0"
+          }
+        ]
       ]
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "82235bc5-3e36-4280-9e18-9e1269f01236"
+      }
     }
   }
 }
