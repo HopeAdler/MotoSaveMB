@@ -21,7 +21,6 @@ export default function RootLayout() {
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="onboard/index" options={{ headerShown: false }} />
         <Stack.Screen name="auth" options={{ headerShown: false }} />
-        {/* <Stack.Screen name="auth" options={{ headerShown: false }} /> */}
         <Stack.Screen name="user/customer" options={{ headerShown: false }} />
         <Stack.Screen name="user/driver" options={{ headerShown: false }} />
         <Stack.Screen name="user/mechanic" options={{ headerShown: false }} />
