@@ -14,9 +14,7 @@ export default function RegisterScreen() {
                 This is RegisterScreen
             </Text>
             <Button onPress={() =>  router.navigate("/auth/login")}> <Text> login</Text> </Button>
-            <Button onPress={() =>  router.navigate("/user/customer/home")}> <Text> customer home</Text> </Button>
-            <Button onPress={() =>  router.navigate("/user/driver/home")}> <Text> driver home</Text> </Button>
-            <Button onPress={() =>  router.navigate("/user/mechanic/home")}> <Text> mechanic home</Text> </Button>
+            
         </Box>
     );
 }
