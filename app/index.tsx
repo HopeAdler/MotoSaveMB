@@ -59,7 +59,7 @@
 //như cramata trang icon ấy
 
 import React, { useEffect } from 'react';
-import { Redirect, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { Box } from '@/components/ui/box';
 import { Text } from '@/components/ui/text';
 

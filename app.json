@@ -1,7 +1,8 @@
 {
   "expo": {
+    "owner": "moto_save",
     "name": "MotoSave-mb",
-    "slug": "MotoSave-mb",
+    "slug": "motorsave",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -52,7 +53,7 @@
         "origin": false
       },
       "eas": {
-        "projectId": "82235bc5-3e36-4280-9e18-9e1269f01236"
+        "projectId": "d3249292-c843-4bd4-bfed-947818a21653"
       }
     }
   }
