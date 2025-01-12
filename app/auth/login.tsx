@@ -24,8 +24,7 @@
 // }
 // //Screen nay la cho cai viec gioi thieu app nhu cramata
 
-
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import axios from "axios";
 import { useRouter } from "expo-router";
 import { Box } from "@/components/ui/box";
@@ -33,125 +32,144 @@ import { Text } from "@/components/ui/text";
 import { Button } from "@/components/ui/button";
 import { Input, InputField } from "@/components/ui/input";
 import {
-    FormControl,
-    FormControlLabel,
-    FormControlLabelText,
-    FormControlError,
-    FormControlErrorText,
+  FormControl,
+  FormControlLabel,
+  FormControlLabelText,
+  FormControlError,
+  FormControlErrorText,
 } from "@/components/ui/form-control";
-import { validateField, handleBlurField, translateFieldName, shortifiedFieldName } from "@/app/utils/utils";
+import {
+  validateField,
+  handleBlurField,
+  translateFieldName,
+  shortifiedFieldName,
+} from "@/app/utils/utils";
 import { loginForm } from "@/app/context/formFields";
-
+import { AuthContext } from "../context/AuthContext";
 
 export default function LoginScreen() {
-    const router = useRouter();
+  const router = useRouter();
+  const { dispatch } = useContext(AuthContext);
+  const [form, setForm] = useState(loginForm);
+  const [errors, setErrors] = useState<any>({});
+  const [touched, setTouched] = useState<any>({});
 
-    const [form, setForm] = useState(loginForm);
-    const [errors, setErrors] = useState<any>({});
-    const [touched, setTouched] = useState<any>({});
+  const handleBlur = (field: string) => {
+    handleBlurField(field, form, setTouched, setErrors);
+  };
 
-    const handleBlur = (field: string) => {
-        handleBlurField(field, form, setTouched, setErrors);
-    };
+  const handleChange = (field: string, value: string) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
 
-    const handleChange = (field: string, value: string) => {
-        setForm((prev) => ({ ...prev, [field]: value }));
+    if (touched[field]) {
+      const error = validateField(field, value);
+      setErrors((prev: any) => ({ ...prev, [field]: error }));
+    }
+  };
 
-        if (touched[field]) {
-            const error = validateField(field, value);
-            setErrors((prev: any) => ({ ...prev, [field]: error }));
+  const handleSubmit = async () => {
+    dispatch?.({ type: "LOGIN_START" });
+    const newErrors: any = {};
+    Object.keys(form).forEach((field) => {
+      const error = validateField(field, form[field as keyof typeof form]);
+      if (error) newErrors[field] = error;
+    });
+
+    if (Object.keys(newErrors).length) {
+      setErrors(newErrors);
+      return;
+    }
+
+    try {
+        const response = await axios.post(
+          "https://motor-save-be.vercel.app/api/v1/auth/login",
+          form,
+          { headers: { "Content-Type": "application/json" } }
+        );
+    
+        if (response.status === 201) {
+          const { user, token } = response.data;
+          dispatch?.({ type: "LOGIN_SUCCESS", payload: { user, token } });
+    
+          // Navigate based on user role
+          switch (user.role) {
+            case "Customer":
+              router.navigate("/user/customer/home");
+              break;
+            case "Driver":
+              router.navigate("/user/driver/home");
+              break;
+            case "Mechanic":
+              router.navigate("/user/mechanic/home");
+              break;
+            default:
+              router.navigate("/auth/Error");
+              break;
+          }
+        } else {
+          // Handle other status codes
+          const errorData = response.data;
+          dispatch?.({ type: "LOGIN_FAILURE", payload: errorData.message });
+          setErrors({ server: errorData.message });
         }
-    };
-
-    const handleSubmit = async () => {
-        const newErrors: any = {};
-        Object.keys(form).forEach((field) => {
-            const error = validateField(field, form[field as keyof typeof form]);
-            if (error) newErrors[field] = error;
-        });
-
-        if (Object.keys(newErrors).length) {
-            setErrors(newErrors);
-            return;
+      } catch (error: any) {
+        // Handle request errors
+        if (error.response) {
+          setErrors({ server: error.response.data.message });
+        } else if (error.request) {
+          setErrors({ server: "Không thể kết nối đến máy chủ." });
+        } else {
+          setErrors({ server: "Đã xảy ra lỗi. Vui lòng thử lại sau." });
         }
+      }
+  };
 
-        try {
-            const response = await axios.post(
-                "https://motor-save-be.vercel.app/api/v1/auth/login",
-                form,
-                {
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                }
-            );
+  return (
+    <Box className="flex-1 p-6 justify-center">
+      <Text bold size="2xl" className="text-center mb-6">
+        Login
+      </Text>
 
-            if (response.status === 201) {
-                router.navigate("/user/customer/home"); // Điều hướng đến trang chính sau khi đăng nhập thành công
-            } else if (response.status === 400) {
-                const errorData = response.data;
-                setErrors({ server: errorData.message });
-            } else if (response.status === 401) {
-                const errorData = response.data;
-                setErrors({ server: errorData.message });
-            } else {
-                const errorData = response.data;
-                setErrors({ server: errorData.message });
-            }
-        } catch (error: any) {
-            if (error.response) {
-                setErrors({ server: error.response.data.message });
-            } else if (error.request) {
-                setErrors({ server: "Không thể kết nối đến máy chủ." });
-            } else {
-                setErrors({ server: "Đã xảy ra lỗi. Vui lòng thử lại sau." });
-            }
-        }
-    };
+      {Object.keys(loginForm).map((field) => (
+        <FormControl key={field} isInvalid={!!errors[field]} className="mb-4">
+          <FormControlLabel>
+            <FormControlLabelText>
+              {translateFieldName(field)}
+            </FormControlLabelText>
+          </FormControlLabel>
+          <Input>
+            <InputField
+              placeholder={`Nhập ${
+                translateFieldName(field).charAt(0).toLowerCase() +
+                translateFieldName(field).slice(1)
+              }`}
+              secureTextEntry={field === "password"}
+              keyboardType={"default"}
+              value={form[field as keyof typeof form]}
+              onChangeText={(value) => handleChange(field, value)}
+              onBlur={() => handleBlur(field)}
+            />
+          </Input>
+          {errors[field] && (
+            <FormControlError>
+              <FormControlErrorText>{errors[field]}</FormControlErrorText>
+            </FormControlError>
+          )}
+        </FormControl>
+      ))}
 
-    return (
-        <Box className="flex-1 p-6 justify-center">
-            <Text bold size="2xl" className="text-center mb-6">
-                Login
-            </Text>
-
-            {Object.keys(loginForm).map((field) => (
-                <FormControl key={field} isInvalid={!!errors[field]} className="mb-4">
-                    <FormControlLabel>
-                        <FormControlLabelText>
-                            {translateFieldName(field)}
-                        </FormControlLabelText>
-                    </FormControlLabel>
-                    <Input>
-                        <InputField
-                            placeholder={`Nhập ${translateFieldName(field).charAt(0).toLowerCase()+translateFieldName(field).slice(1)}`}
-                            secureTextEntry={field === "password"}
-                            keyboardType={"default"}
-                            value={form[field as keyof typeof form]}
-                            onChangeText={(value) => handleChange(field, value)}
-                            onBlur={() => handleBlur(field)}
-                        />
-                    </Input>
-                    {errors[field] && (
-                        <FormControlError>
-                            <FormControlErrorText>{errors[field]}</FormControlErrorText>
-                        </FormControlError>
-                    )}
-                </FormControl>
-            ))}
-
-            {errors.server && (
-                <Text className="text-red-500 text-center mb-4">{errors.server}</Text>
-            )}
-            <Button onPress={handleSubmit}><Text>Login</Text></Button>
-            <Text
-                className="text-blue-500 text-center mt-4"
-                onPress={() => router.navigate("/auth/register")}
-            >
-                Éo có tài khoản? Đăng ký ngay đây.
-            </Text>
-        </Box>
-    );
+      {errors.server && (
+        <Text className="text-red-500 text-center mb-4">{errors.server}</Text>
+      )}
+      <Button onPress={handleSubmit}>
+        <Text>Login</Text>
+      </Button>
+      <Text
+        className="text-blue-500 text-center mt-4"
+        onPress={() => router.navigate("/auth/register")}
+      >
+        Éo có tài khoản? Đăng ký ngay đây.
+      </Text>
+    </Box>
+  );
 }
-
-
