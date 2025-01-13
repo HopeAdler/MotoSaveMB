@@ -4,7 +4,7 @@ import { Text } from "@/components/ui/text";
 import { Button } from "@/components/ui/button";
 import React, { useContext } from "react";
 
-export default function CHomeScreen() {
+export default function CSettingscreen() {
   const { user, dispatch } = useContext(AuthContext);
   const logout = () => {
     dispatch?.({ type: "LOGOUT" });
@@ -12,13 +12,11 @@ export default function CHomeScreen() {
   return (
     <Box className="flex-1 justify-center items-center">
       <Text bold size="2xl">
-        Welcome to My App bitches This is HomeScreen of customer
+        Welcome to My App bitches This is AccountScreen of customer
       </Text>
-      <Button onPress={logout}>
-        <Text>Logout</Text>
-      </Button>
+      
     </Box>
   );
 }
 
-//  NAY LA MAN HINH TRANG CHU CUA CUSTOMER
+//  NAY LA MAN HINH SETTING ACCOUNT CUA CUSTOMER
