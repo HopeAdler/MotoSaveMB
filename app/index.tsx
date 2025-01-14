@@ -58,30 +58,71 @@
 // Đây là trang splashscreen là trang đầu trong cái app, 
 //như cramata trang icon ấy
 
-import React, { useEffect } from 'react';
+
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Box } from '@/components/ui/box';
 import { Text } from '@/components/ui/text';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import LoadingScreen from './loading/loading';
 
 export default function SplashScreen() {
   const router = useRouter();
+  const [isLoading, setLoading] = useState(false);  // Trạng thái loading để điều khiển thời gian đợi
 
   useEffect(() => {
-    setTimeout(() => {
-      router.navigate("/onboard");
-      // return <Redirect href='/onboard/index' />
-    }, 2000); // Chuyển tới Onboard Screen sau 2 giây
+    // Hàm kiểm tra dữ liệu user và token
+    const checkUserData = async () => {
+      const storedUser = await AsyncStorage.getItem("user");
+      const storedToken = await AsyncStorage.getItem("token");
+
+      if (storedUser && storedToken) {
+        const user = JSON.parse(storedUser);
+        // Nếu có token và user, chuyển tới home theo role
+        switch (user.role) {
+          case "Customer":
+            router.navigate("/user/customer/home");
+            break;
+          case "Driver":
+            router.navigate("/user/driver/home");
+            break;
+          case "Mechanic":
+            router.navigate("/user/mechanic/home");
+            break;
+          default:
+            router.navigate("/error/404"); // Hoặc một màn hình lỗi nếu cần
+            break;
+        }
+      } else {
+        // Nếu không có user và token, qua onboard
+        router.navigate("/onboard");
+      }
+    };
+
+    // Đặt setTimeout để delay 3 giây trước khi gọi checkUserData
+    const timeout = setTimeout(() => {
+      checkUserData();
+      setLoading(true);  // Thay đổi trạng thái để cho phép chuyển hướng
+    }, 5000);  // Đợi 3 giây (3000ms)
+
+    // Cleanup khi component bị unmount để tránh gọi lại setTimeout
+    return () => clearTimeout(timeout);
+
   }, [router]);
+
+
+  if (isLoading) {
+    return (
+      <LoadingScreen />
+    );
+  }
 
   return (
     <Box className='flex-1 justify-center items-center'>
       <Text bold size='2xl'>
-        Welcome to My App bitches
+        Welcome to My App Bitches
         This is SplashScreen
       </Text>
     </Box>
   );
 }
-
-
-
