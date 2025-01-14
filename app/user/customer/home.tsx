@@ -30,8 +30,6 @@ export default function CHomeScreen() {
   }
   const handleLogout = async () => {
     dispatch?.({ type: "LOGOUT" });
-    await AsyncStorage.removeItem("user");
-    await AsyncStorage.removeItem("token");
     router.replace("/auth/login"); // Chuyển hướng về trang login
   };
 
