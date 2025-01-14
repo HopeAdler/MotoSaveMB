@@ -46,6 +46,7 @@ import {
 } from "@/app/utils/utils";
 import { loginForm } from "@/app/context/formFields";
 import { AuthContext } from "../context/AuthContext";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -81,47 +82,75 @@ export default function LoginScreen() {
     }
 
     try {
-        const response = await axios.post(
-          "https://motor-save-be.vercel.app/api/v1/auth/login",
-          form,
-          { headers: { "Content-Type": "application/json" } }
-        );
-    
-        if (response.status === 201) {
-          const { user, token } = response.data;
-          dispatch?.({ type: "LOGIN_SUCCESS", payload: { user, token } });
-    
-          // Navigate based on user role
-          switch (user.role) {
-            case "Customer":
-              router.navigate("/user/customer/home");
-              break;
-            case "Driver":
-              router.navigate("/user/driver/home");
-              break;
-            case "Mechanic":
-              router.navigate("/user/mechanic/home");
-              break;
-            default:
-              router.navigate("/auth/Error");
-              break;
-          }
-        } else {
-          // Handle other status codes
-          const errorData = response.data;
-          dispatch?.({ type: "LOGIN_FAILURE", payload: errorData.message });
-          setErrors({ server: errorData.message });
-        }
-      } catch (error: any) {
-        // Handle request errors
-        if (error.response) {
-          setErrors({ server: error.response.data.message });
-        } else if (error.request) {
-          setErrors({ server: "Không thể kết nối đến máy chủ." });
-        } else {
-          setErrors({ server: "Đã xảy ra lỗi. Vui lòng thử lại sau." });
+      const response = await axios.post(
+        "https://motor-save-be.vercel.app/api/v1/auth/login",
+        form,
+        { headers: { "Content-Type": "application/json" } }
+      );
+
+      // if (response.status === 201) {
+      //   const { user, token } = response.data;
+      //   dispatch?.({ type: "LOGIN_SUCCESS", payload: { user, token } });
+
+      //   // Navigate based on user role
+      //   switch (user.role) {
+      //     case "Customer":
+      //       router.navigate("/user/customer/home");
+      //       break;
+      //     case "Driver":
+      //       router.navigate("/user/driver/home");
+      //       break;
+      //     case "Mechanic":
+      //       router.navigate("/user/mechanic/home");
+      //       break;
+      //     default:
+      //       // router.navigate("/error/404");//vì lí do nào đó, rout không nhận ra.
+      //       break;
+      //   }
+      // } 
+      // Sau khi đăng nhập thành công
+      if (response.status === 201) {
+        const { user, token } = response.data;
+        dispatch?.({ type: "LOGIN_SUCCESS", payload: { user, token } });
+
+        // Lưu thông tin vào AsyncStorage
+        await AsyncStorage.setItem("user", JSON.stringify(user));
+        await AsyncStorage.setItem("token", token);
+
+        // Điều hướng dựa trên vai trò
+        switch (user.role) {
+          case "Customer":
+            router.navigate("/user/customer/home");
+            break;
+          case "Driver":
+            router.replace("/user/driver/home");
+            break;
+          case "Mechanic":
+            router.replace("/user/mechanic/home");
+            break;
+          default:
+            // Điều hướng đến lỗi nếu không có vai trò hợp lệ
+            router.replace("/error/404");
+            break;
         }
       }
+
+      else {
+        // Handle other status codes
+        const errorData = response.data;
+        dispatch?.({ type: "LOGIN_FAILURE", payload: errorData.message });
+        setErrors({ server: errorData.message });
+      }
+    } catch (error: any) {
+      // Handle request errors
+      if (error.response) {
+        setErrors({ server: error.response.data.message });
+      } else if (error.request) {
+        setErrors({ server: "Không thể kết nối đến máy chủ." });
+      } else {
+        setErrors({ server: "Đã xảy ra lỗi. Vui lòng thử lại sau." });
+      }
+    }
   };
 
   return (
@@ -139,10 +168,9 @@ export default function LoginScreen() {
           </FormControlLabel>
           <Input>
             <InputField
-              placeholder={`Nhập ${
-                translateFieldName(field).charAt(0).toLowerCase() +
+              placeholder={`Nhập ${translateFieldName(field).charAt(0).toLowerCase() +
                 translateFieldName(field).slice(1)
-              }`}
+                }`}
               secureTextEntry={field === "password"}
               keyboardType={"default"}
               value={form[field as keyof typeof form]}
