@@ -40,6 +40,9 @@ export default function CHomeScreen() {
       <Text bold size="2xl">
         Welcome to My App bitches This is HomeScreen of customer
       </Text>
+      <Button className="bg-red-500 mb-5" onPress={() => router.navigate('/user/customer/servicePackage')}>
+        <Text>Cứu hộ</Text>
+      </Button>
       <Button onPress={handleLogout}>
         <Text>Logout</Text>
       </Button>
