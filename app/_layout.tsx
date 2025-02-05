@@ -148,19 +148,22 @@ import React, { useContext } from "react";
 import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
 import { Stack } from "expo-router";
 import { AuthContextProvider } from "./context/AuthContext";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 export default function RootLayout() {
   // Không cần check token và user ở đây nữa
   return (
-    <GluestackUIProvider mode="light">
-      <AuthContextProvider>
-        <Stack>
-          <Stack.Screen name="index" options={{ headerShown: false }} />
-          <Stack.Screen name="onboard/index" options={{ headerShown: false }} />
-          <Stack.Screen name="auth" options={{ headerShown: false }} />
-          <Stack.Screen name="error" options={{ headerShown: false }} />
-        </Stack>
-      </AuthContextProvider>
-    </GluestackUIProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <GluestackUIProvider mode="light">
+        <AuthContextProvider>
+          <Stack>
+            <Stack.Screen name="index" options={{ headerShown: false }} />
+            <Stack.Screen name="onboard/index" options={{ headerShown: false }} />
+            <Stack.Screen name="auth" options={{ headerShown: false }} />
+            <Stack.Screen name="error" options={{ headerShown: false }} />
+          </Stack>
+        </AuthContextProvider>
+      </GluestackUIProvider>
+    </GestureHandlerRootView>
   );
 }
