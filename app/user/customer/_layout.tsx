@@ -1,4 +1,4 @@
-import { Tabs, Stack } from "expo-router";
+import { Tabs } from "expo-router";
 import "@/global.css";
 import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
 import {
@@ -18,7 +18,7 @@ export default function CustomerLayout() {
           options={{
             headerShown: false,
             tabBarLabel: "Home",
-            tabBarIcon: (tabInfo) => <House size={28} color={tabInfo.color} />,
+            tabBarIcon: (tabInfo) => <House size={24} color={tabInfo.color} />,
           }}
         />
         <Tabs.Screen
@@ -37,7 +37,7 @@ export default function CustomerLayout() {
             headerShown: false,
             tabBarLabel: "Payment",
             tabBarIcon: (tabInfo) => (
-              <CreditCard size={28} color={tabInfo.color} />
+              <CreditCard size={24} color={tabInfo.color} />
             ),
           }}
         />
@@ -46,7 +46,7 @@ export default function CustomerLayout() {
           options={{
             headerShown: false,
             tabBarLabel: "Notifications",
-            tabBarIcon: (tabInfo) => <Bell size={28} color={tabInfo.color} />,
+            tabBarIcon: (tabInfo) => <Bell size={24} color={tabInfo.color} />,
           }}
         />
         <Tabs.Screen
@@ -55,8 +55,20 @@ export default function CustomerLayout() {
             headerShown: false,
             tabBarLabel: "Account",
             tabBarIcon: (tabInfo) => (
-              <CircleUserRound size={28} color={tabInfo.color} />
+              <CircleUserRound size={24} color={tabInfo.color} />
             ),
+          }}
+        />
+        <Tabs.Screen
+          name="servicePackage"
+          options={{
+            href: null,
+          }}
+        />
+        <Tabs.Screen
+          name="payment_success"
+          options={{
+            href: null,
           }}
         />
       </Tabs>
