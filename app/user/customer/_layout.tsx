@@ -71,6 +71,12 @@ export default function CustomerLayout() {
             href: null,
           }}
         />
+        <Tabs.Screen
+          name="rescueMap"
+          options={{
+            href: null,
+          }}
+        />
       </Tabs>
     </GluestackUIProvider>
   );
