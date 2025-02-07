@@ -2,6 +2,7 @@ import { Box } from "@/components/ui/box";
 import { FlatList, Text, TextInput, TouchableOpacity, View } from "react-native";
 import MapboxGL from "@rnmapbox/maps";
 import React, { useState, useRef, useEffect } from "react";
+import * as Location from 'expo-location';
 
 MapboxGL.setAccessToken("pk.eyJ1IjoiaG9wZWFkbGVyIiwiYSI6ImNtNWF4azVlNjR1MGoyanEzdmx4cXJta2IifQ.2D3xCxaGst7iz9zxCwvAhg");
 
@@ -19,7 +20,7 @@ const rescueMap = () => {
   const [loadMap] = useState(
     "https://tiles.goong.io/assets/goong_map_web.json?api_key=kxqBgWA65Rq2Z0K85ZUUFgksN2liNnqprw9BY6DE"
   );
-  const [coordinates, setCoordinates] = useState<[number, number]>([105.83991, 21.028]);
+  const [coordinates, setCoordinates] = useState<[number, number]>();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
 
@@ -33,6 +34,25 @@ const rescueMap = () => {
 
   useEffect(() => {
     MapboxGL.setTelemetryEnabled(false);
+    const requestLocationPermission = async () => {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        console.log('Permission to access location was denied');
+        return;
+      }
+
+      let location = await Location.getCurrentPositionAsync({});
+      console.log(location)
+      const { longitude, latitude } = location.coords;
+      setCoordinates([longitude, latitude]);
+      camera.current.setCamera({
+        centerCoordinate: [longitude, latitude],
+        zoomLevel: 12,
+        animationDuration: 2000,
+      });
+    };
+
+    requestLocationPermission();
   }, []);
 
   const onDragEnd = (index: number, e: any) => {
