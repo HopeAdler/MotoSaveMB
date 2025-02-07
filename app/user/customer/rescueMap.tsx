@@ -44,24 +44,26 @@ const rescueMap = () => {
     });
   };
 
+  const searchLocation = async () => {
+    if (searchQuery.trim() === "") {
+      setSearchResults([]);
+      return;
+    }
+    try {
+      const response = await fetch(
+        `https://rsapi.goong.io/Place/AutoComplete?api_key=ukTFcS7AFh3CpfiofJdA6qs3YXWoK9kGwhKgYrQv&input=${searchQuery}`
+      );
+      const data = await response.json();
+      setSearchResults(data.predictions || []);
+    } catch (error) {
+      console.error("Error fetching search results:", error);
+    }
+  };
   useEffect(() => {
-    const searchLocation = async () => {
-      if (searchQuery.trim() === "") {
-        setSearchResults([]);
-        return;
-      }
-      try {
-        const response = await fetch(
-          `https://rsapi.goong.io/Place/AutoComplete?api_key=ukTFcS7AFh3CpfiofJdA6qs3YXWoK9kGwhKgYrQv&input=${searchQuery}`
-        );
-        const data = await response.json();
-        setSearchResults(data.predictions || []);
-      } catch (error) {
-        console.error("Error fetching search results:", error);
-      }
-    };
-    
-    searchLocation();
+    const delayDebounce = setTimeout(() => {
+      searchLocation();
+    }, 1000);
+    return () => clearTimeout(delayDebounce);
   }, [searchQuery]);
 
   return (
@@ -101,7 +103,7 @@ const rescueMap = () => {
 
         {locations.map((item, index) => (
           <MapboxGL.PointAnnotation
-            id={`pointID-${index}`} 
+            id={`pointID-${index}`}
             key={`pointKey-${index}`}
             coordinate={item.coord}
             draggable={true}
