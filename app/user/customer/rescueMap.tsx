@@ -8,19 +8,11 @@ import { Input, InputField } from "@/components/ui/input";
 import { Pressable } from "@/components/ui/pressable";
 import { Text } from "@/components/ui/text";
 import polyline from "@mapbox/polyline"; // Thêm thư viện giải mã polyline
+import { SearchResult } from "@/app/context/formFields";
 
 // Set Mapbox Access Token
 MapboxGL.setAccessToken("pk.eyJ1IjoiaG9wZWFkbGVyIiwiYSI6ImNtNWF4azVlNjR1MGoyanEzdmx4cXJta2IifQ.2D3xCxaGst7iz9zxCwvAhg");
 
-// Kiểu dữ liệu cho kết quả autocomplete
-interface SearchResult {
-  description: string;
-  place_id: string;
-  structured_formatting: {
-    main_text: string;
-    secondary_text: string;
-  };
-}
 
 /**
  * Hàm giải mã polyline sử dụng thư viện @mapbox/polyline.
@@ -69,8 +61,8 @@ const RescueMapScreen = () => {
       let location = await Location.getCurrentPositionAsync({});
       console.log(location)
       const { longitude, latitude } = location.coords;
-      setCoordinates([longitude, latitude]);
-      camera.current.setCamera({
+      setOriginCoordinates([longitude, latitude]);
+      camera.current?.setCamera({
         centerCoordinate: [longitude, latitude],
         zoomLevel: 12,
         animationDuration: 2000,
