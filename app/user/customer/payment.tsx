@@ -133,8 +133,8 @@ const ZaloPayDemo = () => {
     console.log(params);
     // Serialize form data
     const formBody = (Object.keys(params) as Array<keyof RefundParams>)
-  .map((key) => `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`)
-  .join('&');
+    .map((key) => `${encodeURIComponent(key)}=${encodeURIComponent(params[key] ?? '')}`)
+    .join('&');
   
     // Make POST request
     try {
