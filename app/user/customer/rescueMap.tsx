@@ -2,17 +2,17 @@ import { Box } from "@/components/ui/box";
 import { FlatList, Text, TextInput, TouchableOpacity, View } from "react-native";
 import MapboxGL from "@rnmapbox/maps";
 import React, { useState, useRef, useEffect } from "react";
-
+import { SearchResult } from "../../context/formFields";
 MapboxGL.setAccessToken("pk.eyJ1IjoiaG9wZWFkbGVyIiwiYSI6ImNtNWF4azVlNjR1MGoyanEzdmx4cXJta2IifQ.2D3xCxaGst7iz9zxCwvAhg");
 
-interface SearchResult {
-  description: string;
-  place_id: string;
-  structured_formatting: {
-    main_text: string;
-    secondary_text: string;
-  };
-}
+// interface SearchResult {
+//   description: string;
+//   place_id: string;
+//   structured_formatting: {
+//     main_text: string;
+//     secondary_text: string;
+//   };
+// }
 
 
 const rescueMap = () => {
@@ -21,8 +21,8 @@ const rescueMap = () => {
   );
   const [coordinates, setCoordinates] = useState<[number, number]>([105.83991, 21.028]);
   const [searchQuery, setSearchQuery] = useState("");
+  
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
-
   const [locations, setLocations] = useState([
     { coord: [105.83991, 21.028], name: "Hanoi" },
     { coord: [105.84117, 21.0238], name: "Point 2" },
@@ -56,6 +56,7 @@ const rescueMap = () => {
         );
         const data = await response.json();
         setSearchResults(data.predictions || []);
+        console.log(data);
       } catch (error) {
         console.error("Error fetching search results:", error);
       }
