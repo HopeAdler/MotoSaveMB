@@ -1,47 +1,70 @@
-import { Box } from "@/components/ui/box";
-import { FlatList, Text, TextInput, TouchableOpacity, View } from "react-native";
+import {
+  FlatList,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import MapboxGL from "@rnmapbox/maps";
 import React, { useState, useRef, useEffect } from "react";
 
-MapboxGL.setAccessToken("pk.eyJ1IjoiaG9wZWFkbGVyIiwiYSI6ImNtNWF4azVlNjR1MGoyanEzdmx4cXJta2IifQ.2D3xCxaGst7iz9zxCwvAhg");
+MapboxGL.setAccessToken(
+  "pk.eyJ1IjoiaG9wZWFkbGVyIiwiYSI6ImNtNWF4azVlNjR1MGoyanEzdmx4cXJta2IifQ.2D3xCxaGst7iz9zxCwvAhg"
+);
 
 interface SearchResult {
   description: string;
   place_id: string;
-  structured_formatting: {
-    main_text: string;
-    secondary_text: string;
-  };
 }
-
 
 const rescueMap = () => {
   const [loadMap] = useState(
     "https://tiles.goong.io/assets/goong_map_web.json?api_key=kxqBgWA65Rq2Z0K85ZUUFgksN2liNnqprw9BY6DE"
   );
-  const [coordinates, setCoordinates] = useState<[number, number]>([105.83991, 21.028]);
+  const [coordinates, setCoordinates] = useState<[number, number]>([
+    106.701054, 10.776553,
+  ]);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [selectedLocation, setSelectedLocation] = useState<[number, number] | null>(null);
 
-  const [locations, setLocations] = useState([
-    { coord: [105.83991, 21.028], name: "Hanoi" },
-    { coord: [105.84117, 21.0238], name: "Point 2" },
-    { coord: [105.8345, 21.0308], name: "Point 3" },
-  ]);
-
-  const camera = useRef(null);
+  const camera = useRef<MapboxGL.Camera>(null);
 
   useEffect(() => {
     MapboxGL.setTelemetryEnabled(false);
   }, []);
 
-  const onDragEnd = (index: number, e: any) => {
-    const newCoord = e.geometry.coordinates;
-    setLocations((prevLocations) => {
-      const updatedLocations = [...prevLocations];
-      updatedLocations[index] = { ...updatedLocations[index], coord: newCoord };
-      return updatedLocations;
-    });
+  // const onDragEnd = (index: number, e: any) => {
+  //   const newCoord = e.geometry.coordinates;
+  //   setLocations((prevLocations) => {
+  //     const updatedLocations = [...prevLocations];
+  //     updatedLocations[index] = { ...updatedLocations[index], coord: newCoord };
+  //     return updatedLocations;
+  //   });
+  // };
+
+  const fetchLocationFromGeocoding = async (address: string) => {
+    try {
+      const response = await fetch(
+        `https://rsapi.goong.io/Geocode?address=${encodeURIComponent(
+          address
+        )}&api_key=ukTFcS7AFh3CpfiofJdA6qs3YXWoK9kGwhKgYrQv`
+      );
+      const data = await response.json();
+      if (data.results && data.results.length > 0) {
+        const { lat, lng } = data.results[0].geometry.location;
+        setSelectedLocation([lng, lat]);
+        setSearchResults([]);
+        camera.current?.setCamera({
+          centerCoordinate: [lng, lat],
+          zoomLevel: 16,
+          animationDuration: 1000,
+        });
+        // setCoordinates([lng, lat]);
+      }
+    } catch (error) {
+      console.error("Error fetching geocode location:", error);
+    }
   };
 
   const searchLocation = async () => {
@@ -67,54 +90,54 @@ const rescueMap = () => {
   }, [searchQuery]);
 
   return (
-    <View style={{ flex: 1, padding: 10 }}>
-      <TextInput
-        placeholder="Search location"
-        value={searchQuery}
-        onChangeText={setSearchQuery}
-        style={{ borderWidth: 1, padding: 8, marginBottom: 10 }}
-      />
-      <FlatList
-        data={searchResults}
-        keyExtractor={(item, index) => index.toString()}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            onPress={() => {
-              // setCoordinates([item.geometry.location.lng, item.geometry.location.lat]);
-              // setSearchResults([]);
-              setSearchQuery(item.description)
-            }}
-          >
-            <Text style={{ padding: 10, backgroundColor: '#f0f0f0', marginBottom: 5 }}>{item.description}</Text>
-          </TouchableOpacity>
-        )}
-      />
-      <MapboxGL.MapView
-        styleURL={loadMap}
-        style={{ flex: 1 }}
-        projection="globe"
-        zoomEnabled={true}
-      >
-        <MapboxGL.Camera
-          ref={camera}
-          zoomLevel={12}
-          centerCoordinate={coordinates}
+    <View className="flex-1">
+      <View className="absolute w-full z-10 p-4">
+        <TextInput
+          placeholder="Search location"
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          className="border p-2 mb-2 rounded bg-white"
         />
-
-        {locations.map((item, index) => (
-          <MapboxGL.PointAnnotation
-            id={`pointID-${index}`}
-            key={`pointKey-${index}`}
-            coordinate={item.coord}
-            draggable={true}
-            onDragEnd={(e) => onDragEnd(index, e)}
-          >
-            <MapboxGL.Callout title={item.name} />
-          </MapboxGL.PointAnnotation>
-        ))}
-      </MapboxGL.MapView>
+        <FlatList
+          data={searchResults}
+          keyExtractor={(item, index) => index.toString()}
+          className="bg-white rounded shadow"
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              onPress={() => {
+                setSearchQuery(item.description);
+                fetchLocationFromGeocoding(item.description);
+              }}
+            >
+              <Text className="p-2 bg-white">{item.description}</Text>
+            </TouchableOpacity>
+          )}
+        />
+      </View>
+      <View className="flex-1">
+        <MapboxGL.MapView
+          styleURL={loadMap}
+          style={{ height: "100%", width: "100%" }}
+          projection="globe"
+          zoomEnabled={true}
+        >
+          <MapboxGL.Camera
+            ref={camera}
+            zoomLevel={12}
+            centerCoordinate={coordinates}
+          />
+          {selectedLocation && (
+            <MapboxGL.PointAnnotation
+              id="selected-location"
+              coordinate={selectedLocation}
+            >
+              <MapboxGL.Callout title="Selected Location" />
+            </MapboxGL.PointAnnotation>
+          )}
+        </MapboxGL.MapView>
+      </View>
     </View>
   );
-}
+};
 
-export default rescueMap
+export default rescueMap;
