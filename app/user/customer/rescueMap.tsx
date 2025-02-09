@@ -51,25 +51,25 @@ const RescueMapScreen = () => {
 
   useEffect(() => {
     MapboxGL.setTelemetryEnabled(false);
-    // const requestLocationPermission = async () => {
-    //   let { status } = await Location.requestForegroundPermissionsAsync();
-    //   if (status !== 'granted') {
-    //     console.log('Permission to access location was denied');
-    //     return;
-    //   }
+    const requestLocationPermission = async () => {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        console.log('Permission to access location was denied');
+        return;
+      }
 
-    //   let location = await Location.getCurrentPositionAsync({});
-    //   console.log(location)
-    //   const { longitude, latitude } = location.coords;
-    //   setOriginCoordinates([longitude, latitude]);
-    //   camera.current?.setCamera({
-    //     centerCoordinate: [longitude, latitude],
-    //     zoomLevel: 12,
-    //     animationDuration: 2000,
-    //   });
-    // };
+      let location = await Location.getCurrentPositionAsync({});
+      console.log(location)
+      const { longitude, latitude } = location.coords;
+      setOriginCoordinates([longitude, latitude]);
+      camera.current?.setCamera({
+        centerCoordinate: [longitude, latitude],
+        zoomLevel: 12,
+        animationDuration: 2000,
+      });
+    };
 
-    // requestLocationPermission();
+    requestLocationPermission();
   }, []);
 
   // Hàm gọi API Geocode của Goong để lấy tọa độ từ địa chỉ
