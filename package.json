@@ -14,6 +14,7 @@
   "jest": {
     "preset": "jest-expo"
   },
+  "packageManager": "bun@1.2.2",
   "dependencies": {
     "@expo/vector-icons": "^14.0.2",
     "@gluestack-ui/button": "^1.0.8",
@@ -35,12 +36,13 @@
     "babel-plugin-module-resolver": "^5.0.2",
     "crypto-js": "^4.2.0",
     "expo": "~52.0.23",
-    "expo-blur": "~14.0.2",
+    "expo-blur": "~14.0.3",
     "expo-constants": "~17.0.3",
     "expo-dev-client": "~5.0.8",
     "expo-font": "~13.0.2",
     "expo-haptics": "~14.0.0",
     "expo-linking": "~7.0.3",
+    "expo-location": "~18.0.5",
     "expo-router": "~4.0.15",
     "expo-splash-screen": "~0.29.18",
     "expo-status-bar": "~2.0.0",

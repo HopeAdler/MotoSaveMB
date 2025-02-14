@@ -43,6 +43,12 @@
             "RNMapboxMapsVersion": "11.0.0"
           }
         ]
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow MotoSave-mb to use your location."
+        }
       ]
     ],
     "experiments": {
