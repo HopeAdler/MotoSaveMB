@@ -39,7 +39,7 @@ const RescueMapScreen = () => {
   const [loadMap] = useState(
     `https://tiles.goong.io/assets/goong_map_web.json?api_key=${GOONG_MAP_KEY}`
   );
-  // console.log(loadMap);
+  let map = loadMap
   // Tọa độ cho current location, origin và destination
   const [currentLocation, setCurrentLocation] = useState<[number, number] | null>(null);
   const [originCoordinates, setOriginCoordinates] = useState<[number, number] | null>(null);
@@ -250,7 +250,7 @@ const RescueMapScreen = () => {
         const encodedPolyline = data.routes[0].overview_polyline.points;
         const decoded = decodePolyline(encodedPolyline);
         setRouteCoordinates(decoded);
-        console.log("Decoded polyline:", decoded);
+        // console.log("Decoded polyline:", decoded);
         if (data.routes[0].legs && data.routes[0].legs.length > 0) {
           setDirectionsInfo(data.routes[0].legs[0]);
         }
