@@ -20,6 +20,7 @@ import {
   ActionsheetItemText,
 } from "@/components/ui/actionsheet";
 import { Button, ButtonText } from "@/components/ui/button";
+import { Icon, LocateFixed } from "lucide-react-native";
 
 // Set Mapbox Access Token
 MapboxGL.setAccessToken(
@@ -43,7 +44,6 @@ const RescueMapScreen = () => {
   // Tọa độ cho origin và destination
   const [originCoordinates, setOriginCoordinates] = useState<[number, number]>([106.701054, 10.776553]);
   const [destinationCoordinates, setDestinationCoordinates] = useState<[number, number] | null>(null);
-
   // State cho input text
   const [originQuery, setOriginQuery] = useState("");
   const [destinationQuery, setDestinationQuery] = useState("");
@@ -71,23 +71,23 @@ const RescueMapScreen = () => {
 
   const camera = useRef<MapboxGL.Camera>(null);
 
+  const requestLocationPermission = async () => {
+    let { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== "granted") {
+      console.log("Permission to access location was denied");
+      return;
+    }
+    let location = await Location.getCurrentPositionAsync({});
+    const { longitude, latitude } = location.coords;
+    setOriginCoordinates([longitude, latitude]);
+    camera.current?.setCamera({
+      centerCoordinate: [longitude, latitude],
+      zoomLevel: 12,
+      animationDuration: 2000,
+    });
+  };
   useEffect(() => {
     MapboxGL.setTelemetryEnabled(false);
-    const requestLocationPermission = async () => {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        console.log("Permission to access location was denied");
-        return;
-      }
-      let location = await Location.getCurrentPositionAsync({});
-      const { longitude, latitude } = location.coords;
-      setOriginCoordinates([longitude, latitude]);
-      camera.current?.setCamera({
-        centerCoordinate: [longitude, latitude],
-        zoomLevel: 12,
-        animationDuration: 2000,
-      });
-    };
     requestLocationPermission();
   }, []);
 
@@ -176,6 +176,21 @@ const RescueMapScreen = () => {
     return () => clearTimeout(timeout);
   }, [destinationQuery]);
 
+  //Đổi lng&lat của origin thành địa chỉ gắn lên input
+  const getStringedLocation = async () => {
+    try {
+      requestLocationPermission();
+      const coords = originCoordinates;
+      const response = await fetch(
+        `https://rsapi.goong.io/geocode?latlng=${coords[1]}%2C${coords[0]}&api_key=ukTFcS7AFh3CpfiofJdA6qs3YXWoK9kGwhKgYrQv`
+      );
+      const data = await response.json();
+      console.log(data.results[0].formatted_address);
+      setOriginQuery(data.results[0].formatted_address);
+    } catch (error) {
+      console.error("Error getting stringed Location:", error);
+    }
+  }
   // Hàm gọi API Directions của Goong để lấy tuyến đường (xe tải mặc định)
   const fetchDirections = async () => {
     if (!destinationCoordinates) return;
@@ -237,9 +252,13 @@ const RescueMapScreen = () => {
         <Input variant="outline" size="md" className="bg-white">
           <InputField
             placeholder="Search origin"
+            defaultValue={originQuery}
             value={originQuery}
             onChangeText={setOriginQuery}
           />
+          <Button variant="solid" size="sm" onPress={() => getStringedLocation()}>
+            <LocateFixed color="#8b5cf6" />
+          </Button>
         </Input>
         {originResults.length > 0 && !originSelected && (
           <FlatList
@@ -352,8 +371,8 @@ const RescueMapScreen = () => {
                 {fareLoading
                   ? "Calculating fare..."
                   : fare !== null
-                  ? `Fare: ${fare.toLocaleString()} VND`
-                  : "Fare: N/A"}
+                    ? `Fare: ${fare.toLocaleString()} VND`
+                    : "Fare: N/A"}
               </Text>
             </Box>
             <Box className="mt-4">
