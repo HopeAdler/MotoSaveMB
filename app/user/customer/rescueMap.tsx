@@ -21,9 +21,7 @@ import { Button, ButtonText } from "@/components/ui/button";
 import { CircleChevronDown, LocateFixed, MapPinHouse } from "lucide-react-native";
 
 // Set Mapbox Access Token
-MapboxGL.setAccessToken(
-  "pk.eyJ1IjoiaG9wZWFkbGVyIiwiYSI6ImNtNWF4azVlNjR1MGoyanEzdmx4cXJta2IifQ.2D3xCxaGst7iz9zxCwvAhg"
-);
+MapboxGL.setAccessToken(`${process.env.MAPBOX_ACCESS_TOKEN}`);
 
 /**
  * Giải mã polyline: chuyển chuỗi mã hóa thành mảng tọa độ theo định dạng [lng, lat]
@@ -35,7 +33,7 @@ function decodePolyline(encoded: string): [number, number][] {
 const RescueMapScreen = () => {
   // URL bản đồ từ goong.io
   const [loadMap] = useState(
-    "https://tiles.goong.io/assets/goong_map_web.json?api_key=kxqBgWA65Rq2Z0K85ZUUFgksN2liNnqprw9BY6DE"
+    `https://tiles.goong.io/assets/goong_map_web.json?api_key=${process.env.GOONG_MAP_KEY}`
   );
 
   // Tọa độ cho current location, origin và destination
@@ -110,9 +108,11 @@ const RescueMapScreen = () => {
     try {
       if (!originCoordinates) return;
       const response = await fetch(
-        `https://rsapi.goong.io/geocode?latlng=${originCoordinates[1]}%2C${originCoordinates[0]}&api_key=ukTFcS7AFh3CpfiofJdA6qs3YXWoK9kGwhKgYrQv`
+        `https://rsapi.goong.io/geocode?latlng=${originCoordinates[1]}%2C${originCoordinates[0]}&api_key=${process.env.GOONG_API_KEY}`
       );
       const data = await response.json();
+      console.log(data)
+      console.log(data.error.code)
       if (data.results && data.results.length > 0) {
         setOriginQuery(data.results[0].formatted_address);
         setOriginSelected(true);
@@ -132,7 +132,7 @@ const RescueMapScreen = () => {
   const fetchLocationFromGeocoding = async (address: string, isOrigin: boolean) => {
     try {
       const response = await fetch(
-        `https://rsapi.goong.io/geocode?address=${encodeURIComponent(address)}&api_key=ukTFcS7AFh3CpfiofJdA6qs3YXWoK9kGwhKgYrQv`
+        `https://rsapi.goong.io/geocode?address=${encodeURIComponent(address)}&api_key=${process.env.GOONG_API_KEY}`
       );
       const data = await response.json();
       if (data.results && data.results.length > 0) {
@@ -182,7 +182,7 @@ const RescueMapScreen = () => {
     try {
       const locationParam = originCoordinates ? `&location=${originCoordinates[1]},${originCoordinates[0]}` : "";
       const response = await fetch(
-        `https://rsapi.goong.io/Place/AutoComplete?api_key=ukTFcS7AFh3CpfiofJdA6qs3YXWoK9kGwhKgYrQv&input=${originQuery}${locationParam}`
+        `https://rsapi.goong.io/Place/AutoComplete?api_key=${process.env.GOONG_API_KEY}&input=${originQuery}${locationParam}`
       );
       const data = await response.json();
       setOriginResults(data.predictions || []);
@@ -200,7 +200,7 @@ const RescueMapScreen = () => {
     try {
       const locationParam = originCoordinates ? `&location=${originCoordinates[1]},${originCoordinates[0]}` : "";
       const response = await fetch(
-        `https://rsapi.goong.io/Place/AutoComplete?api_key=ukTFcS7AFh3CpfiofJdA6qs3YXWoK9kGwhKgYrQv&input=${destinationQuery}${locationParam}`
+        `https://rsapi.goong.io/Place/AutoComplete?api_key=${process.env.GOONG_API_KEY}&input=${destinationQuery}${locationParam}`
       );
       const data = await response.json();
       setDestinationResults(data.predictions || []);
@@ -239,7 +239,7 @@ const RescueMapScreen = () => {
     const destinationStr = `${destinationCoordinates![1]},${destinationCoordinates![0]}`;
     try {
       const response = await fetch(
-        `https://rsapi.goong.io/direction?origin=${originStr}&destination=${destinationStr}&vehicle=truck&api_key=ukTFcS7AFh3CpfiofJdA6qs3YXWoK9kGwhKgYrQv`
+        `https://rsapi.goong.io/direction?origin=${originStr}&destination=${destinationStr}&vehicle=truck&api_key=${process.env.GOONG_API_KEY}`
       );
       const data = await response.json();
       if (data.routes && data.routes.length > 0) {
