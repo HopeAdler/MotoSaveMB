@@ -15,6 +15,7 @@ import {
 import React, { useContext, useEffect, useState } from "react";
 import { Pressable, ScrollView } from "react-native";
 import LoadingScreen from "../../loading/loading";
+import { Avatar } from "react-native-elements";
 
 interface ServiceCardProps {
   icon: LucideIcon;
@@ -73,8 +74,13 @@ export default function DHomeScreen() {
 
   return (
     <Box className="flex-1 bg-gray-50">
-      <Box className="bg-blue-600 p-4 pb-6">
-        <Box className="flex flex-row items-center justify-between mb-4">
+      <Box className="bg-blue-600 p-4 flex flex-row items-center justify-between">
+        <Avatar
+          size={64}
+          rounded
+          source={{ uri: "https://randomuser.me/api/portraits/men/36.jpg" }}
+        />
+        <Box className="flex w-3/4">
           <Text className="text-white text-lg font-bold">Xin chào lái xe: {user.username}</Text>
           <Button variant="outline" onPress={handleLogout}>
             <Text className="text-white">Đăng xuất</Text>
@@ -109,7 +115,7 @@ export default function DHomeScreen() {
               <Button
                 variant="solid"
                 className="bg-red-500 mb-4 m-8"
-                // onPress={() => router.navigate("/user/customer/servicePackage")}
+              // onPress={() => router.navigate("/user/customer/servicePackage")}
               >
                 <Text className="text-lg font-bold text-white">
                   Trở lại trang yêu cầu
@@ -119,6 +125,6 @@ export default function DHomeScreen() {
           </Box>
         </Box>
       </ScrollView>
-    </Box>
+    </Box >
   );
 }
