@@ -40,7 +40,7 @@ const RescueMapScreen = () => {
 
   // Tọa độ cho current location, origin và destination
   const [currentLocation, setCurrentLocation] = useState<[number, number] | null>(null);
-  const [originCoordinates, setOriginCoordinates] = useState<[number, number]>([106.701054, 10.776553]);
+  const [originCoordinates, setOriginCoordinates] = useState<[number, number] | null>(null);
   const [destinationCoordinates, setDestinationCoordinates] = useState<[number, number] | null>(null);
 
   // State cho input text
@@ -233,7 +233,9 @@ const RescueMapScreen = () => {
 
   // Hàm gọi API Directions của Goong (xe tải)
   const fetchDirections = async () => {
-    const originStr = `${originCoordinates[1]},${originCoordinates[0]}`;
+    const originStr = originCoordinates?.[1] !== undefined && originCoordinates?.[0] !== undefined
+      ? `${originCoordinates[1]},${originCoordinates[0]}`
+      : "0,0"; // Default value
     const destinationStr = `${destinationCoordinates![1]},${destinationCoordinates![0]}`;
     try {
       const response = await fetch(
@@ -368,11 +370,13 @@ const RescueMapScreen = () => {
           projection="globe"
           zoomEnabled={true}
         >
-          <MapboxGL.Camera
-            ref={camera}
-            zoomLevel={12}
-            centerCoordinate={originCoordinates}
-          />
+          {originCoordinates &&
+            <MapboxGL.Camera
+              ref={camera}
+              zoomLevel={12}
+              centerCoordinate={originCoordinates}
+            />
+          }
           {currentLocation && (
             <MapboxGL.PointAnnotation id="current-location" coordinate={currentLocation}>
               <Box style={{ width: 28, height: 28, alignItems: "center", justifyContent: "center" }}>
@@ -381,10 +385,11 @@ const RescueMapScreen = () => {
             </MapboxGL.PointAnnotation>
           )}
 
-
-          <MapboxGL.PointAnnotation id="origin-marker" coordinate={originCoordinates}>
-            <MapboxGL.Callout title="Origin" />
-          </MapboxGL.PointAnnotation>
+          {originCoordinates &&
+            <MapboxGL.PointAnnotation id="origin-marker" coordinate={originCoordinates}>
+              <MapboxGL.Callout title="Origin" />
+            </MapboxGL.PointAnnotation>
+          }
           {destinationCoordinates && (
             <MapboxGL.PointAnnotation id="destination-marker" coordinate={destinationCoordinates} >
               {/* <MapboxGL.Callout title="Destination" /> */}
