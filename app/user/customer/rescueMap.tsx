@@ -427,14 +427,14 @@ const RescueMapScreen = () => {
         <Actionsheet
           isOpen={true}
           onClose={() => { }}
-          snapPoints={[50, 2]}
+          // snapPoints={[50, 2]}
         >
           <ActionsheetContent
             className="bg-white rounded-t-xl"
           >
-            <ActionsheetDragIndicatorWrapper>
+            {/* <ActionsheetDragIndicatorWrapper>
               <ActionsheetDragIndicator className="bg-gray-300 rounded-full w-10 h-1 mx-auto my-2" />
-            </ActionsheetDragIndicatorWrapper>
+            </ActionsheetDragIndicatorWrapper> */}
             <Box className="p-4">
               <Text className="text-xl font-bold text-center">Trip Details</Text>
               <Box className="mt-4">
