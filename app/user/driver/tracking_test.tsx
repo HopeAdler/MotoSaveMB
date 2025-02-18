@@ -1,20 +1,21 @@
-import React, { useState, useEffect, useRef, useContext } from "react";
-import {
-  StyleSheet,
-  Text,
-  View,
-  TouchableOpacity,
-  Switch,
-} from "react-native";
-import {
-  widthPercentageToDP as wp,
-  heightPercentageToDP as hp,
-} from "react-native-responsive-screen";
+import { AuthContext } from "@/app/context/AuthContext";
+import { decodedToken } from "@/app/utils/utils";
 import MapboxGL from "@rnmapbox/maps";
 import * as Location from "expo-location";
-import PubNubReact from "pubnub";
 import { Bike, LocateFixed } from "lucide-react-native";
-import { AuthContext } from "@/app/context/AuthContext";
+import PubNubReact from "pubnub";
+import React, { useContext, useEffect, useRef, useState } from "react";
+import {
+  StyleSheet,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import {
+  heightPercentageToDP as hp,
+  widthPercentageToDP as wp,
+} from "react-native-responsive-screen";
 
 // const { MAPBOX_ACCESS_TOKEN, PUBNUB_PUBLISH_KEY, PUBNUB_SUBSCRIBE_KEY } = process.env;
 const { MAPBOX_ACCESS_TOKEN } = process.env;
@@ -34,7 +35,8 @@ type PubNubMessage = {
 
 const DTrackingScreen = () => {
   // console.log(MAPBOX_ACCESS_TOKEN, PUBNUB_PUBLISH_KEY)
-  const { user } = useContext(AuthContext);
+  const { user, token } = useContext(AuthContext);
+  const userId = decodedToken(token)?.id;
   const [currentLoc, setCurrentLoc] = useState({ latitude: 0, longitude: 0 });
   const [users, setUsers] = useState(new Map());
   const [userCount, setUserCount] = useState(0);
@@ -46,8 +48,7 @@ const DTrackingScreen = () => {
   const pubnub = new PubNubReact({
     publishKey: PUBNUB_PUBLISH_KEY,
     subscribeKey: PUBNUB_SUBSCRIBE_KEY || "",
-    userId: "49c4901e-1300-437e-a877-39a575d8a275", //driver1
-    // userId: "e74c2597-ed78-44d4-a2da-fb5c38a112ed", //bigbaballs
+    userId,
   });
 
 
@@ -55,8 +56,7 @@ const DTrackingScreen = () => {
     pubnub.publish({
       channel: "global",
       message: {
-        uuid: "49c4901e-1300-437e-a877-39a575d8a275", //driver1
-        // uuid: "e74c2597-ed78-44d4-a2da-fb5c38a112ed", //bigbaballs
+        uuid: userId || "",
         latitude,
         longitude,
       },
@@ -95,13 +95,12 @@ const DTrackingScreen = () => {
 
   useEffect(() => {
     pubnub.subscribe({ channels: ["global"], withPresence: true });
-
     pubnub.addListener({
       message: (msg) => {
         const data = msg.message as PubNubMessage;
         console.log(data)
         setUsers((prevUsers) => {
-          const updatedUsers = new Map(prevUsers);
+          const updatedUsers = prevUsers;
           if (data.hideUser) {
             updatedUsers.delete(msg.publisher);
           } else {
@@ -121,9 +120,6 @@ const DTrackingScreen = () => {
               }
             }
           });
-          // console.log('Updated user: ' + users.forEach(u => {
-          //   u.uuid
-          // }));
           return updatedUsers;
         });
       },
@@ -135,24 +131,15 @@ const DTrackingScreen = () => {
   }, []);
 
   useEffect(() => {
-    // pubnub.hereNow({ includeUUIDs: true, includeState: true }, (status, response) => {
-    //   setUserCount(response?.totalOccupancy ?? users.size);
-    //   console.log(response)
-    // });
     pubnub.hereNow(
       {
         channels: ["global"],
         includeState: true
       },
       function (status, response) {
-        // console.log(status);
         console.log(response);
       }
     )
-    const userData = pubnub.objects.getUUIDMetadata()
-      .then(u => {
-        console.log(u.data)
-      });
   }, [users]);
 
   const focusLoc = () => {

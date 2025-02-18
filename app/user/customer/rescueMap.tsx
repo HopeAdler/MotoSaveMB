@@ -36,10 +36,11 @@ function decodePolyline(encoded: string): [number, number][] {
 
 const RescueMapScreen = () => {
   // URL bản đồ từ goong.io
-  const [loadMap] = useState(
-    `https://tiles.goong.io/assets/goong_map_web.json?api_key=${GOONG_MAP_KEY}`
-  );
-  let map = loadMap
+  // const [loadMap] = useState(
+  //   `https://tiles.goong.io/assets/goong_map_web.json?api_key=${GOONG_MAP_KEY}`
+  // );
+  // let map = loadMap
+  const loadMap = `https://tiles.goong.io/assets/goong_map_web.json?api_key=${GOONG_MAP_KEY}`
   // Tọa độ cho current location, origin và destination
   const [currentLocation, setCurrentLocation] = useState<[number, number] | null>(null);
   const [originCoordinates, setOriginCoordinates] = useState<[number, number] | null>(null);

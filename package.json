@@ -54,6 +54,7 @@
     "expo-system-ui": "~4.0.6",
     "expo-web-browser": "~14.0.1",
     "gluestack-ui": "^0.7.20",
+    "jwt-decode": "^4.0.0",
     "lucide-react-native": "^0.471.0",
     "nativewind": "^4.1.23",
     "pubnub": "^8.8.1",
