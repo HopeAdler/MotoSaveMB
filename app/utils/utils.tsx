@@ -1,6 +1,6 @@
 import { Dispatch, SetStateAction, useMemo } from "react";
 import { jwtDecode, JwtPayload } from "jwt-decode";
-
+import polyline from "@mapbox/polyline";
 // Hàm dịch các tên trường sang tiếng Việt
 export const translateFieldName = (field: string): string => {
   // const fieldTranslations: Record<string, string> = {
@@ -93,3 +93,13 @@ export const handleBlurField = (
   // setErrors((prev) => ({ ...prev, [field]: error }));
   setErrors((prev: any) => ({ ...prev, [field]: error }));
 };
+
+
+
+
+/**
+ * Giải mã polyline: chuyển chuỗi mã hóa thành mảng tọa độ theo định dạng [lng, lat]
+ */
+export function decodePolyline(encoded: string): [number, number][] {
+  return polyline.decode(encoded).map(([lat, lng]: [number, number]) => [lng, lat]);
+}
