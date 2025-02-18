@@ -2,7 +2,7 @@ import { AuthContext } from "@/app/context/AuthContext";
 import { decodedToken } from "@/app/utils/utils";
 import MapboxGL from "@rnmapbox/maps";
 import * as Location from "expo-location";
-import { Bike, LocateFixed } from "lucide-react-native";
+import { Bike, LocateFixed, Truck } from "lucide-react-native";
 import PubNubReact from "pubnub";
 import React, { useContext, useEffect, useRef, useState } from "react";
 import {
@@ -140,6 +140,7 @@ const DTrackingScreen = () => {
         console.log(response);
       }
     )
+    console.log(user)
   }, [users]);
 
   const focusLoc = () => {
@@ -160,7 +161,7 @@ const DTrackingScreen = () => {
 
         {Array.from(users.values()).map((item) => (
           <MapboxGL.PointAnnotation key={item.uuid} id={item.uuid} coordinate={[item.longitude, item.latitude]}>
-            <Bike color="#0080FF" size={28} />
+            <Truck color="#0080FF" size={28} />
           </MapboxGL.PointAnnotation>
         ))}
       </MapboxGL.MapView>
