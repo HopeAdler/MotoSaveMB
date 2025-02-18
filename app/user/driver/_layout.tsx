@@ -1,7 +1,7 @@
 import { Tabs } from "expo-router";
 import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
 import "@/global.css";
-import { ChartArea, DollarSign, House, List } from "lucide-react-native";
+import { ChartArea, DollarSign, House, List, LucideLocateFixed } from "lucide-react-native";
 
 export default function DriverLayout() {
   return (
@@ -21,6 +21,16 @@ export default function DriverLayout() {
             headerShown: false,
             tabBarLabel: "Yêu cầu",
             tabBarIcon: (tabInfo) => <List size={24} color={tabInfo.color} />,
+          }}
+        />
+        <Tabs.Screen
+          name="tracking_test"
+          options={{
+            headerShown: false,
+            tabBarLabel: "Tracking",
+            tabBarIcon: (tabInfo) => (
+              <LucideLocateFixed size={24} color={tabInfo.color} />
+            ),
           }}
         />
         <Tabs.Screen

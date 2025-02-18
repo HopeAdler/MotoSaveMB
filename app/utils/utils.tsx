@@ -1,5 +1,5 @@
-import { Dispatch, SetStateAction } from "react";
-
+import { Dispatch, SetStateAction, useMemo } from "react";
+import { jwtDecode, JwtPayload } from "jwt-decode";
 
 // Hàm dịch các tên trường sang tiếng Việt
 export const translateFieldName = (field: string): string => {
@@ -18,6 +18,15 @@ export const translateFieldName = (field: string): string => {
   return fieldTranslations[field] || field;
 };
 
+type MyTokenPayload = {
+  id: string; // Adjust type if needed (e.g., `number` if it's numeric)
+} & JwtPayload; // Extend default JWT payload (which includes `exp`, `iat`)
+
+export const decodedToken = (token: string | null) => {
+  if (token != null)
+    return jwtDecode<MyTokenPayload>(token);
+  else return;
+};
 
 export const shortifiedFieldName = (field: string): string => {
   const shortTranslations: any = {
