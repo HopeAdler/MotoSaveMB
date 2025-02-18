@@ -7,6 +7,7 @@ import {
   CreditCard,
   Bell,
   CircleUserRound,
+  LucideLocateFixed,
 } from "lucide-react-native";
 
 export default function CustomerLayout() {
@@ -38,6 +39,16 @@ export default function CustomerLayout() {
             tabBarLabel: "Payment",
             tabBarIcon: (tabInfo) => (
               <CreditCard size={24} color={tabInfo.color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="tracking_test"
+          options={{
+            headerShown: false,
+            tabBarLabel: "Tracking",
+            tabBarIcon: (tabInfo) => (
+              <LucideLocateFixed size={24} color={tabInfo.color} />
             ),
           }}
         />
