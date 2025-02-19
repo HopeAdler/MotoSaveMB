@@ -8,6 +8,7 @@
         "@expo/vector-icons": "^14.0.2",
         "@gluestack-ui/actionsheet": "^0.2.46",
         "@gluestack-ui/button": "^1.0.8",
+        "@gluestack-ui/divider": "^0.1.10",
         "@gluestack-ui/form-control": "^0.1.19",
         "@gluestack-ui/icon": "^0.1.25",
         "@gluestack-ui/input": "^0.1.32",
@@ -414,6 +415,8 @@
     "@gluestack-ui/actionsheet": ["@gluestack-ui/actionsheet@0.2.46", "", { "dependencies": { "@gluestack-ui/hooks": "0.1.12", "@gluestack-ui/overlay": "^0.1.16", "@gluestack-ui/transitions": "^0.1.11", "@gluestack-ui/utils": "^0.1.14", "@react-native-aria/dialog": "^0.0.4", "@react-native-aria/focus": "^0.2.9", "@react-native-aria/interactions": "0.2.13" }, "peerDependencies": { "react": ">=16", "react-dom": ">=16" } }, "sha512-zZ4t0gLtHeN6pDDBAPduqnB6ySnqKtWcQfdWQF0KSjpicxMmk22kJQEuPbPPurdZKvq2dCpzQMsJUKe1Xar7Sg=="],
 
     "@gluestack-ui/button": ["@gluestack-ui/button@1.0.8", "", { "dependencies": { "@gluestack-ui/utils": "0.1.14", "@react-native-aria/focus": "^0.2.9", "@react-native-aria/interactions": "0.2.13" }, "peerDependencies": { "react": ">=16", "react-dom": ">=16" } }, "sha512-60ZcFd0XWIwoWe35GSf5jdcgpDI4R1LcQr098SYMUoYg3cWNFrbKUIa+cdCtD7oV/crVFjrmyj+6wZpiyDtx5g=="],
+
+    "@gluestack-ui/divider": ["@gluestack-ui/divider@0.1.10", "", { "peerDependencies": { "react": ">=16", "react-dom": ">=16" } }, "sha512-/hZx1Rmy4Pgln9AwAprAEQcxYPEHjHSNF4xCUWlK/q0peyiMT5Nagt54VnxykVn5A0b2zg5QKP0pOqOF9xeE6w=="],
 
     "@gluestack-ui/form-control": ["@gluestack-ui/form-control@0.1.19", "", { "dependencies": { "@gluestack-ui/utils": "^0.1.14", "@react-native-aria/focus": "^0.2.9" }, "peerDependencies": { "react": ">=16", "react-dom": ">=16" } }, "sha512-6YbPbi/RZrXc5DyVPbxPV17FYaBoEl1yAdSwut8iE6n+yQekjluINrh2q5ZPWF2SGmyo7VSNcL85yeU5I97xHg=="],
 
