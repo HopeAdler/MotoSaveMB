@@ -187,8 +187,11 @@ const CTrackingScreen = () => {
       </MapboxGL.MapView>
 
       <View style={styles.topBar}>
-        <Text style={{ backgroundColor: 'lightyellow' }}>Bật/Tắt thu thập vị trí</Text>
-        <Switch value={allowGPS} onValueChange={() => setAllowGPS(!allowGPS)} />
+        <Text>Số người online: {users.size}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Text>Nổ địa chỉ của tôi?</Text>
+          <Switch value={allowGPS} onValueChange={() => setAllowGPS(!allowGPS)} />
+        </View>
       </View>
 
       <View style={styles.bottom}>
