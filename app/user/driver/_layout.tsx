@@ -24,6 +24,13 @@ export default function DriverLayout() {
           }}
         />
         <Tabs.Screen
+          name="requestMap"
+          options={{
+            headerShown: false,
+            href: null,
+          }}
+        />
+        <Tabs.Screen
           name="tracking_test"
           options={{
             headerShown: false,
