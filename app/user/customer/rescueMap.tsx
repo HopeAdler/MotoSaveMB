@@ -37,7 +37,7 @@ const RescueMapScreen = () => {
 
   // --- STATE & REF ---
   const loadMap = `https://tiles.goong.io/assets/goong_map_web.json?api_key=${GOONG_MAP_KEY}`
-  console.log(loadMap)
+  // console.log(loadMap)
   const [currentLocation, setCurrentLocation] = useState<[number, number] | null>(null);
   const [originCoordinates, setOriginCoordinates] = useState<[number, number] | null>(null);
   const [destinationCoordinates, setDestinationCoordinates] = useState<[number, number] | null>(null);
