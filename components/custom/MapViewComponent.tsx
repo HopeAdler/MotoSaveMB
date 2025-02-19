@@ -1,11 +1,9 @@
-import React, { useRef, useState } from "react";
+import React, { useRef } from "react";
 import MapboxGL from "@rnmapbox/maps";
 import { View, StyleSheet, TouchableOpacity } from "react-native";
 import UserMarker from "./UserMarker";
 import { LocateFixed } from "lucide-react-native";
-import {
-  heightPercentageToDP as hp,
-} from "react-native-responsive-screen";
+import { heightPercentageToDP as hp } from "react-native-responsive-screen";
 
 type User = {
   uuid: string;
@@ -20,16 +18,20 @@ type Users = Map<string, User>;
 type MapViewComponentProps = {
   users: Users;
   currentLoc: { latitude: number; longitude: number };
+  focusMode: [boolean, React.Dispatch<React.SetStateAction<boolean>>];
 };
 
 const { MAPBOX_ACCESS_TOKEN } = process.env;
 const { GOONG_MAP_KEY } = process.env;
 
-const MapViewComponent: React.FC<MapViewComponentProps> = ({ users, currentLoc }) => {
-  const loadMap = `https://tiles.goong.io/assets/goong_map_web.json?api_key=${GOONG_MAP_KEY}`
+const MapViewComponent: React.FC<MapViewComponentProps> = ({
+  users,
+  currentLoc,
+  focusMode: [focusOnMe, setFocusOnMe]
+}) => {
+  const loadMap = `https://tiles.goong.io/assets/goong_map_web.json?api_key=${GOONG_MAP_KEY}`;
   const mapRef = useRef<MapboxGL.MapView>(null);
   const cameraRef = useRef<MapboxGL.Camera>(null);
-  const [focusOnMe, setFocusOnMe] = useState(false);
 
   const focusLoc = () => {
     setFocusOnMe(!focusOnMe);
@@ -40,7 +42,7 @@ const MapViewComponent: React.FC<MapViewComponentProps> = ({ users, currentLoc }
         animationDuration: 2000,
       });
     }
-    console.log("Current Users: " + users.size); // ✅ This will now work
+    console.log("Current Users: " + users.size);
   };
 
   // Set Mapbox Access Token
