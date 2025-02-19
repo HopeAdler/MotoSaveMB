@@ -2,7 +2,7 @@ import { AuthContext } from "@/app/context/AuthContext";
 import { decodedToken } from "@/app/utils/utils";
 import MapboxGL from "@rnmapbox/maps";
 import * as Location from "expo-location";
-import { Bike, LocateFixed } from "lucide-react-native";
+import { Bike, LocateFixed, Truck } from "lucide-react-native";
 import PubNubReact from "pubnub";
 import React, { useContext, useEffect, useRef, useState } from "react";
 import {
@@ -33,12 +33,20 @@ type PubNubMessage = {
   hideUser?: boolean;
 };
 
+type User = {
+  uuid: string,
+  username: string,
+  role: string,
+  latitude: number,
+  longitude: number,
+}
+
 const CTrackingScreen = () => {
   // console.log(MAPBOX_ACCESS_TOKEN, PUBNUB_PUBLISH_KEY)
   const { user, token } = useContext(AuthContext);
   const userId = decodedToken(token)?.id;
   const [currentLoc, setCurrentLoc] = useState({ latitude: 0, longitude: 0 });
-  const [users, setUsers] = useState(new Map());
+  const [users, setUsers] = useState(new Map<string, User>());
   const [userCount, setUserCount] = useState(0);
   const [allowGPS, setAllowGPS] = useState(true);
   const [focusOnMe, setFocusOnMe] = useState(false);
@@ -57,6 +65,8 @@ const CTrackingScreen = () => {
       channel: "global",
       message: {
         uuid: userId || "",
+        username: user.username || "",
+        role: user.role || "",
         latitude,
         longitude,
       },
@@ -97,16 +107,17 @@ const CTrackingScreen = () => {
     pubnub.subscribe({ channels: ["global"], withPresence: true });
     pubnub.addListener({
       message: (msg) => {
-        console.log(msg)
         const data = msg.message as PubNubMessage;
         console.log(data)
         setUsers((prevUsers) => {
           const updatedUsers = prevUsers;
           if (data.hideUser) {
-            updatedUsers.delete(msg.publisher);
+            updatedUsers.delete(msg.publisher || "");
           } else {
-            updatedUsers.set(msg.publisher, {
-              uuid: msg.publisher,
+            updatedUsers.set((msg.publisher || ""), {
+              uuid: msg.publisher || "",
+              username: user.username,
+              role: user.role,
               latitude: data.latitude,
               longitude: data.longitude,
             });
@@ -138,7 +149,8 @@ const CTrackingScreen = () => {
         includeState: true
       },
       function (status, response) {
-        console.log(response);
+        console.log('Herenow function returning..');
+        console.log(response?.channels["global"]);
       }
     )
   }, [users]);
@@ -152,6 +164,7 @@ const CTrackingScreen = () => {
         animationDuration: 2000,
       });
     }
+    console.log("Current Users: " + users.size)
   };
 
   return (
@@ -159,15 +172,22 @@ const CTrackingScreen = () => {
       <MapboxGL.MapView style={styles.map} ref={mapRef}>
         <MapboxGL.Camera ref={cameraRef} zoomLevel={10} centerCoordinate={[currentLoc.longitude, currentLoc.latitude]} />
 
-        {Array.from(users.values()).map((item) => (
-          <MapboxGL.PointAnnotation key={item.uuid} id={item.uuid} coordinate={[item.longitude, item.latitude]}>
-            <Bike color="#0080FF" size={28} />
+        {Array.from(users.values()).map((u) => (
+          <MapboxGL.PointAnnotation key={u.uuid} id={u.uuid} coordinate={[u.longitude, u.latitude]}>
+            <MapboxGL.Callout title={`${u.username} - ${u.role}`} />
+            {u.role === 'Customer' ? (
+              <Bike color="#0080FF" size={28} />
+            ) : (
+              <Truck color="#FF8000" size={28} />
+            )}
           </MapboxGL.PointAnnotation>
         ))}
+
+
       </MapboxGL.MapView>
 
       <View style={styles.topBar}>
-        <Text>{userCount}</Text>
+        <Text style={{ backgroundColor: 'lightyellow' }}>Bật/Tắt thu thập vị trí</Text>
         <Switch value={allowGPS} onValueChange={() => setAllowGPS(!allowGPS)} />
       </View>
 
@@ -186,9 +206,8 @@ const styles = StyleSheet.create({
   topBar: {
     position: "absolute",
     top: hp("2%"),
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: "column",
+    alignItems: "flex-end",
     width: "100%",
     paddingHorizontal: wp("5%"),
   },
