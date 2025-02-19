@@ -56,6 +56,7 @@
     "gluestack-ui": "^0.7.20",
     "jwt-decode": "^4.0.0",
     "lucide-react-native": "^0.471.0",
+    "moment": "^2.30.1",
     "nativewind": "^4.1.23",
     "pubnub": "^8.8.1",
     "pubnub-react": "^3.0.2",
