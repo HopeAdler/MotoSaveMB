@@ -3,6 +3,7 @@ import PubNubReact from "pubnub";
 type User = {
   uuid: string;
   username: string;
+  email: string;
   fullname: string;
   role: string;
   latitude: number;
@@ -40,11 +41,12 @@ export const subscribeToChannel = (pubnub: any, user: User, callback: any) => {
       pubnub.objects.setUUIDMetadata({
         data: {
           name: user.username,
+          email: user.email,
           custom: {
-            fullname: user.fullname, 
-            role: user.role,
-          },
-        },
+            "fullname": user.fullname,
+            "role": user.role,
+          }
+        }
       });
     },
   });
