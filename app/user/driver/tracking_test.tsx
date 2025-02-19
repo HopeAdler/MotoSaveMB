@@ -59,13 +59,14 @@ const DTrackingScreen = () => {
 
 
   useEffect(() => {
-    subscribeToChannel(pubnub, (msg: any) => {
+    subscribeToChannel(pubnub, user, (msg: any) => {
       const data = msg.message;
       setUsers((prev) => new Map(prev).set(msg.publisher, data));
     });
 
     return () => pubnub.unsubscribeAll();
   }, []);
+
   return (
     <View style={styles.container}>
       <MapViewComponent users={users} currentLoc={currentLoc} focusMode={[focusOnMe, setFocusOnMe]} />

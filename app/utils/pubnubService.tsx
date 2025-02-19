@@ -3,6 +3,7 @@ import PubNubReact from "pubnub";
 type User = {
   uuid: string;
   username: string;
+  fullname: string;
   role: string;
   latitude: number;
   longitude: number;
@@ -23,7 +24,18 @@ export const publishLocation = (pubnub: any, userId: string, user: User, latitud
   });
 };
 
-export const subscribeToChannel = (pubnub: any, callback: any) => {
+export const subscribeToChannel = (pubnub: any, user: User, callback: any) => {
   pubnub.subscribe({ channels: ["global"], withPresence: true });
+
   pubnub.addListener({ message: callback });
+
+  pubnub.objects.setUUIDMetadata({
+    data: {
+      name: user.username,
+      custom: {
+        fullname: user.fullname, // Assuming fullname is the same as username here
+        role: user.role,
+      },
+    },
+  });
 };
