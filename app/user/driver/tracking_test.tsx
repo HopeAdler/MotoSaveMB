@@ -8,7 +8,7 @@ import {
   widthPercentageToDP as wp,
 } from "react-native-responsive-screen";
 import { getCurrentLocation, requestLocationPermission, watchLocation } from "../../utils/locationService";
-import { publishLocation, setupPubNub, subscribeToChannel } from "../../utils/pubnubService";
+import { hereNow, publishLocation, setupPubNub, subscribeToChannel } from "../../utils/pubnubService";
 
 type User = {
   uuid: string;
@@ -66,6 +66,10 @@ const DTrackingScreen = () => {
 
     return () => pubnub.unsubscribeAll();
   }, []);
+
+  useEffect(() => {
+    hereNow(pubnub)
+  }, [users])
 
   return (
     <View style={styles.container}>
