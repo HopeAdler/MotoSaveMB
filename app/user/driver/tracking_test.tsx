@@ -21,8 +21,6 @@ import {
 const { MAPBOX_ACCESS_TOKEN } = process.env;
 const { PUBNUB_PUBLISH_KEY } = process.env;
 const { PUBNUB_SUBSCRIBE_KEY } = process.env;
-const latitudeDelta = 0.025;
-const longitudeDelta = 0.025;
 
 // Set Mapbox Access Token
 MapboxGL.setAccessToken(`${MAPBOX_ACCESS_TOKEN}`);
@@ -47,7 +45,6 @@ const DTrackingScreen = () => {
   const userId = decodedToken(token)?.id;
   const [currentLoc, setCurrentLoc] = useState({ latitude: 0, longitude: 0 });
   const [users, setUsers] = useState(new Map<string, User>());
-  const [userCount, setUserCount] = useState(0);
   const [allowGPS, setAllowGPS] = useState(true);
   const [focusOnMe, setFocusOnMe] = useState(false);
   const mapRef = useRef<MapboxGL.MapView>(null);
