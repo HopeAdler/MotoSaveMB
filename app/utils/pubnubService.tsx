@@ -39,3 +39,15 @@ export const subscribeToChannel = (pubnub: any, user: User, callback: any) => {
     },
   });
 };
+
+export const hereNow = (pubnub: any) => {
+  pubnub.hereNow(
+    {
+      channels: ["global"],
+      includeState: true
+    },
+    function (status: any, response: any) {
+      console.log(response);
+    }
+  )
+}
