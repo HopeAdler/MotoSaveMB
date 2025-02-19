@@ -20,25 +20,36 @@ export const setupPubNub = (publishKey: string, subscribeKey: string, userId: st
 export const publishLocation = (pubnub: any, userId: string, user: User, latitude: number, longitude: number) => {
   pubnub.publish({
     channel: "global",
-    message: { uuid: userId, username: user.username, role: user.role, latitude, longitude },
+    message: {
+      uuid: userId,
+      username: user.username,
+      role: user.role,
+      latitude,
+      longitude
+    },
   });
 };
 
 export const subscribeToChannel = (pubnub: any, user: User, callback: any) => {
   pubnub.subscribe({ channels: ["global"], withPresence: true });
 
-  pubnub.addListener({ message: callback });
+  pubnub.addListener({
+    message: (msg: any) => {
+      callback(msg);
 
-  pubnub.objects.setUUIDMetadata({
-    data: {
-      name: user.username,
-      custom: {
-        fullname: user.fullname, // Assuming fullname is the same as username here
-        role: user.role,
-      },
+      pubnub.objects.setUUIDMetadata({
+        data: {
+          name: user.username,
+          custom: {
+            fullname: user.fullname, 
+            role: user.role,
+          },
+        },
+      });
     },
   });
 };
+
 
 export const hereNow = (pubnub: any) => {
   pubnub.hereNow(
