@@ -2,7 +2,6 @@ import React from "react";
 import MapboxGL from "@rnmapbox/maps";
 import { View, StyleSheet } from "react-native";
 import { Bike, Truck } from "lucide-react-native";
-import RippleEffect from "./RippleEffect";
 type User = {
   uuid: string;
   username: string;
@@ -18,7 +17,6 @@ const UserMarker: React.FC<UserMarkerComponentProps> = ({ user }) => {
     <MapboxGL.PointAnnotation id={user.uuid} coordinate={[user.longitude, user.latitude]}>
       <MapboxGL.Callout title={`${user.username} - ${user.role}`} />
       <View style={styles.iconContainer}>
-        <RippleEffect />
         {user.role === "Customer" ? (
           <Bike color="#0080FF" size={28} style={styles.icon} />
         ) : (

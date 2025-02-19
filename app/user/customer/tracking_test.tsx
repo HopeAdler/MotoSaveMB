@@ -10,6 +10,14 @@ import {
 import { getCurrentLocation, requestLocationPermission, watchLocation } from "../../utils/locationService";
 import { publishLocation, setupPubNub, subscribeToChannel } from "../../utils/pubnubService";
 
+type User = {
+  uuid: string;
+  username: string;
+  role: string;
+  latitude: number;
+  longitude: number;
+};
+
 const { PUBNUB_PUBLISH_KEY } = process.env;
 const { PUBNUB_SUBSCRIBE_KEY } = process.env;
 
@@ -17,26 +25,38 @@ const CTrackingScreen = () => {
   const { user, token } = useContext(AuthContext);
   const userId = decodedToken(token)?.id;
   const [currentLoc, setCurrentLoc] = useState({ latitude: 0, longitude: 0 });
-  const [users, setUsers] = useState(new Map());
-  const [allowGPS, setAllowGPS] = useState(true);
+  const [users, setUsers] = useState(new Map<string, User>());
   const pubnub = setupPubNub(PUBNUB_PUBLISH_KEY || "", PUBNUB_SUBSCRIBE_KEY || "", userId || "");
+  const [focusOnMe, setFocusOnMe] = useState(false);
+
+  const updateLocation = async (locationSubscription: any) => {
+    if (await requestLocationPermission() && userId) {
+      const location = await getCurrentLocation();
+      setCurrentLoc(location.coords);
+      publishLocation(pubnub, userId, user, location.coords.latitude, location.coords.longitude);
+
+      // Subscribe to live location updates
+      locationSubscription = await watchLocation((position: any) => {
+        setCurrentLoc(position.coords);
+        publishLocation(pubnub, userId, user, position.coords.latitude, position.coords.longitude);
+      });
+      console.log('Location updated')
+    }
+  };
 
   useEffect(() => {
-    (async () => {
-      if (await requestLocationPermission() && userId) {
-        const location = await getCurrentLocation();
-        setCurrentLoc(location.coords);
-        if (allowGPS) publishLocation(pubnub, userId, user, location.coords.latitude, location.coords.longitude);
+    let locationSubscription: any;
 
-        const locationSubscription = await watchLocation((position: any) => {
-          setCurrentLoc(position.coords);
-          if (allowGPS) publishLocation(pubnub, userId, user, position.coords.latitude, position.coords.longitude);
-        });
+    // Initial call
+    updateLocation(locationSubscription);
+    // Set interval for 10s updates
+    const intervalId = setInterval(updateLocation, 5000);
+    return () => {
+      clearInterval(intervalId);
+      if (locationSubscription) locationSubscription.remove(); // Cleanup
+    };
+  }, []);
 
-        return () => locationSubscription.remove();
-      }
-    })();
-  }, [allowGPS]);
 
   useEffect(() => {
     subscribeToChannel(pubnub, (msg: any) => {
@@ -48,13 +68,9 @@ const CTrackingScreen = () => {
   }, []);
   return (
     <View style={styles.container}>
-      <MapViewComponent users={users} currentLoc={currentLoc}/>
+      <MapViewComponent users={users} currentLoc={currentLoc} focusMode={[focusOnMe,setFocusOnMe]} />
       <View style={styles.topBar}>
         <Text>Số người online: {users.size}</Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <Text>Nổ địa chỉ của tôi?</Text>
-          <Switch value={allowGPS} onValueChange={() => setAllowGPS(!allowGPS)} />
-        </View>
       </View>
     </View>
   );
