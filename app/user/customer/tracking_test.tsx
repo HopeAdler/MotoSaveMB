@@ -40,7 +40,7 @@ const CTrackingScreen = () => {
         setCurrentLoc(position.coords);
         publishLocation(pubnub, userId, user, position.coords.latitude, position.coords.longitude);
       });
-      console.log('Location updated')
+      // console.log('Location updated')
     }
   };
 
