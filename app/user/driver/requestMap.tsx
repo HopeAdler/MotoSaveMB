@@ -11,7 +11,7 @@ import { ActivityIndicator, TouchableOpacity, View } from "react-native";
 import Icon from "react-native-vector-icons/Feather";
 // Import the ActionSheet components from gluestack-ui
 import { getDirections } from "@/app/services/goongAPI";
-import { decodePolyline } from "@/app/utils/utils";
+import { decodedToken, decodePolyline } from "@/app/utils/utils";
 import {
   Actionsheet,
   ActionsheetBackdrop,
@@ -20,11 +20,20 @@ import {
   ActionsheetDragIndicatorWrapper,
   ActionsheetSectionHeaderText,
 } from "@/components/ui/actionsheet";
+import { hereNow, publishLocation, setupPubNub, subscribeToChannel } from "@/app/utils/pubnubService";
+import { getCurrentLocation, requestLocationPermission, watchLocation } from "@/app/utils/locationService";
+import MapViewComponent from "@/components/custom/MapViewComponent";
 
-const { MAPBOX_ACCESS_TOKEN } = process.env;
-const { GOONG_MAP_KEY } = process.env;
+const { PUBNUB_PUBLISH_KEY } = process.env;
+const { PUBNUB_SUBSCRIBE_KEY } = process.env;
 
-MapboxGL.setAccessToken(`${MAPBOX_ACCESS_TOKEN}`);
+type User = {
+  uuid: string;
+  username: string;
+  role: string;
+  latitude: number;
+  longitude: number;
+};
 
 interface RequestDetail {
   fullname: string;
@@ -34,6 +43,8 @@ interface RequestDetail {
   totalprice: number;
   pickuplong: number;
   pickuplat: number;
+  deslng: number;
+  deslat: number;
 }
 
 interface DirectionsLeg {
@@ -60,13 +71,14 @@ interface ICamera {
 const RequestMap: React.FC = () => {
   // Inline generic type for search params to satisfy the constraint.
   const { requestdetailid } = useLocalSearchParams<{ requestdetailid: string }>();
-  const { token } = useContext(AuthContext);
-  const loadMap = `https://tiles.goong.io/assets/goong_map_web.json?api_key=${GOONG_MAP_KEY}`;
+  const { user, token } = useContext(AuthContext);
 
   const [requestDetail, setRequestDetail] = useState<RequestDetail | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [originCoordinates, setOriginCoordinates] = useState<[number, number] | null>(null);
-  const [destinationCoordinates, setDestinationCoordinates] = useState<[number, number] | null>(null);
+  // const [originCoordinates, setOriginCoordinates] = useState<[number, number] | null>(null);
+  // const [destinationCoordinates, setDestinationCoordinates] = useState<[number, number] | null>(null);
+  const [originCoordinates, setOriginCoordinates] = useState({ latitude: 0, longitude: 0 });
+  const [destinationCoordinates, setDestinationCoordinates] = useState({ latitude: 0, longitude: 0 });
   const [routeCoordinates, setRouteCoordinates] = useState<[number, number][]>([]);
   const [directionsInfo, setDirectionsInfo] = useState<DirectionsLeg | null>(null);
   const [progress, setProgress] = useState<ProgressState>("Accepted");
@@ -74,6 +86,56 @@ const RequestMap: React.FC = () => {
   const [isActionSheetOpen, setIsActionSheetOpen] = useState<boolean>(false);
 
   const camera = useRef<ICamera | null>(null);
+
+  //PUBNUB integration:
+  const userId = decodedToken(token)?.id;
+  const [currentLoc, setCurrentLoc] = useState({ latitude: 0, longitude: 0 });
+  const [users, setUsers] = useState(new Map<string, User>());
+  const pubnub = setupPubNub(PUBNUB_PUBLISH_KEY || "", PUBNUB_SUBSCRIBE_KEY || "", userId || "");
+  const [focusOnMe, setFocusOnMe] = useState(false);
+
+  //PUBNUB SERVICE
+  const updateLocation = async (locationSubscription: any) => {
+    if (await requestLocationPermission() && userId) {
+      const location = await getCurrentLocation();
+      setCurrentLoc(location.coords);
+      publishLocation(pubnub, userId, user, location.coords.latitude, location.coords.longitude);
+
+      // Subscribe to live location updates
+      locationSubscription = await watchLocation((position: any) => {
+        setCurrentLoc(position.coords);
+        publishLocation(pubnub, userId, user, position.coords.latitude, position.coords.longitude);
+      });
+      // console.log('Location updated')
+    }
+  };
+
+  useEffect(() => {
+    let locationSubscription: any;
+
+    // Initial call
+    updateLocation(locationSubscription);
+    // Set interval for 10s updates
+    const intervalId = setInterval(updateLocation, 10000);
+    return () => {
+      clearInterval(intervalId);
+      if (locationSubscription) locationSubscription.remove(); // Cleanup
+    };
+  }, []);
+
+
+  useEffect(() => {
+    subscribeToChannel(pubnub, user, (msg: any) => {
+      const data = msg.message;
+      setUsers((prev) => new Map(prev).set(msg.publisher, data));
+    });
+
+    return () => pubnub.unsubscribeAll();
+  }, []);
+
+  useEffect(() => {
+    hereNow(pubnub)
+  }, [users])
 
   const changeProgressState = () => {
     switch (progress) {
@@ -133,10 +195,14 @@ const RequestMap: React.FC = () => {
           { headers: { Authorization: "Bearer " + token } }
         );
         setRequestDetail(response.data);
-        setDestinationCoordinates([
-          response.data.pickuplong,
-          response.data.pickuplat,
-        ]);
+        setOriginCoordinates({
+          latitude: response.data.pickuplat,
+          longitude: response.data.pickuplong,
+        });
+        setDestinationCoordinates({
+          latitude: response.data.deslat,
+          longitude: response.data.deslng,
+        });
       } catch (error) {
         console.error("Error fetching request details:", error);
       } finally {
@@ -147,42 +213,11 @@ const RequestMap: React.FC = () => {
     fetchRequestDetail();
   }, [requestdetailid, token]);
 
-  const requestLocationPermission = async () => {
-    const { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== "granted") return;
-    const location = await Location.getCurrentPositionAsync({});
-    const { longitude, latitude } = location.coords;
-    const coords: [number, number] = [longitude, latitude];
-    setOriginCoordinates(coords);
-    camera.current?.setCamera({
-      centerCoordinate: coords,
-      zoomLevel: 12,
-      animationDuration: 2000,
-    });
-  };
-
-  useEffect(() => {
-    (async () => {
-      await requestLocationPermission();
-      const subscription = await Location.watchPositionAsync(
-        {
-          accuracy: Location.Accuracy.High,
-          timeInterval: 5000,
-          distanceInterval: 10,
-        },
-        (loc) => {
-          // Optionally update state here.
-          const { longitude, latitude } = loc.coords;
-        }
-      );
-      return () => subscription.remove();
-    })();
-  }, []);
 
   useEffect(() => {
     if (originCoordinates && destinationCoordinates) {
-      const originStr = `${originCoordinates[1]},${originCoordinates[0]}`;
-      const destinationStr = `${destinationCoordinates[1]},${destinationCoordinates[0]}`;
+      const originStr = `${originCoordinates.latitude},${originCoordinates.longitude}`;
+      const destinationStr = `${destinationCoordinates.latitude},${destinationCoordinates.longitude}`;
       getDirections(originStr, destinationStr)
         .then((data: any) => {
           if (data.routes && data.routes.length > 0) {
@@ -220,26 +255,14 @@ const RequestMap: React.FC = () => {
 
   return (
     <Box className="flex-1">
-      <MapboxGL.MapView
-        styleURL={loadMap}
-        style={{ flex: 1 }}
-        projection="globe"
-        zoomEnabled={true}
-      >
+      <MapViewComponent users={users} currentLoc={focusOnMe ? currentLoc : originCoordinates} focusMode={[focusOnMe, setFocusOnMe]}>
         {originCoordinates && (
-          <MapboxGL.Camera
-            ref={camera as any}
-            zoomLevel={12}
-            centerCoordinate={originCoordinates}
-          />
-        )}
-        {originCoordinates && (
-          <MapboxGL.PointAnnotation id="origin-marker" coordinate={originCoordinates}>
+          <MapboxGL.PointAnnotation id="ori-marker" coordinate={[originCoordinates.longitude, originCoordinates.latitude]}>
             <MapboxGL.Callout title="Origin" />
           </MapboxGL.PointAnnotation>
         )}
         {destinationCoordinates && (
-          <MapboxGL.PointAnnotation id="destination-marker" coordinate={destinationCoordinates}>
+          <MapboxGL.PointAnnotation id="destination-marker" coordinate={[destinationCoordinates.longitude, destinationCoordinates.latitude]}>
             <MapboxGL.Callout title="Destination" />
           </MapboxGL.PointAnnotation>
         )}
@@ -258,7 +281,7 @@ const RequestMap: React.FC = () => {
             />
           </MapboxGL.ShapeSource>
         )}
-      </MapboxGL.MapView>
+      </MapViewComponent>
 
       {/* ActionSheet from gluestack-ui for the request details */}
       <Actionsheet isOpen={isActionSheetOpen} onClose={() => setIsActionSheetOpen(false)}>
@@ -281,10 +304,10 @@ const RequestMap: React.FC = () => {
                 📞 Phone: {requestDetail?.phone}
               </Text>
               <Text className="text-gray-700">
-                📍 Pickup: {requestDetail?.pickuplocation}
+                📍 Xuất phát ở: {requestDetail?.pickuplocation}
               </Text>
               <Text className="text-gray-700">
-                📍 Destination: {requestDetail?.destination}
+                📍 Kết thúc tại: {requestDetail?.destination}
               </Text>
               <Text className="text-gray-700">
                 Distance: {directionsInfo?.distance?.text}
@@ -293,7 +316,7 @@ const RequestMap: React.FC = () => {
                 Duration: {directionsInfo?.duration?.text}
               </Text>
               <Text className="text-green-600 font-semibold">
-                💰 Total Price: {requestDetail?.totalprice.toLocaleString()} VND
+                💰 Tổng tiền: {requestDetail?.totalprice.toLocaleString()} VND
               </Text>
             </View>
           )}
@@ -304,19 +327,7 @@ const RequestMap: React.FC = () => {
       {/* {!isActionSheetOpen && ( */}
       <TouchableOpacity
         onPress={() => setIsActionSheetOpen(true)}
-        style={{
-          position: "absolute",
-          bottom: 100,
-          left: 20,
-          backgroundColor: "white",
-          padding: 8,
-          borderRadius: 20,
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.3,
-          shadowRadius: 4,
-          elevation: 5,
-        }}
+        className="absolute bottom-24 left-5 bg-white p-2 rounded-2xl shadow-lg"
       >
         <Icon name="chevron-up" size={24} color="#000" />
       </TouchableOpacity>
@@ -324,14 +335,7 @@ const RequestMap: React.FC = () => {
 
       {/* Buttons Container – fixed at the bottom */}
       <View
-        style={{
-          position: "absolute",
-          bottom: 20,
-          left: 0,
-          right: 0,
-          flexDirection: "row",
-          justifyContent: "space-around",
-        }}
+        className="absolute bottom-5 left-0 right-0 flex flex-row justify-around"
       >
         <Button
           className={`${changeButtonColor()} p-2 rounded`}
@@ -349,6 +353,9 @@ const RequestMap: React.FC = () => {
         >
           <Text className="text-white text-center">Reset Progress</Text>
         </Button>
+      </View>
+      <View className="absolute top-[2%] flex flex-col items-end w-full px-[5%]">
+        <Text>Số người online: {users.size}</Text>
       </View>
     </Box>
   );
