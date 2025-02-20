@@ -1,16 +1,25 @@
-import React, { useContext, useEffect, useRef, useState } from "react";
-import { useLocalSearchParams } from "expo-router";
-import MapboxGL from "@rnmapbox/maps";
-import { Box } from "@/components/ui/box";
-import axios from "axios";
-import { ActivityIndicator, View, TouchableOpacity } from "react-native";
-import { Text } from "@/components/ui/text";
 import { AuthContext } from "@/app/context/AuthContext";
+import { Box } from "@/components/ui/box";
 import { Button } from "@/components/ui/button";
+import { Text } from "@/components/ui/text";
+import MapboxGL from "@rnmapbox/maps";
+import axios from "axios";
 import * as Location from "expo-location";
+import { useLocalSearchParams } from "expo-router";
+import React, { useContext, useEffect, useRef, useState } from "react";
+import { ActivityIndicator, TouchableOpacity, View } from "react-native";
 import Icon from "react-native-vector-icons/Feather";
+// Import the ActionSheet components from gluestack-ui
 import { getDirections } from "@/app/services/goongAPI";
 import { decodePolyline } from "@/app/utils/utils";
+import {
+  Actionsheet,
+  ActionsheetBackdrop,
+  ActionsheetContent,
+  ActionsheetDragIndicator,
+  ActionsheetDragIndicatorWrapper,
+  ActionsheetSectionHeaderText,
+} from "@/components/ui/actionsheet";
 
 const { MAPBOX_ACCESS_TOKEN } = process.env;
 const { GOONG_MAP_KEY } = process.env;
@@ -49,7 +58,7 @@ interface ICamera {
 }
 
 const RequestMap: React.FC = () => {
-  // Inline generic type for search params satisfies the constraint.
+  // Inline generic type for search params to satisfy the constraint.
   const { requestdetailid } = useLocalSearchParams<{ requestdetailid: string }>();
   const { token } = useContext(AuthContext);
   const loadMap = `https://tiles.goong.io/assets/goong_map_web.json?api_key=${GOONG_MAP_KEY}`;
@@ -61,7 +70,8 @@ const RequestMap: React.FC = () => {
   const [routeCoordinates, setRouteCoordinates] = useState<[number, number][]>([]);
   const [directionsInfo, setDirectionsInfo] = useState<DirectionsLeg | null>(null);
   const [progress, setProgress] = useState<ProgressState>("Accepted");
-  const [isDetailsOpen, setIsDetailsOpen] = useState<boolean>(true);
+  // State to control the open/close state of the ActionSheet.
+  const [isActionSheetOpen, setIsActionSheetOpen] = useState<boolean>(false);
 
   const camera = useRef<ICamera | null>(null);
 
@@ -250,14 +260,22 @@ const RequestMap: React.FC = () => {
         )}
       </MapboxGL.MapView>
 
-      {isDetailsOpen ? (
-        <Box className="absolute bottom-100 left-0 right-0 bg-white shadow-lg rounded-t-lg p-4">
+      {/* ActionSheet from gluestack-ui for the request details */}
+      <Actionsheet isOpen={isActionSheetOpen} onClose={() => setIsActionSheetOpen(false)}>
+        <ActionsheetBackdrop />
+        <ActionsheetContent>
+          <ActionsheetDragIndicatorWrapper>
+            <ActionsheetDragIndicator className="bg-gray-300 rounded-full w-10 h-1 mx-auto my-2" />
+          </ActionsheetDragIndicatorWrapper>
+          <ActionsheetSectionHeaderText>
+            <Text className="text-lg font-bold">Request Details</Text>
+          </ActionsheetSectionHeaderText>
           {loading ? (
             <ActivityIndicator size="large" color="#007AFF" />
           ) : (
             <View className="space-y-2">
               <Text className="text-lg font-bold">
-                Tên khách hàng: {requestDetail?.fullname}
+                Full name: {requestDetail?.fullname}
               </Text>
               <Text className="text-gray-600">
                 📞 Phone: {requestDetail?.phone}
@@ -279,34 +297,32 @@ const RequestMap: React.FC = () => {
               </Text>
             </View>
           )}
-          <TouchableOpacity
-            onPress={() => setIsDetailsOpen(false)}
-            style={{ alignSelf: "center", marginTop: 8 }}
-          >
-            <Icon name="chevron-up" size={24} color="#000" />
-          </TouchableOpacity>
-        </Box>
-      ) : (
-        <TouchableOpacity
-          onPress={() => setIsDetailsOpen(true)}
-          style={{
-            position: "absolute",
-            bottom: 100,
-            left: 20,
-            backgroundColor: "white",
-            padding: 8,
-            borderRadius: 20,
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.3,
-            shadowRadius: 4,
-            elevation: 5,
-          }}
-        >
-          <Icon name="info" size={24} color="#000" />
-        </TouchableOpacity>
-      )}
+        </ActionsheetContent>
+      </Actionsheet>
 
+      {/* Button to open the ActionSheet when it's closed */}
+      {/* {!isActionSheetOpen && ( */}
+      <TouchableOpacity
+        onPress={() => setIsActionSheetOpen(true)}
+        style={{
+          position: "absolute",
+          bottom: 100,
+          left: 20,
+          backgroundColor: "white",
+          padding: 8,
+          borderRadius: 20,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.3,
+          shadowRadius: 4,
+          elevation: 5,
+        }}
+      >
+        <Icon name="chevron-up" size={24} color="#000" />
+      </TouchableOpacity>
+      {/* )} */}
+
+      {/* Buttons Container – fixed at the bottom */}
       <View
         style={{
           position: "absolute",
@@ -317,25 +333,22 @@ const RequestMap: React.FC = () => {
           justifyContent: "space-around",
         }}
       >
-        {progress != 'Done' ?
-          <Button
-            className={`${changeButtonColor()} p-2 rounded`}
-            size="lg"
-            onPress={changeProgressState}
-          >
-            <Text className="text-white text-center">
-              {changeButtonTitle()}
-            </Text>
-          </Button>
-          :
-          <Button
-            className="bg-gray-500 p-2 rounded"
-            size="lg"
-            onPress={resetProgress}
-          >
-            <Text className="text-white text-center">Reset Progress</Text>
-          </Button>
-        }
+        <Button
+          className={`${changeButtonColor()} p-2 rounded`}
+          size="lg"
+          onPress={changeProgressState}
+        >
+          <Text className="text-white text-center">
+            {changeButtonTitle()}
+          </Text>
+        </Button>
+        <Button
+          className="bg-green-500 p-2 rounded"
+          size="lg"
+          onPress={resetProgress}
+        >
+          <Text className="text-white text-center">Reset Progress</Text>
+        </Button>
       </View>
     </Box>
   );
