@@ -50,7 +50,7 @@ const DTrackingScreen = () => {
     // Initial call
     updateLocation(locationSubscription);
     // Set interval for 10s updates
-    const intervalId = setInterval(updateLocation, 5000);
+    const intervalId = setInterval(updateLocation, 10000);
     return () => {
       clearInterval(intervalId);
       if (locationSubscription) locationSubscription.remove(); // Cleanup
