@@ -10,6 +10,14 @@ export interface RescueRequestPayload {
   totalprice: number;
 }
 
+export interface Transaction{
+  requestdetailid: string;
+  zptransid: string;
+  totalamount: number | null;
+  paymentmethod: string;
+  paymentstatus: string;
+}
+
 export async function createRescueRequest(
   payload: RescueRequestPayload,
   token: string
@@ -27,6 +35,24 @@ export async function createRescueRequest(
     return response.data;
   } catch (error) {
     console.error("Error creating rescue request", error);
+    throw error;
+  }
+}
+
+export async function createTransaction(payload: Transaction, token: string): Promise<any> {
+  try {
+    const response = await axios.post(
+      "https://motor-save-be.vercel.app/api/v1/transactions",
+      payload,
+      {
+        headers: {
+          Authorization: "Bearer " + token,
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error creating transaction", error);
     throw error;
   }
 }

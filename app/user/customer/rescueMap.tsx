@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useContext } from "react";
 import * as Location from "expo-location";
-import { FlatList } from "react-native";
+import { FlatList, NativeEventEmitter, NativeModules } from "react-native";
 import MapboxGL from "@rnmapbox/maps";
 import { Box } from "@/components/ui/box";
 import { Input, InputField } from "@/components/ui/input";
@@ -9,6 +9,7 @@ import { Text } from "@/components/ui/text";
 import { Actionsheet, ActionsheetContent } from "@/components/ui/actionsheet";
 import { Button, ButtonIcon, ButtonText } from "@/components/ui/button";
 import { CircleChevronDown, LocateFixed } from "lucide-react-native";
+import { router } from "expo-router";
 
 // Reanimated
 import Animated, {
@@ -28,10 +29,16 @@ import {
 import {
   calculateFare,
   createRescueRequest,
+  createTransaction,
   RescueRequestPayload,
 } from "@/app/services/beAPI";
 import { decodePolyline } from "@/app/utils/utils";
 import TrackingActionSheet from "@/components/custom/TrackingActionSheet";
+import {
+  createOrder,
+  PayZaloEventData,
+  processPayment,
+} from "@/app/utils/payment";
 
 const { MAPBOX_ACCESS_TOKEN } = process.env;
 const { GOONG_MAP_KEY } = process.env;
@@ -39,6 +46,7 @@ MapboxGL.setAccessToken(`${MAPBOX_ACCESS_TOKEN}`);
 
 const RescueMapScreen = () => {
   const { token } = useContext(AuthContext);
+  const { PayZaloBridge } = NativeModules;
 
   // --- STATE & REF ---
   const loadMap = `https://tiles.goong.io/assets/goong_map_web.json?api_key=${GOONG_MAP_KEY}`;
@@ -268,6 +276,13 @@ const RescueMapScreen = () => {
     }
   }, [directionsInfo]);
 
+  const transaction = (
+    requestdetailid: string,
+    zptransid: string,
+    totalamount: number,
+    paymentmethod: string
+  ) => {};
+
   // --- Payment ---
   const handlePayment = async () => {
     if (!token) {
@@ -288,8 +303,48 @@ const RescueMapScreen = () => {
     try {
       const result = await createRescueRequest(payload, token);
       console.log(result);
+      const requestDetailId = result.requestdetailid;
       setShowActionsheet(false);
       setShowTracking(true); // This should trigger the TrackingActionSheet
+      // Step 2: Process payment
+      processPayment(fare);
+      // Step 3: Listen for payment result
+      const payZaloBridgeEmitter = new NativeEventEmitter(PayZaloBridge);
+      const subscription = payZaloBridgeEmitter.addListener(
+        "EventPayZalo",
+        async (data: PayZaloEventData) => {
+          if (data.returnCode === "1") {
+            console.log("Payment successful:", data);
+            alert("Payment successful!");
+
+            try {
+              // Step 4: Create transaction after successful payment
+              const transactionResponse = await createTransaction(
+                {
+                  requestdetailid: requestDetailId,
+                  zptransid: data.transactionId || "", // ZaloPay transaction ID
+                  totalamount: fare,
+                  paymentmethod: "ZaloPay",
+                  paymentstatus: "Success",
+                },
+                token // Authentication token
+              );
+
+              console.log("Transaction created:", transactionResponse);
+            } catch (error) {
+              console.error("Error creating transaction:", error);
+            }
+
+            router.navigate("/user/customer/rescueMap");
+          } else {
+            alert("Payment failed! Return code: " + data.returnCode);
+            router.navigate("/user/customer/rescueMap");
+          }
+
+          // Step 5: Remove listener after execution
+          subscription.remove();
+        }
+      );
     } catch (error) {
       console.error("Error during payment", error);
     } finally {
@@ -487,11 +542,11 @@ const RescueMapScreen = () => {
                   variant="solid"
                   size="lg"
                   onPress={handlePayment}
-                  disabled={fareLoading || paymentLoading || fare === null}
+                  // disabled={fareLoading || paymentLoading || fare === null}
                 >
-                  <ButtonText>
+                  {/* <ButtonText>
                     {paymentLoading ? "Processing..." : "Pay Now"}
-                  </ButtonText>
+                  </ButtonText> */}
                 </Button>
               </Box>
             </Box>
