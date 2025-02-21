@@ -65,7 +65,7 @@ const RescueMapScreen = () => {
   // console.log(loadMap)
   const userId = decodedToken(token)?.id;
   const [currentLoc, setCurrentLoc] = useState({ latitude: 0, longitude: 0 });
-  const [focusOnMe, setFocusOnMe] = useState(false);
+  const [focusOnMe, setFocusOnMe] = useState(true);
   const [originCoordinates, setOriginCoordinates] = useState({ latitude: 0, longitude: 0 });
   const [destinationCoordinates, setDestinationCoordinates] = useState({ latitude: 0, longitude: 0 });
   const [originQuery, setOriginQuery] = useState("");
@@ -339,6 +339,7 @@ const RescueMapScreen = () => {
     if (await requestLocationPermission() && userId) {
       const location = await getCurrentLocation();
       setCurrentLoc(location.coords);
+      setOriginCoordinates(location.coords)
       publishLocation(pubnub, userId, user, location.coords.latitude, location.coords.longitude);
 
       // Subscribe to live location updates
@@ -356,6 +357,7 @@ const RescueMapScreen = () => {
     // Initial call
     updateLocation(locationSubscription);
     // Set interval for 10s updates
+    setOriginCoordinates(currentLoc);
     const intervalId = setInterval(updateLocation, 10000);
     return () => {
       clearInterval(intervalId);
