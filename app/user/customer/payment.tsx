@@ -12,6 +12,16 @@ type PayZaloEventData = {
   transactionId?: string;
 };
 
+interface RefundParams {
+  app_id: number;
+  m_refund_id: string;
+  zp_trans_id: string | null;
+  amount: number | null;
+  timestamp: number;
+  description: string;
+  mac?: string; // Optional initially, added later
+}
+
 const ZaloPayDemo = () => {
   const navigation = useNavigation<any>();
 
