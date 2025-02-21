@@ -64,3 +64,12 @@ export const hereNow = (pubnub: any) => {
     }
   )
 }
+
+const pubnubService = {
+  setupPubNub,
+  publishLocation,
+  subscribeToChannel,
+  hereNow
+};
+
+export default pubnubService;

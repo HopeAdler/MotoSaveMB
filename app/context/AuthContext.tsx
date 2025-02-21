@@ -290,3 +290,5 @@ export const AuthContextProvider: React.FC<{ children: React.ReactNode }> = ({ c
     </AuthContext.Provider>
   );
 };
+
+export default AuthContext;

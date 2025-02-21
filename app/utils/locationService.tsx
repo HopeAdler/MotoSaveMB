@@ -15,3 +15,11 @@ export const watchLocation = async (callback: any) => {
     callback
   );
 };
+
+const locationService = {
+  requestLocationPermission,
+  getCurrentLocation,
+  watchLocation,
+};
+
+export default locationService;
