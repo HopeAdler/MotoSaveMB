@@ -1,65 +1,73 @@
-import React, { useState, useRef, useEffect, useContext } from "react";
-import * as Location from "expo-location";
-import { FlatList, NativeEventEmitter, NativeModules } from "react-native";
-import MapboxGL from "@rnmapbox/maps";
+import { Actionsheet, ActionsheetContent } from "@/components/ui/actionsheet";
 import { Box } from "@/components/ui/box";
+import { Button } from "@/components/ui/button";
 import { Input, InputField } from "@/components/ui/input";
 import { Pressable } from "@/components/ui/pressable";
 import { Text } from "@/components/ui/text";
-import { Actionsheet, ActionsheetContent } from "@/components/ui/actionsheet";
-import { Button, ButtonIcon, ButtonText } from "@/components/ui/button";
-import { CircleChevronDown, LocateFixed } from "lucide-react-native";
+import MapboxGL from "@rnmapbox/maps";
 import { router } from "expo-router";
+import { CircleChevronDown, LocateFixed } from "lucide-react-native";
+import React, { useContext, useEffect, useRef, useState } from "react";
+import { FlatList, NativeEventEmitter, NativeModules, View } from "react-native";
 
 // Reanimated
-import Animated, {
-  useSharedValue,
+import {
   useAnimatedStyle,
+  useSharedValue,
   withTiming,
 } from "react-native-reanimated";
 
 // Import AuthContext, axios, và các hàm API từ services
 import { AuthContext } from "@/app/context/AuthContext";
 import {
-  getReverseGeocode,
-  geocodeAddress,
-  getAutocomplete,
-  getDirections,
-} from "@/app/services/goongAPI";
-import {
   calculateFare,
   createRescueRequest,
   createTransaction,
   RescueRequestPayload,
 } from "@/app/services/beAPI";
-import { decodePolyline } from "@/app/utils/utils";
-import TrackingActionSheet from "@/components/custom/TrackingActionSheet";
 import {
-  createOrder,
+  geocodeAddress,
+  getAutocomplete,
+  getDirections,
+  getReverseGeocode,
+} from "@/app/services/goongAPI";
+import { getCurrentLocation, requestLocationPermission, watchLocation } from "@/app/utils/locationService";
+import {
   PayZaloEventData,
-  processPayment,
+  processPayment
 } from "@/app/utils/payment";
+import { hereNow, publishLocation, setupPubNub, subscribeToChannel } from "@/app/utils/pubnubService";
+import { decodedToken, decodePolyline } from "@/app/utils/utils";
+import MapViewComponent from "@/components/custom/MapViewComponent";
+import TrackingActionSheet from "@/components/custom/TrackingActionSheet";
 
 const { MAPBOX_ACCESS_TOKEN } = process.env;
 const { GOONG_MAP_KEY } = process.env;
+const { PUBNUB_PUBLISH_KEY } = process.env;
+const { PUBNUB_SUBSCRIBE_KEY } = process.env;
+
+type User = {
+  uuid: string;
+  username: string;
+  role: string;
+  latitude: number;
+  longitude: number;
+};
+
 MapboxGL.setAccessToken(`${MAPBOX_ACCESS_TOKEN}`);
 
 const RescueMapScreen = () => {
-  const { token } = useContext(AuthContext);
+  const { user, token } = useContext(AuthContext);
   const { PayZaloBridge } = NativeModules;
 
   // --- STATE & REF ---
   const loadMap = `https://tiles.goong.io/assets/goong_map_web.json?api_key=${GOONG_MAP_KEY}`;
   // console.log(loadMap)
-  const [currentLocation, setCurrentLocation] = useState<
-    [number, number] | null
-  >(null);
-  const [originCoordinates, setOriginCoordinates] = useState<
-    [number, number] | null
-  >(null);
-  const [destinationCoordinates, setDestinationCoordinates] = useState<
-    [number, number] | null
-  >(null);
+  const userId = decodedToken(token)?.id;
+  const [currentLoc, setCurrentLoc] = useState({ latitude: 0, longitude: 0 });
+  const [focusOnMe, setFocusOnMe] = useState(false);
+  const [originCoordinates, setOriginCoordinates] = useState({ latitude: 0, longitude: 0 });
+  const [destinationCoordinates, setDestinationCoordinates] = useState({ latitude: 0, longitude: 0 });
   const [originQuery, setOriginQuery] = useState("");
   const [destinationQuery, setDestinationQuery] = useState("");
   const [originResults, setOriginResults] = useState<any[]>([]);
@@ -96,45 +104,12 @@ const RescueMapScreen = () => {
     bottom: locationButtonOffset.value,
   }));
 
-  // --- LOCATION & PERMISSION ---
-  const requestLocationPermission = async () => {
-    const { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== "granted") return;
-    const location = await Location.getCurrentPositionAsync({});
-    const { longitude, latitude } = location.coords;
-    const coords: [number, number] = [longitude, latitude];
-    setCurrentLocation(coords);
-    setOriginCoordinates(coords);
-    camera.current?.setCamera({
-      centerCoordinate: coords,
-      zoomLevel: 12,
-      animationDuration: 2000,
-    });
-  };
-
-  useEffect(() => {
-    (async () => {
-      await requestLocationPermission();
-      const subscription = await Location.watchPositionAsync(
-        {
-          accuracy: Location.Accuracy.High,
-          timeInterval: 5000,
-          distanceInterval: 10,
-        },
-        (loc) => {
-          const { longitude, latitude } = loc.coords;
-          setCurrentLocation([longitude, latitude]);
-        }
-      );
-      return () => subscription.remove();
-    })();
-  }, []);
 
   // --- Geocoding & Autocomplete ---
   // Reverse geocode origin nếu query rỗng
   useEffect(() => {
     if (!originQuery && originCoordinates) {
-      getReverseGeocode(originCoordinates[1], originCoordinates[0]).then(
+      getReverseGeocode(originCoordinates.latitude, originCoordinates.longitude).then(
         (address) => {
           if (address) {
             setOriginQuery(address);
@@ -150,11 +125,11 @@ const RescueMapScreen = () => {
     if (result) {
       const { lat, lng } = result;
       if (isOrigin) {
-        setOriginCoordinates([lng, lat]);
+        setOriginCoordinates({ longitude: lng, latitude: lat });
         setOriginResults([]);
         setOriginSelected(true);
       } else {
-        setDestinationCoordinates([lng, lat]);
+        setDestinationCoordinates({ longitude: lng, latitude: lat });
         setDestinationResults([]);
         setDestinationSelected(true);
       }
@@ -182,7 +157,7 @@ const RescueMapScreen = () => {
         getAutocomplete(
           originQuery,
           originCoordinates
-            ? `${originCoordinates[1]},${originCoordinates[0]}`
+            ? `${originCoordinates.latitude},${originCoordinates.longitude}`
             : ""
         ).then(setOriginResults);
       } else {
@@ -198,7 +173,7 @@ const RescueMapScreen = () => {
         getAutocomplete(
           destinationQuery,
           originCoordinates
-            ? `${originCoordinates[1]},${originCoordinates[0]}`
+            ? `${originCoordinates.latitude},${originCoordinates.longitude}`
             : ""
         ).then(setDestinationResults);
       } else {
@@ -216,8 +191,8 @@ const RescueMapScreen = () => {
       originCoordinates &&
       destinationCoordinates
     ) {
-      const originStr = `${originCoordinates[1]},${originCoordinates[0]}`;
-      const destinationStr = `${destinationCoordinates[1]},${destinationCoordinates[0]}`;
+      const originStr = `${originCoordinates.latitude},${originCoordinates.longitude}`;
+      const destinationStr = `${destinationCoordinates.latitude},${destinationCoordinates.longitude}`;
       getDirections(originStr, destinationStr)
         .then((data) => {
           if (data.routes && data.routes.length > 0) {
@@ -281,7 +256,7 @@ const RescueMapScreen = () => {
     zptransid: string,
     totalamount: number,
     paymentmethod: string
-  ) => {};
+  ) => { };
 
   // --- Payment ---
   const handlePayment = async () => {
@@ -291,10 +266,10 @@ const RescueMapScreen = () => {
     }
     setPaymentLoading(true);
     const payload: RescueRequestPayload = {
-      pickuplong: originCoordinates ? originCoordinates[0] : 0,
-      pickuplat: originCoordinates ? originCoordinates[1] : 0,
-      deslng: destinationCoordinates ? destinationCoordinates[0] : 0,
-      deslat: destinationCoordinates ? destinationCoordinates[1] : 0,
+      pickuplong: originCoordinates.longitude,
+      pickuplat: originCoordinates.latitude,
+      deslng: destinationCoordinates.longitude,
+      deslat: destinationCoordinates.latitude,
       pickuplocation: originQuery,
       destination: destinationQuery,
       totalprice: fare || 0,
@@ -352,16 +327,55 @@ const RescueMapScreen = () => {
     }
   };
 
-  const centerOnCurrentLocation = () => {
-    if (currentLocation && camera.current) {
-      camera.current.setCamera({
-        centerCoordinate: currentLocation,
-        zoomLevel: 16,
-        animationDuration: 1000,
+
+  //PUBNUB integration:
+
+  const [users, setUsers] = useState(new Map<string, User>());
+  const pubnub = setupPubNub(PUBNUB_PUBLISH_KEY || "", PUBNUB_SUBSCRIBE_KEY || "", userId || "");
+
+
+  //PUBNUB SERVICE
+  const updateLocation = async (locationSubscription: any) => {
+    if (await requestLocationPermission() && userId) {
+      const location = await getCurrentLocation();
+      setCurrentLoc(location.coords);
+      publishLocation(pubnub, userId, user, location.coords.latitude, location.coords.longitude);
+
+      // Subscribe to live location updates
+      locationSubscription = await watchLocation((position: any) => {
+        setCurrentLoc(position.coords);
+        publishLocation(pubnub, userId, user, position.coords.latitude, position.coords.longitude);
       });
+      // console.log('Location updated')
     }
   };
 
+  useEffect(() => {
+    let locationSubscription: any;
+
+    // Initial call
+    updateLocation(locationSubscription);
+    // Set interval for 10s updates
+    const intervalId = setInterval(updateLocation, 10000);
+    return () => {
+      clearInterval(intervalId);
+      if (locationSubscription) locationSubscription.remove(); // Cleanup
+    };
+  }, []);
+
+
+  useEffect(() => {
+    subscribeToChannel(pubnub, user, (msg: any) => {
+      const data = msg.message;
+      setUsers((prev) => new Map(prev).set(msg.publisher, data));
+    });
+
+    return () => pubnub.unsubscribeAll();
+  }, []);
+
+  useEffect(() => {
+    hereNow(pubnub)
+  }, [users])
   // --- RENDER ---
   return (
     <Box className="flex-1">
@@ -429,23 +443,18 @@ const RescueMapScreen = () => {
 
       {/* Bản đồ */}
       <Box className="flex-1">
-        <MapboxGL.MapView
-          styleURL={loadMap}
-          style={{ flex: 1 }}
-          projection="globe"
-          zoomEnabled={true}
-        >
+        <MapViewComponent users={users} currentLoc={focusOnMe ? currentLoc : originCoordinates} focusMode={[focusOnMe, setFocusOnMe]}>
           {originCoordinates && (
             <MapboxGL.Camera
               ref={camera}
               zoomLevel={12}
-              centerCoordinate={originCoordinates}
+              centerCoordinate={[originCoordinates.longitude, originCoordinates.latitude]}
             />
           )}
-          {currentLocation && (
+          {currentLoc && (
             <MapboxGL.PointAnnotation
               id="current-location"
-              coordinate={currentLocation}
+              coordinate={[currentLoc.longitude, currentLoc.latitude]}
             >
               <Box
                 style={{
@@ -462,7 +471,7 @@ const RescueMapScreen = () => {
           {originCoordinates && (
             <MapboxGL.PointAnnotation
               id="origin-marker"
-              coordinate={originCoordinates}
+              coordinate={[originCoordinates.longitude, originCoordinates.latitude]}
             >
               <MapboxGL.Callout title="Origin" />
             </MapboxGL.PointAnnotation>
@@ -470,7 +479,7 @@ const RescueMapScreen = () => {
           {destinationCoordinates && (
             <MapboxGL.PointAnnotation
               id="destination-marker"
-              coordinate={destinationCoordinates}
+              coordinate={[destinationCoordinates.longitude, destinationCoordinates.latitude]}
             >
               <Box className="w-40 h-40 items-center relative z-10 -bottom-1 border-red-400 border-2">
                 <CircleChevronDown color="#0080FF" size={30} />
@@ -492,31 +501,13 @@ const RescueMapScreen = () => {
               />
             </MapboxGL.ShapeSource>
           )}
-        </MapboxGL.MapView>
+        </MapViewComponent>
       </Box>
 
-      {/* Nút "My Location" với vị trí animate */}
-      {currentLocation && (
-        <Animated.View
-          style={[
-            { position: "absolute", right: 5, zIndex: 20 },
-            animatedButtonStyle,
-          ]}
-        >
-          <Button
-            variant="solid"
-            size="lg"
-            className="rounded-full p-3.5"
-            onPress={centerOnCurrentLocation}
-          >
-            <ButtonIcon as={LocateFixed} />
-          </Button>
-        </Animated.View>
-      )}
 
       {/* Actionsheet hiển thị thông tin chuyến đi & nút thanh toán */}
       {showActionsheet && (
-        <Actionsheet isOpen={true} onClose={() => {}}>
+        <Actionsheet isOpen={true} onClose={() => { }}>
           <ActionsheetContent className="bg-white rounded-t-xl">
             <Box className="p-4">
               <Text className="text-xl font-bold text-center">
@@ -542,7 +533,7 @@ const RescueMapScreen = () => {
                   variant="solid"
                   size="lg"
                   onPress={handlePayment}
-                  // disabled={fareLoading || paymentLoading || fare === null}
+                // disabled={fareLoading || paymentLoading || fare === null}
                 >
                   {/* <ButtonText>
                     {paymentLoading ? "Processing..." : "Pay Now"}
@@ -569,6 +560,9 @@ const RescueMapScreen = () => {
           status={driverInfo.status}
         />
       )}
+      <View className="absolute top-[2%] flex flex-col items-end w-full px-[5%]">
+        <Text>Số người online: {users.size}</Text>
+      </View>
     </Box>
   );
 };
