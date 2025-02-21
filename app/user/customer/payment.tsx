@@ -163,7 +163,7 @@ const ZaloPayDemo = () => {
       const subscription = DeviceEventEmitter.addListener('EventPayZalo', params => {
         console.log(params);
         if (params.returnCode==="1") {
-          // navigation.navigate('payment_success');
+          navigation.navigate('payment_success');
           setZpTransId(params.transactionId);
         }
       });
