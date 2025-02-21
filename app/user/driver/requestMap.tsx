@@ -75,8 +75,6 @@ const RequestMap: React.FC = () => {
 
   const [requestDetail, setRequestDetail] = useState<RequestDetail | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  // const [originCoordinates, setOriginCoordinates] = useState<[number, number] | null>(null);
-  // const [destinationCoordinates, setDestinationCoordinates] = useState<[number, number] | null>(null);
   const [originCoordinates, setOriginCoordinates] = useState({ latitude: 0, longitude: 0 });
   const [destinationCoordinates, setDestinationCoordinates] = useState({ latitude: 0, longitude: 0 });
   const [routeCoordinates, setRouteCoordinates] = useState<[number, number][]>([]);

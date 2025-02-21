@@ -43,16 +43,6 @@ export default function CustomerLayout() {
           }}
         />
         <Tabs.Screen
-          name="tracking_test"
-          options={{
-            headerShown: false,
-            tabBarLabel: "Tracking",
-            tabBarIcon: (tabInfo) => (
-              <LucideLocateFixed size={24} color={tabInfo.color} />
-            ),
-          }}
-        />
-        <Tabs.Screen
           name="notification"
           options={{
             headerShown: false,
