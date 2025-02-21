@@ -15,19 +15,21 @@ type User = {
 
 type Users = Map<string, User>;
 
+const { MAPBOX_ACCESS_TOKEN } = process.env;
+const { GOONG_MAP_KEY } = process.env;
+
 type MapViewComponentProps = {
   users: Users;
   currentLoc: { latitude: number; longitude: number };
   focusMode: [boolean, React.Dispatch<React.SetStateAction<boolean>>];
+  children?: React.ReactNode | undefined; // Accepts any JSX elements
 };
-
-const { MAPBOX_ACCESS_TOKEN } = process.env;
-const { GOONG_MAP_KEY } = process.env;
 
 const MapViewComponent: React.FC<MapViewComponentProps> = ({
   users,
   currentLoc,
-  focusMode: [focusOnMe, setFocusOnMe]
+  focusMode: [focusOnMe, setFocusOnMe],
+  children, // Add children here
 }) => {
   const loadMap = `https://tiles.goong.io/assets/goong_map_web.json?api_key=${GOONG_MAP_KEY}`;
   const mapRef = useRef<MapboxGL.MapView>(null);
@@ -45,7 +47,6 @@ const MapViewComponent: React.FC<MapViewComponentProps> = ({
     console.log("Current Users: " + users.size);
   };
 
-  // Set Mapbox Access Token
   MapboxGL.setAccessToken(`${MAPBOX_ACCESS_TOKEN}`);
 
   return (
@@ -59,6 +60,7 @@ const MapViewComponent: React.FC<MapViewComponentProps> = ({
         {Array.from(users.values()).map((user) => (
           <UserMarker key={user.uuid} user={user} />
         ))}
+        {children /* Render additional components passed from parent */}
       </MapboxGL.MapView>
       <View style={styles.bottom}>
         <TouchableOpacity onPress={focusLoc}>

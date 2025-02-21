@@ -60,7 +60,7 @@ export const hereNow = (pubnub: any) => {
       includeState: true
     },
     function (status: any, response: any) {
-      console.log(response);
+      // console.log(response);
     }
   )
 }
