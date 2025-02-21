@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { StyleSheet, Text, ScrollView, KeyboardAvoidingView, NativeModules, NativeEventEmitter, DeviceEventEmitter } from 'react-native';
+import { StyleSheet, Text, ScrollView, KeyboardAvoidingView, NativeModules, DeviceEventEmitter } from 'react-native';
 import { TextInput } from 'react-native-gesture-handler';
 import { Button } from 'react-native-elements';
 import CryptoJS from 'crypto-js';
@@ -9,30 +9,8 @@ const { PayZaloBridge } = NativeModules;
 
 type PayZaloEventData = {
   returnCode: string;
+  transactionId?: string;
 };
-
-const payZaloBridgeEmitter = new NativeEventEmitter(PayZaloBridge);
-
-payZaloBridgeEmitter.addListener(
-  'EventPayZalo',
-  (data: PayZaloEventData) => {
-    if (data.returnCode === "1") {
-      alert('Pay success!');
-    } else {
-      alert('Pay error! Return code: ' + data.returnCode);
-    }
-  }
-);
-
-interface RefundParams {
-  app_id: number;
-  m_refund_id: string;
-  zp_trans_id: string | null;
-  amount: number;
-  timestamp: number;
-  description: string;
-  mac?: string; // Optional initially, added later
-}
 
 const ZaloPayDemo = () => {
   const navigation = useNavigation<any>();
@@ -160,19 +138,21 @@ const ZaloPayDemo = () => {
   }
   
   useEffect(() => {
-      const subscription = DeviceEventEmitter.addListener('EventPayZalo', params => {
-        console.log(params);
-        if (params.returnCode==="1") {
-          navigation.navigate('payment_success');
-          setZpTransId(params.transactionId);
-        }
-      });
-  
-      // Clean up subscription
-      return () => {
-        subscription.remove();
-      };
-    }, []);
+    const subscription = DeviceEventEmitter.addListener('EventPayZalo', (data: PayZaloEventData) => {
+      console.log('Payment response:', data);
+      if (data.returnCode === "1") {
+        navigation.navigate('payment_success');
+        setZpTransId(data.transactionId || null);
+      } else {
+        alert('Payment failed! Return code: ' + data.returnCode);
+      }
+    });
+
+    // Cleanup subscription
+    return () => {
+      subscription.remove();
+    };
+  }, [navigation]);
     
   function payOrder(): void {
     console.log('Generating Zalopay transaction...')

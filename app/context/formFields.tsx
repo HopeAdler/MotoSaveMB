@@ -19,4 +19,11 @@ export interface SearchResult {
     main_text: string;
     secondary_text: string;
   };
-}
+};
+
+const formFields = {
+  registerForm,
+  loginForm,
+};
+
+export default formFields;

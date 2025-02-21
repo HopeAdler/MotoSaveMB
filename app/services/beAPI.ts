@@ -69,3 +69,11 @@ export async function calculateFare(distance: number): Promise<number> {
     throw error;
   }
 }
+
+const beAPI = {
+  createRescueRequest,
+  createTransaction,
+  calculateFare,
+};
+
+export default beAPI;

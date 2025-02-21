@@ -177,4 +177,11 @@ async function refundTransaction(
   }
 }
 
+const payment = {
+  createOrder,
+  processPayment,
+  refundTransaction,
+};
+
 export { createOrder, processPayment, refundTransaction };
+export default payment;

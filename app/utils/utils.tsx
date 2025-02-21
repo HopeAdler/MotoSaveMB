@@ -103,3 +103,14 @@ export const handleBlurField = (
 export function decodePolyline(encoded: string): [number, number][] {
   return polyline.decode(encoded).map(([lat, lng]: [number, number]) => [lng, lat]);
 }
+
+const utils = {
+  translateFieldName,
+  validateField,
+  handleBlurField,
+  shortifiedFieldName,
+  decodedToken,
+  decodePolyline,
+};
+
+export default utils;
