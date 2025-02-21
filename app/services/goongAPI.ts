@@ -60,3 +60,12 @@ export async function getDirections(origin: string, destination: string): Promis
     throw error;
   }
 }
+
+const goongAPI = {
+  getReverseGeocode,
+  geocodeAddress,
+  getAutocomplete,
+  getDirections,
+};
+
+export default goongAPI;
