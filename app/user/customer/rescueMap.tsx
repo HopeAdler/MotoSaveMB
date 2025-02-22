@@ -14,6 +14,7 @@ import {
 import React, { useContext, useEffect, useRef, useState } from "react";
 import {
   Alert,
+  DeviceEventEmitter,
   FlatList,
   NativeEventEmitter,
   NativeModules,
@@ -349,7 +350,8 @@ const RescueMapScreen = () => {
       setShowActionsheet(false);
       // setShowTracking(true); // This should trigger the TrackingActionSheet
       // Step 2: Process payment
-      processPayment(fare);
+      await processPayment(fare);
+      handleRequestSuccess(requestDetailId);
       // Step 3: Listen for payment result
       const payZaloBridgeEmitter = new NativeEventEmitter(PayZaloBridge);
       const subscription = payZaloBridgeEmitter.addListener(
@@ -409,7 +411,6 @@ const RescueMapScreen = () => {
         return prev - 1;
       });
     }, 1000);
-
   };
 
   // Handle "Cancel" button click
@@ -424,14 +425,29 @@ const RescueMapScreen = () => {
         "Cancel"
       );
       console.log(result.message);
-      Alert.alert("Request cancel")
+      alert("Request cancel");
       if (paymentMethod === "Zalopay") {
         // If ZaloPay, process refund
         await refundTransaction(zpTransId, "User canceled request", fare);
+        // Reinitialize the event listener for ZaloPay
+        const payZaloBridgeEmitter = new NativeEventEmitter(PayZaloBridge);
+        const subscription = payZaloBridgeEmitter.addListener(
+          "EventPayZalo",
+          async (data: PayZaloEventData) => {
+            // if (data.returnCode === "1") {
+            //   console.log("Refund successful:", data);
+            //   alert("Refund successful!");
+            // } else {
+            //   console.log("Refund failed!", data);
+            //   alert("Refund failed! Return code: " + data.returnCode);
+            // }
+            subscription.remove(); // Cleanup listener after execution
+          }
+        );
       }
 
       setShowCountdownSheet(false); // Close ActionSheet
-      router.navigate('/user/customer/rescueMap')
+      // router.navigate('/user/customer/rescueMap')
     } catch (error) {
       console.error("Error canceling request:", error);
     }

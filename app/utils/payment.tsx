@@ -15,9 +15,9 @@ export interface PayZaloEventData {
 }
 
 interface RefundParams {
-  appid: number;
-  mrefundid: string;
-  zptransid: string | null;
+  app_id: number;
+  m_refund_id: string;
+  zp_trans_id: string | null;
   amount: number | null;
   timestamp: number;
   description: string;
@@ -133,9 +133,9 @@ async function refundTransaction(
   const mRefundId = `${getCurrentDateYYMMDD()}_${appid}_${randomPart}`;
   // Prepare parameters
   const params: RefundParams = {
-    appid: appid,
-    mrefundid: mRefundId,
-    zptransid: zpTransId, //transactionId from createOrder()
+    app_id: appid,
+    m_refund_id: mRefundId,
+    zp_trans_id: zpTransId, //transactionId from createOrder()
     amount: money,
     timestamp: timestamp,
     description: description || "Refund transaction",
