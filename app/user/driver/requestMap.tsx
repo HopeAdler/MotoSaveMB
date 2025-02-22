@@ -283,7 +283,7 @@ const RequestMap: React.FC = () => {
 
   return (
     <Box className="flex-1">
-      <MapViewComponent users={users} currentLoc={focusOnMe ? currentLoc : originCoordinates} focusMode={[focusOnMe, setFocusOnMe]}>
+      <MapViewComponent users={users} currentLoc={focusOnMe ? currentLoc : originCoordinates} focusMode={[focusOnMe, setFocusOnMe]} isActionSheetOpen={isActionSheetOpen}>
         {originCoordinates && (
           <MapboxGL.PointAnnotation id="ori-marker" coordinate={[originCoordinates.longitude, originCoordinates.latitude]}>
             <MapboxGL.Callout title="Origin" />

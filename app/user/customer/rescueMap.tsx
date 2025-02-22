@@ -62,10 +62,10 @@ const RescueMapScreen = () => {
   const userId = decodedToken(token)?.id;
 
   // Sử dụng hook lấy vị trí hiện tại
-  const currentLoc = useLocationTracking();
+  // const currentLoc = useLocationTracking();
 
   // Các state cho origin, destination, route, fare, countdown, tracking, …  
-  //   const [currentLoc, setCurrentLoc] = useState({ latitude: 0, longitude: 0 });
+  const [currentLoc, setCurrentLoc] = useState({ latitude: 0, longitude: 0 });
   const [originCoordinates, setOriginCoordinates] = useState({ latitude: 0, longitude: 0 });
   const [destinationCoordinates, setDestinationCoordinates] = useState({ latitude: 0, longitude: 0 });
   const [originQuery, setOriginQuery] = useState("");
@@ -201,6 +201,7 @@ const RescueMapScreen = () => {
     ) {
       const originStr = `${originCoordinates.latitude},${originCoordinates.longitude}`;
       const destinationStr = `${destinationCoordinates.latitude},${destinationCoordinates.longitude}`;
+      console.log('Calculating direction..')
       getDirections(originStr, destinationStr)
         .then((data) => {
           if (data.routes && data.routes.length > 0) {
@@ -226,6 +227,7 @@ const RescueMapScreen = () => {
       calculateFare(distanceValue)
         .then((money) => {
           setFare(money);
+          console.log(money)
           setFareLoading(false);
         })
         .catch((error) => {
@@ -381,24 +383,51 @@ const RescueMapScreen = () => {
   const [users, setUsers] = useState(new Map<string, User>());
   const pubnub = setupPubNub(PUBNUB_PUBLISH_KEY || "", PUBNUB_SUBSCRIBE_KEY || "", userId || "");
   const updateLocation = async (locationSubscription: any) => {
-    if ((await requestLocationPermission()) && userId) {
-      const location = await getCurrentLocation();
-      setOriginCoordinates(location.coords);
-      publishLocation(pubnub, userId, user, location.coords.latitude, location.coords.longitude);
-      locationSubscription = await watchLocation((position: any) => {
-        publishLocation(pubnub, userId, user, position.coords.latitude, position.coords.longitude);
-      });
-    }
+    if (!(await requestLocationPermission()) || !userId) return;
+
+    const location = await getCurrentLocation();
+    if (!location?.coords) return;
+
+    const { latitude, longitude } = location.coords;
+
+    // Update current location
+    setCurrentLoc(location.coords);
+
+    // Only update origin if it's still {0,0}
+    setOriginCoordinates((prev) => {
+      if (prev.latitude === 0 && prev.longitude === 0) {
+        console.log("Origin reset", location.coords);
+        return location.coords;
+      }
+      return prev; // Keep the existing value
+    });
+
+    // Publish location to PubNub
+    publishLocation(pubnub, userId, user, latitude, longitude);
+
+    // Subscribe to live location updates
+    locationSubscription = await watchLocation((position: any) => {
+      setCurrentLoc(position.coords);
+      publishLocation(pubnub, userId, user, position.coords.latitude, position.coords.longitude);
+    });
   };
 
   useEffect(() => {
     let locationSubscription: any;
     updateLocation(locationSubscription);
+    // Set interval for 10s updates
+    // setOriginCoordinates(currentLoc);
+    const intervalId = setInterval(updateLocation, 10000);
+    return () => {
+      clearInterval(intervalId);
+      if (locationSubscription) locationSubscription.remove(); // Cleanup
+    };
   }, []);
 
   useEffect(() => {
     subscribeToChannel(pubnub, user, (msg: any) => {
       const data = msg.message;
+      console.log(data)
       setUsers((prev) => new Map(prev).set(msg.publisher, data));
     });
     return () => pubnub.unsubscribeAll();
