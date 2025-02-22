@@ -4,14 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
 import MapboxGL from "@rnmapbox/maps";
 import axios from "axios";
-import * as Location from "expo-location";
 import { useLocalSearchParams } from "expo-router";
 import React, { useContext, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, TouchableOpacity, View } from "react-native";
 import Icon from "react-native-vector-icons/Feather";
 // Import the ActionSheet components from gluestack-ui
 import { getDirections } from "@/app/services/goongAPI";
+import { getCurrentLocation, requestLocationPermission, watchLocation } from "@/app/utils/locationService";
+import { hereNow, publishLocation, setupPubNub, subscribeToChannel } from "@/app/utils/pubnubService";
 import { decodedToken, decodePolyline } from "@/app/utils/utils";
+import MapViewComponent from "@/components/custom/MapViewComponent";
 import {
   Actionsheet,
   ActionsheetBackdrop,
@@ -20,9 +22,6 @@ import {
   ActionsheetDragIndicatorWrapper,
   ActionsheetSectionHeaderText,
 } from "@/components/ui/actionsheet";
-import { hereNow, publishLocation, setupPubNub, subscribeToChannel } from "@/app/utils/pubnubService";
-import { getCurrentLocation, requestLocationPermission, watchLocation } from "@/app/utils/locationService";
-import MapViewComponent from "@/components/custom/MapViewComponent";
 
 const { PUBNUB_PUBLISH_KEY } = process.env;
 const { PUBNUB_SUBSCRIBE_KEY } = process.env;
@@ -75,19 +74,20 @@ const RequestMap: React.FC = () => {
 
   const [requestDetail, setRequestDetail] = useState<RequestDetail | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [currentLoc, setCurrentLoc] = useState({ latitude: 0, longitude: 0 });
   const [originCoordinates, setOriginCoordinates] = useState({ latitude: 0, longitude: 0 });
   const [destinationCoordinates, setDestinationCoordinates] = useState({ latitude: 0, longitude: 0 });
+
   const [routeCoordinates, setRouteCoordinates] = useState<[number, number][]>([]);
   const [directionsInfo, setDirectionsInfo] = useState<DirectionsLeg | null>(null);
   const [progress, setProgress] = useState<ProgressState>("Accepted");
   // State to control the open/close state of the ActionSheet.
-  const [isActionSheetOpen, setIsActionSheetOpen] = useState<boolean>(false);
+  const [isActionSheetOpen, setIsActionSheetOpen] = useState<boolean>(true);
 
   const camera = useRef<ICamera | null>(null);
 
   //PUBNUB integration:
   const userId = decodedToken(token)?.id;
-  const [currentLoc, setCurrentLoc] = useState({ latitude: 0, longitude: 0 });
   const [users, setUsers] = useState(new Map<string, User>());
   const pubnub = setupPubNub(PUBNUB_PUBLISH_KEY || "", PUBNUB_SUBSCRIBE_KEY || "", userId || "");
   const [focusOnMe, setFocusOnMe] = useState(false);
@@ -104,7 +104,7 @@ const RequestMap: React.FC = () => {
         setCurrentLoc(position.coords);
         publishLocation(pubnub, userId, user, position.coords.latitude, position.coords.longitude);
       });
-      // console.log('Location updated')
+      console.log('Location updated')
     }
   };
 
@@ -113,6 +113,7 @@ const RequestMap: React.FC = () => {
 
     // Initial call
     updateLocation(locationSubscription);
+    fetchRoute();
     // Set interval for 10s updates
     const intervalId = setInterval(updateLocation, 10000);
     return () => {
@@ -125,15 +126,18 @@ const RequestMap: React.FC = () => {
   useEffect(() => {
     subscribeToChannel(pubnub, user, (msg: any) => {
       const data = msg.message;
-      setUsers((prev) => new Map(prev).set(msg.publisher, data));
+      //Only take current user
+      if (msg.publisher === userId)
+        setUsers((prev) => new Map(prev).set(msg.publisher, data));
     });
+
 
     return () => pubnub.unsubscribeAll();
   }, []);
 
   useEffect(() => {
     hereNow(pubnub)
-  }, [users])
+  }, [])
 
   const changeProgressState = () => {
     switch (progress) {
@@ -212,28 +216,54 @@ const RequestMap: React.FC = () => {
   }, [requestdetailid, token]);
 
 
-  useEffect(() => {
-    if (originCoordinates && destinationCoordinates) {
-      const originStr = `${originCoordinates.latitude},${originCoordinates.longitude}`;
-      const destinationStr = `${destinationCoordinates.latitude},${destinationCoordinates.longitude}`;
-      getDirections(originStr, destinationStr)
-        .then((data: any) => {
-          if (data.routes && data.routes.length > 0) {
-            const encodedPolyline = data.routes[0].overview_polyline.points;
-            const decoded = decodePolyline(encodedPolyline);
-            setRouteCoordinates(decoded);
-            if (data.routes[0].legs && data.routes[0].legs.length > 0) {
-              setDirectionsInfo(data.routes[0].legs[0]);
-            }
-          } else {
-            console.log("No routes found:", data);
-          }
-        })
-        .catch((error: any) =>
-          console.error("Error fetching directions:", error)
-        );
+
+  const fetchRoute = () => {
+    const currentLocStr = `${currentLoc.latitude},${currentLoc.longitude}`;
+    const originStr = `${originCoordinates.latitude},${originCoordinates.longitude}`;
+    const destinationStr = `${destinationCoordinates.latitude},${destinationCoordinates.longitude}`;
+    let startStr = "";
+    let endStr = "";
+
+    switch (progress) {
+      case "Accepted":
+        startStr = originStr;
+        endStr = destinationStr;
+        break; // ✅ Use break instead of return
+      case "Picking Up":
+        startStr = currentLocStr;
+        endStr = originStr;
+        break; // ✅ Use break instead of return
+      case "Processing":
+        startStr = currentLocStr;
+        endStr = destinationStr;
+        break; // ✅ Use break instead of return
+      default:
+        console.warn("Unknown progress state:", progress);
+        return; // Keep return only if progress is unknown
     }
-  }, [originCoordinates, destinationCoordinates]);
+
+    getDirections(startStr, endStr)
+      .then((data: any) => {
+        if (data.routes && data.routes.length > 0) {
+          const encodedPolyline = data.routes[0].overview_polyline.points;
+          const decoded = decodePolyline(encodedPolyline);
+          setRouteCoordinates(decoded);
+          if (data.routes[0].legs && data.routes[0].legs.length > 0) {
+            setDirectionsInfo(data.routes[0].legs[0]);
+            console.log("Switching route...");
+          }
+        } else {
+          console.log("No routes found:", data);
+        }
+      })
+      .catch((error: any) =>
+        console.error("Error fetching directions:", error)
+      );
+  };
+
+  useEffect(() => {
+    fetchRoute();
+  }, [currentLoc, progress])
 
   useEffect(() => {
     if (routeCoordinates.length > 0 && camera.current) {
@@ -351,9 +381,6 @@ const RequestMap: React.FC = () => {
         >
           <Text className="text-white text-center">Reset Progress</Text>
         </Button>
-      </View>
-      <View className="absolute top-[2%] flex flex-col items-end w-full px-[5%]">
-        <Text>Số người online: {users.size}</Text>
       </View>
     </Box>
   );

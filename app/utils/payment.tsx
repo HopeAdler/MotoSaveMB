@@ -18,7 +18,7 @@ interface RefundParams {
   app_id: number;
   m_refund_id: string;
   zp_trans_id: string | null;
-  amount: number;
+  amount: number | null;
   timestamp: number;
   description: string;
   mac?: string; // Optional initially, added later
@@ -118,9 +118,9 @@ function generateRandomString(length: number) {
 }
 
 async function refundTransaction(
-  zpTransId: string,
+  zpTransId: string | null,
   description: string,
-  money: number
+  money: number | null
 ) {
   const appid = 2553; // Application ID
   const key1 = "PcY4iZIKFCIdgZvA6ueMcMHHUbRLYjPL"; // HMAC Key

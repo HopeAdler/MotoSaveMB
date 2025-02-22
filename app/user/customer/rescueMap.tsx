@@ -1,14 +1,25 @@
 import { Actionsheet, ActionsheetContent } from "@/components/ui/actionsheet";
 import { Box } from "@/components/ui/box";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonText } from "@/components/ui/button";
 import { Input, InputField } from "@/components/ui/input";
 import { Pressable } from "@/components/ui/pressable";
 import { Text } from "@/components/ui/text";
 import MapboxGL from "@rnmapbox/maps";
 import { router } from "expo-router";
-import { CircleChevronDown, LocateFixed } from "lucide-react-native";
+import {
+  ChevronDownIcon,
+  CircleChevronDown,
+  LocateFixed,
+} from "lucide-react-native";
 import React, { useContext, useEffect, useRef, useState } from "react";
-import { FlatList, NativeEventEmitter, NativeModules, View } from "react-native";
+import {
+  Alert,
+  DeviceEventEmitter,
+  FlatList,
+  NativeEventEmitter,
+  NativeModules,
+  View,
+} from "react-native";
 
 // Reanimated
 import {
@@ -24,6 +35,7 @@ import {
   createRescueRequest,
   createTransaction,
   RescueRequestPayload,
+  updateRequestStatus,
 } from "@/app/services/beAPI";
 import {
   geocodeAddress,
@@ -31,15 +43,35 @@ import {
   getDirections,
   getReverseGeocode,
 } from "@/app/services/goongAPI";
-import { getCurrentLocation, requestLocationPermission, watchLocation } from "@/app/utils/locationService";
+import {
+  getCurrentLocation,
+  requestLocationPermission,
+  watchLocation,
+} from "@/app/utils/locationService";
 import {
   PayZaloEventData,
-  processPayment
+  processPayment,
+  refundTransaction,
 } from "@/app/utils/payment";
-import { hereNow, publishLocation, setupPubNub, subscribeToChannel } from "@/app/utils/pubnubService";
+import {
+  hereNow,
+  publishLocation,
+  setupPubNub,
+  subscribeToChannel,
+} from "@/app/utils/pubnubService";
 import { decodedToken, decodePolyline } from "@/app/utils/utils";
 import MapViewComponent from "@/components/custom/MapViewComponent";
 import TrackingActionSheet from "@/components/custom/TrackingActionSheet";
+import {
+  Select,
+  SelectBackdrop,
+  SelectContent,
+  SelectIcon,
+  SelectInput,
+  SelectItem,
+  SelectPortal,
+  SelectTrigger,
+} from "@/components/ui/select";
 
 const { MAPBOX_ACCESS_TOKEN } = process.env;
 const { GOONG_MAP_KEY } = process.env;
@@ -66,8 +98,14 @@ const RescueMapScreen = () => {
   const userId = decodedToken(token)?.id;
   const [currentLoc, setCurrentLoc] = useState({ latitude: 0, longitude: 0 });
   const [focusOnMe, setFocusOnMe] = useState(true);
-  const [originCoordinates, setOriginCoordinates] = useState({ latitude: 0, longitude: 0 });
-  const [destinationCoordinates, setDestinationCoordinates] = useState({ latitude: 0, longitude: 0 });
+  const [originCoordinates, setOriginCoordinates] = useState({
+    latitude: 0,
+    longitude: 0,
+  });
+  const [destinationCoordinates, setDestinationCoordinates] = useState({
+    latitude: 0,
+    longitude: 0,
+  });
   const [originQuery, setOriginQuery] = useState("");
   const [destinationQuery, setDestinationQuery] = useState("");
   const [originResults, setOriginResults] = useState<any[]>([]);
@@ -91,6 +129,11 @@ const RescueMapScreen = () => {
     distance: "2.5 km",
     status: "arriving" as const,
   });
+  const [paymentMethod, setPaymentMethod] = useState("Tiền mặt");
+  const [showCountdownSheet, setShowCountdownSheet] = useState(false);
+  const [countdown, setCountdown] = useState(10);
+  const [requestDetailId, setRequestDetailId] = useState(null);
+  const [zpTransId, setZpTransId] = useState<string | null>(null);
   const camera = useRef<MapboxGL.Camera>(null);
 
   // Reanimated: shared value cho nút "My Location"
@@ -104,19 +147,19 @@ const RescueMapScreen = () => {
     bottom: locationButtonOffset.value,
   }));
 
-
   // --- Geocoding & Autocomplete ---
   // Reverse geocode origin nếu query rỗng
   useEffect(() => {
     if (!originQuery && originCoordinates) {
-      getReverseGeocode(originCoordinates.latitude, originCoordinates.longitude).then(
-        (address) => {
-          if (address) {
-            setOriginQuery(address);
-            setOriginSelected(true);
-          }
+      getReverseGeocode(
+        originCoordinates.latitude,
+        originCoordinates.longitude
+      ).then((address) => {
+        if (address) {
+          setOriginQuery(address);
+          setOriginSelected(true);
         }
-      );
+      });
     }
   }, [originCoordinates]);
 
@@ -251,12 +294,37 @@ const RescueMapScreen = () => {
     }
   }, [directionsInfo]);
 
-  const transaction = (
-    requestdetailid: string,
-    zptransid: string,
-    totalamount: number,
-    paymentmethod: string
-  ) => { };
+  // Call this after successful request/payment
+  const handleRequestSuccess = (requestId: string) => {
+    startCountdown(requestId);
+  };
+
+  // create request
+  const handleCreateRequest = async () => {
+    if (!token) {
+      console.error("User not authenticated");
+      return;
+    }
+    const payload: RescueRequestPayload = {
+      pickuplong: originCoordinates.longitude,
+      pickuplat: originCoordinates.latitude,
+      deslng: destinationCoordinates.longitude,
+      deslat: destinationCoordinates.latitude,
+      pickuplocation: originQuery,
+      destination: destinationQuery,
+      totalprice: fare || 0,
+    };
+
+    try {
+      const result = await createRescueRequest(payload, token);
+      console.log(result);
+      handleRequestSuccess(result.requestdetailid);
+      setShowActionsheet(false);
+      // setShowTracking(true);
+    } catch (error) {
+      console.error("Error during payment", error);
+    }
+  };
 
   // --- Payment ---
   const handlePayment = async () => {
@@ -280,18 +348,19 @@ const RescueMapScreen = () => {
       console.log(result);
       const requestDetailId = result.requestdetailid;
       setShowActionsheet(false);
-      setShowTracking(true); // This should trigger the TrackingActionSheet
+      // setShowTracking(true); // This should trigger the TrackingActionSheet
       // Step 2: Process payment
-      processPayment(fare);
+      await processPayment(fare);
+      handleRequestSuccess(requestDetailId);
       // Step 3: Listen for payment result
       const payZaloBridgeEmitter = new NativeEventEmitter(PayZaloBridge);
       const subscription = payZaloBridgeEmitter.addListener(
         "EventPayZalo",
         async (data: PayZaloEventData) => {
           if (data.returnCode === "1") {
+            router.navigate("/user/customer/rescueMap");
             console.log("Payment successful:", data);
-            alert("Payment successful!");
-
+            setZpTransId(data.transactionId || null);
             try {
               // Step 4: Create transaction after successful payment
               const transactionResponse = await createTransaction(
@@ -309,11 +378,10 @@ const RescueMapScreen = () => {
             } catch (error) {
               console.error("Error creating transaction:", error);
             }
-
-            router.navigate("/user/customer/rescueMap");
+            handleRequestSuccess(requestDetailId);
           } else {
-            alert("Payment failed! Return code: " + data.returnCode);
             router.navigate("/user/customer/rescueMap");
+            alert("Payment failed! Return code: " + data.returnCode);
           }
 
           // Step 5: Remove listener after execution
@@ -327,25 +395,97 @@ const RescueMapScreen = () => {
     }
   };
 
+  // Function to start countdown
+  const startCountdown = (requestId: any) => {
+    setRequestDetailId(requestId);
+    setShowCountdownSheet(true);
+    setCountdown(10);
+
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          setShowCountdownSheet(false); // Auto-close after 10s
+          setShowTracking(true); //Open tracking sheet
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  // Handle "Cancel" button click
+  const handleCancel = async () => {
+    if (!requestDetailId) return;
+
+    try {
+      // Update request status to "Cancel"
+      const result = await updateRequestStatus(
+        requestDetailId,
+        token,
+        "Cancel"
+      );
+      console.log(result.message);
+      alert("Request cancel");
+      if (paymentMethod === "Zalopay") {
+        // If ZaloPay, process refund
+        await refundTransaction(zpTransId, "User canceled request", fare);
+        // Reinitialize the event listener for ZaloPay
+        const payZaloBridgeEmitter = new NativeEventEmitter(PayZaloBridge);
+        const subscription = payZaloBridgeEmitter.addListener(
+          "EventPayZalo",
+          async (data: PayZaloEventData) => {
+            // if (data.returnCode === "1") {
+            //   console.log("Refund successful:", data);
+            //   alert("Refund successful!");
+            // } else {
+            //   console.log("Refund failed!", data);
+            //   alert("Refund failed! Return code: " + data.returnCode);
+            // }
+            subscription.remove(); // Cleanup listener after execution
+          }
+        );
+      }
+
+      setShowCountdownSheet(false); // Close ActionSheet
+      // router.navigate('/user/customer/rescueMap')
+    } catch (error) {
+      console.error("Error canceling request:", error);
+    }
+  };
 
   //PUBNUB integration:
 
   const [users, setUsers] = useState(new Map<string, User>());
-  const pubnub = setupPubNub(PUBNUB_PUBLISH_KEY || "", PUBNUB_SUBSCRIBE_KEY || "", userId || "");
-
+  const pubnub = setupPubNub(
+    PUBNUB_PUBLISH_KEY || "",
+    PUBNUB_SUBSCRIBE_KEY || "",
+    userId || ""
+  );
 
   //PUBNUB SERVICE
   const updateLocation = async (locationSubscription: any) => {
-    if (await requestLocationPermission() && userId) {
+    if ((await requestLocationPermission()) && userId) {
       const location = await getCurrentLocation();
       setCurrentLoc(location.coords);
-      setOriginCoordinates(location.coords)
-      publishLocation(pubnub, userId, user, location.coords.latitude, location.coords.longitude);
+      setOriginCoordinates(location.coords);
+      publishLocation(
+        pubnub,
+        userId,
+        user,
+        location.coords.latitude,
+        location.coords.longitude
+      );
 
       // Subscribe to live location updates
       locationSubscription = await watchLocation((position: any) => {
         setCurrentLoc(position.coords);
-        publishLocation(pubnub, userId, user, position.coords.latitude, position.coords.longitude);
+        publishLocation(
+          pubnub,
+          userId,
+          user,
+          position.coords.latitude,
+          position.coords.longitude
+        );
       });
       // console.log('Location updated')
     }
@@ -358,13 +498,12 @@ const RescueMapScreen = () => {
     updateLocation(locationSubscription);
     // Set interval for 10s updates
     setOriginCoordinates(currentLoc);
-    const intervalId = setInterval(updateLocation, 10000);
-    return () => {
-      clearInterval(intervalId);
-      if (locationSubscription) locationSubscription.remove(); // Cleanup
-    };
+    // const intervalId = setInterval(updateLocation, 10000);
+    // return () => {
+    //   clearInterval(intervalId);
+    //   if (locationSubscription) locationSubscription.remove(); // Cleanup
+    // };
   }, []);
-
 
   useEffect(() => {
     subscribeToChannel(pubnub, user, (msg: any) => {
@@ -376,8 +515,8 @@ const RescueMapScreen = () => {
   }, []);
 
   useEffect(() => {
-    hereNow(pubnub)
-  }, [users])
+    hereNow(pubnub);
+  }, [users]);
   // --- RENDER ---
   return (
     <Box className="flex-1">
@@ -445,12 +584,19 @@ const RescueMapScreen = () => {
 
       {/* Bản đồ */}
       <Box className="flex-1">
-        <MapViewComponent users={users} currentLoc={focusOnMe ? currentLoc : originCoordinates} focusMode={[focusOnMe, setFocusOnMe]}>
+        <MapViewComponent
+          users={users}
+          currentLoc={focusOnMe ? currentLoc : originCoordinates}
+          focusMode={[focusOnMe, setFocusOnMe]}
+        >
           {originCoordinates && (
             <MapboxGL.Camera
               ref={camera}
               zoomLevel={12}
-              centerCoordinate={[originCoordinates.longitude, originCoordinates.latitude]}
+              centerCoordinate={[
+                originCoordinates.longitude,
+                originCoordinates.latitude,
+              ]}
             />
           )}
           {currentLoc && (
@@ -473,7 +619,10 @@ const RescueMapScreen = () => {
           {originCoordinates && (
             <MapboxGL.PointAnnotation
               id="origin-marker"
-              coordinate={[originCoordinates.longitude, originCoordinates.latitude]}
+              coordinate={[
+                originCoordinates.longitude,
+                originCoordinates.latitude,
+              ]}
             >
               <MapboxGL.Callout title="Origin" />
             </MapboxGL.PointAnnotation>
@@ -481,7 +630,10 @@ const RescueMapScreen = () => {
           {destinationCoordinates && (
             <MapboxGL.PointAnnotation
               id="destination-marker"
-              coordinate={[destinationCoordinates.longitude, destinationCoordinates.latitude]}
+              coordinate={[
+                destinationCoordinates.longitude,
+                destinationCoordinates.latitude,
+              ]}
             >
               <Box className="w-40 h-40 items-center relative z-10 -bottom-1 border-red-400 border-2">
                 <CircleChevronDown color="#0080FF" size={30} />
@@ -506,10 +658,9 @@ const RescueMapScreen = () => {
         </MapViewComponent>
       </Box>
 
-
       {/* Actionsheet hiển thị thông tin chuyến đi & nút thanh toán */}
       {showActionsheet && (
-        <Actionsheet isOpen={true} onClose={() => { }}>
+        <Actionsheet isOpen={true} onClose={() => {}}>
           <ActionsheetContent className="bg-white rounded-t-xl">
             <Box className="p-4">
               <Text className="text-xl font-bold text-center">
@@ -530,22 +681,73 @@ const RescueMapScreen = () => {
                       : "Fare: N/A"}
                 </Text>
               </Box>
+              {/* Payment Method Selection */}
+              <Box className="mt-4">
+                <Text className="text-md font-semibold mb-2">
+                  Payment Method
+                </Text>
+                <Select
+                  selectedValue={paymentMethod}
+                  onValueChange={(value) => setPaymentMethod(value)}
+                >
+                  <SelectTrigger className="border border-gray-300 rounded-lg px-4 py-2 flex justify-between items-center">
+                    <SelectInput />
+                    <SelectIcon as={ChevronDownIcon} />
+                  </SelectTrigger>
+                  <SelectPortal>
+                    <SelectBackdrop />
+                    <SelectContent>
+                      <SelectItem label="Tiền mặt" value="Tiền mặt" />
+                      <SelectItem label="Zalopay" value="Zalopay" />
+                    </SelectContent>
+                  </SelectPortal>
+                </Select>
+              </Box>
               <Box className="mt-4">
                 <Button
                   variant="solid"
                   size="lg"
-                  onPress={handlePayment}
-                // disabled={fareLoading || paymentLoading || fare === null}
+                  onPress={() => {
+                    if (paymentMethod === "Tiền mặt") {
+                      handleCreateRequest();
+                    } else {
+                      handlePayment();
+                    }
+                  }}
+                  disabled={fareLoading || paymentLoading || fare === null}
                 >
-                  {/* <ButtonText>
-                    {paymentLoading ? "Processing..." : "Pay Now"}
-                  </ButtonText> */}
+                  <ButtonText>
+                    {paymentLoading ? "Processing..." : "Create Request"}
+                  </ButtonText>
                 </Button>
               </Box>
             </Box>
           </ActionsheetContent>
         </Actionsheet>
       )}
+
+      {/* Countdown ActionSheet */}
+      <Actionsheet
+        isOpen={showCountdownSheet}
+        onClose={() => setShowCountdownSheet(false)}
+      >
+        <ActionsheetContent className="bg-white rounded-t-xl">
+          <Box className="p-4">
+            <Text className="text-xl font-bold text-center">
+              Processing Request...
+            </Text>
+            <Text className="text-md text-center mt-2">
+              Cancel within {countdown} seconds
+            </Text>
+
+            <Box className="mt-4">
+              <Button variant="outline" size="lg" onPress={handleCancel}>
+                <ButtonText>Cancel Request</ButtonText>
+              </Button>
+            </Box>
+          </Box>
+        </ActionsheetContent>
+      </Actionsheet>
 
       {/* Actionsheet hiển thị thông tin của rescue driver */}
       {showTracking && (
