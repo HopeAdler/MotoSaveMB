@@ -1,3 +1,4 @@
+// src/app/components/MyLocationButton.tsx
 import React from "react";
 import { StyleSheet } from "react-native";
 import { Button, ButtonIcon } from "@/components/ui/button";
@@ -10,11 +11,10 @@ interface MyLocationButtonProps {
 }
 
 const MyLocationButton: React.FC<MyLocationButtonProps> = ({ onPress, isActionSheetOpen }) => {
-  // Sử dụng shared value để animate vị trí button
   const offset = useSharedValue(10);
-  
+
   React.useEffect(() => {
-    offset.value = withTiming(isActionSheetOpen ? 150 : 10, { duration: 300 });
+    offset.value = withTiming(isActionSheetOpen ? 200 : 10, { duration: 300 });
   }, [isActionSheetOpen]);
 
   const animatedStyle = useAnimatedStyle(() => ({ bottom: offset.value }));
