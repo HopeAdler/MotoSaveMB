@@ -57,10 +57,11 @@ export const hereNow = (pubnub: any) => {
   pubnub.hereNow(
     {
       channels: ["global"],
+      includeUUIDs: true,
       includeState: true
     },
     function (status: any, response: any) {
-      // console.log(response);
+      console.log(response.channels.global.occupants);
     }
   )
 }
