@@ -151,7 +151,7 @@ const ZaloPayDemo = () => {
     const subscription = DeviceEventEmitter.addListener('EventPayZalo', (data: PayZaloEventData) => {
       console.log('Payment response:', data);
       if (data.returnCode === "1") {
-        navigation.navigate('payment_success');
+        navigation.navigate('payment');
         setZpTransId(data.transactionId || null);
       } else {
         alert('Payment failed! Return code: ' + data.returnCode);
