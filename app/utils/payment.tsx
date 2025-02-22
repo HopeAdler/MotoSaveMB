@@ -15,10 +15,10 @@ export interface PayZaloEventData {
 }
 
 interface RefundParams {
-  app_id: number;
-  m_refund_id: string;
-  zp_trans_id: string | null;
-  amount: number;
+  appid: number;
+  mrefundid: string;
+  zptransid: string | null;
+  amount: number | null;
   timestamp: number;
   description: string;
   mac?: string; // Optional initially, added later
@@ -118,9 +118,9 @@ function generateRandomString(length: number) {
 }
 
 async function refundTransaction(
-  zpTransId: string,
+  zpTransId: string | null,
   description: string,
-  money: number
+  money: number | null
 ) {
   const appid = 2553; // Application ID
   const key1 = "PcY4iZIKFCIdgZvA6ueMcMHHUbRLYjPL"; // HMAC Key
@@ -133,9 +133,9 @@ async function refundTransaction(
   const mRefundId = `${getCurrentDateYYMMDD()}_${appid}_${randomPart}`;
   // Prepare parameters
   const params: RefundParams = {
-    app_id: appid,
-    m_refund_id: mRefundId,
-    zp_trans_id: zpTransId, //transactionId from createOrder()
+    appid: appid,
+    mrefundid: mRefundId,
+    zptransid: zpTransId, //transactionId from createOrder()
     amount: money,
     timestamp: timestamp,
     description: description || "Refund transaction",

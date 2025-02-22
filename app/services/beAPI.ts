@@ -10,7 +10,7 @@ export interface RescueRequestPayload {
   totalprice: number;
 }
 
-export interface Transaction{
+export interface Transaction {
   requestdetailid: string;
   zptransid: string;
   totalamount: number | null;
@@ -39,7 +39,10 @@ export async function createRescueRequest(
   }
 }
 
-export async function createTransaction(payload: Transaction, token: string): Promise<any> {
+export async function createTransaction(
+  payload: Transaction,
+  token: string
+): Promise<any> {
   try {
     const response = await axios.post(
       "https://motor-save-be.vercel.app/api/v1/transactions",
@@ -53,6 +56,32 @@ export async function createTransaction(payload: Transaction, token: string): Pr
     return response.data;
   } catch (error) {
     console.error("Error creating transaction", error);
+    throw error;
+  }
+}
+
+export async function updateRequestStatus(
+  requestdetailid: string,
+  token: string,
+  status: string
+): Promise<any> {
+  try {
+    const response = await axios.put(
+      `https://motor-save-be.vercel.app/api/v1/requests/${requestdetailid}/status`,
+      { newStatus: status },
+      {
+        headers: {
+          Authorization: "Bearer " + token,
+        },
+      }
+    );
+    return response.data;
+  } catch (error: any) {
+    if (error.response) {
+      console.error("Error updating request status:", error.response.data);
+    } else {
+      console.error("Network or unknown error:", error.message);
+    }
     throw error;
   }
 }
@@ -74,6 +103,7 @@ const beAPI = {
   createRescueRequest,
   createTransaction,
   calculateFare,
+  updateRequestStatus,
 };
 
 export default beAPI;
