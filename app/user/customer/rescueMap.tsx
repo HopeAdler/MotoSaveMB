@@ -236,6 +236,7 @@ const RescueMapScreen = () => {
     ) {
       const originStr = `${originCoordinates.latitude},${originCoordinates.longitude}`;
       const destinationStr = `${destinationCoordinates.latitude},${destinationCoordinates.longitude}`;
+      console.log('Calculating direction..')
       getDirections(originStr, destinationStr)
         .then((data) => {
           if (data.routes && data.routes.length > 0) {
@@ -285,6 +286,7 @@ const RescueMapScreen = () => {
       calculateFare(distanceValue)
         .then((money: React.SetStateAction<number | null>) => {
           setFare(money);
+          console.log(money)
           setFareLoading(false);
         })
         .catch((error: any) => {
@@ -464,31 +466,33 @@ const RescueMapScreen = () => {
 
   //PUBNUB SERVICE
   const updateLocation = async (locationSubscription: any) => {
-    if ((await requestLocationPermission()) && userId) {
-      const location = await getCurrentLocation();
-      setCurrentLoc(location.coords);
-      setOriginCoordinates(location.coords);
-      publishLocation(
-        pubnub,
-        userId,
-        user,
-        location.coords.latitude,
-        location.coords.longitude
-      );
+    if (!(await requestLocationPermission()) || !userId) return;
 
-      // Subscribe to live location updates
-      locationSubscription = await watchLocation((position: any) => {
-        setCurrentLoc(position.coords);
-        publishLocation(
-          pubnub,
-          userId,
-          user,
-          position.coords.latitude,
-          position.coords.longitude
-        );
-      });
-      // console.log('Location updated')
-    }
+    const location = await getCurrentLocation();
+    if (!location?.coords) return;
+
+    const { latitude, longitude } = location.coords;
+
+    // Update current location
+    setCurrentLoc(location.coords);
+
+    // Only update origin if it's still {0,0}
+    setOriginCoordinates((prev) => {
+      if (prev.latitude === 0 && prev.longitude === 0) {
+        console.log("Origin reset", location.coords);
+        return location.coords;
+      }
+      return prev; // Keep the existing value
+    });
+
+    // Publish location to PubNub
+    publishLocation(pubnub, userId, user, latitude, longitude);
+
+    // Subscribe to live location updates
+    locationSubscription = await watchLocation((position: any) => {
+      setCurrentLoc(position.coords);
+      publishLocation(pubnub, userId, user, position.coords.latitude, position.coords.longitude);
+    });
   };
 
   useEffect(() => {
@@ -497,17 +501,18 @@ const RescueMapScreen = () => {
     // Initial call
     updateLocation(locationSubscription);
     // Set interval for 10s updates
-    setOriginCoordinates(currentLoc);
-    // const intervalId = setInterval(updateLocation, 10000);
-    // return () => {
-    //   clearInterval(intervalId);
-    //   if (locationSubscription) locationSubscription.remove(); // Cleanup
-    // };
+    // setOriginCoordinates(currentLoc);
+    const intervalId = setInterval(updateLocation, 10000);
+    return () => {
+      clearInterval(intervalId);
+      if (locationSubscription) locationSubscription.remove(); // Cleanup
+    };
   }, []);
 
   useEffect(() => {
     subscribeToChannel(pubnub, user, (msg: any) => {
       const data = msg.message;
+      console.log(data)
       setUsers((prev) => new Map(prev).set(msg.publisher, data));
     });
 
@@ -660,7 +665,7 @@ const RescueMapScreen = () => {
 
       {/* Actionsheet hiển thị thông tin chuyến đi & nút thanh toán */}
       {showActionsheet && (
-        <Actionsheet isOpen={true} onClose={() => {}}>
+        <Actionsheet isOpen={true} onClose={() => { }}>
           <ActionsheetContent className="bg-white rounded-t-xl">
             <Box className="p-4">
               <Text className="text-xl font-bold text-center">
