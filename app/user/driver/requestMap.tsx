@@ -24,9 +24,6 @@ import {
   ActionsheetSectionHeaderText,
 } from "@/components/ui/actionsheet";
 
-const { PUBNUB_PUBLISH_KEY } = process.env;
-const { PUBNUB_SUBSCRIBE_KEY } = process.env;
-
 type User = {
   uuid: string;
   username: string;
@@ -88,7 +85,7 @@ const RequestMap: React.FC = () => {
   //PUBNUB integration:
   const userId = decodedToken(token)?.id;
   const [users, setUsers] = useState(new Map<string, User>());
-  const pubnub = setupPubNub(PUBNUB_PUBLISH_KEY || "", PUBNUB_SUBSCRIBE_KEY || "", userId || "");
+  const pubnub = setupPubNub(userId || "");
   const [focusOnMe, setFocusOnMe] = useState<boolean>(false);
   const [hideUser, setHideUser] = useState<boolean>(false);
   //PUBNUB SERVICE
@@ -123,16 +120,35 @@ const RequestMap: React.FC = () => {
 
 
   useEffect(() => {
-    subscribeToChannel(pubnub, user, (msg: any) => {
-      const message = msg.message;
-      //Only take current driver
-      if (msg.publisher === userId)
-        setUsers((prev) => new Map(prev).set(msg.publisher, message));
-    });
+    subscribeToChannel(
+      pubnub,
+      user,
+      (msg: any) => {
+        // Only the driver
+        if (msg.publisher === userId) {
+          setUsers((prev) => new Map(prev).set(msg.publisher, msg.message));
+        }
+      },
+      (event: any) => {
+        // Handle presence events
+        console.log(event)
+        if (event.action === "leave" || event.action === "timeout") {
+          // Remove user when they disconnect
+          setUsers((prev) => {
+            const updated = new Map(prev);
+            updated.delete(event.uuid);
+            return updated;
+          });
+        }
+      }
+    );
 
-
-    return () => pubnub.unsubscribeAll();
+    return () => {
+      pubnub.unsubscribeAll();
+      pubnub.destroy(); // Ensure the client fully stops sending heartbeats
+    };
   }, []);
+
 
   useEffect(() => {
     hereNow(pubnub)
@@ -371,7 +387,7 @@ const RequestMap: React.FC = () => {
           className={`${changeButtonColor()} p-2 rounded`}
           size="lg"
           onPress={changeRequestStatus}
-          disabled={requestDetail?.requeststatus === 'Done'? true : false }
+          disabled={requestDetail?.requeststatus === 'Done' ? true : false}
         >
           <Text className="text-white text-center">
             {changeButtonTitle()}

@@ -39,7 +39,7 @@ import { PayZaloEventData, processPayment, refundTransaction } from "@/app/utils
 import { hereNow, publishLocation, setupPubNub, subscribeToChannel } from "@/app/utils/pubnubService";
 import { decodedToken } from "@/app/utils/utils";
 import MapViewComponent from "../../../components/custom/MapViewComponent";
-import { PUBNUB_PUBLISH_KEY, PUBNUB_SUBSCRIBE_KEY } from "../../constant/pubnub";
+// import { PUBNUB_PUBLISH_KEY, PUBNUB_SUBSCRIBE_KEY } from "../../constant/pubnub";
 
 const { MAPBOX_ACCESS_TOKEN } = process.env;
 MapboxGL.setAccessToken(`${MAPBOX_ACCESS_TOKEN}`);
@@ -361,35 +361,33 @@ const RescueMapScreen = () => {
 
   // --- PubNub Integration ---
   const [users, setUsers] = useState(new Map<string, User>());
-  const pubnub = setupPubNub(PUBNUB_PUBLISH_KEY || "", PUBNUB_SUBSCRIBE_KEY || "", userId || "");
+  const pubnub = setupPubNub(userId || "");
   const updateLocation = async (locationSubscription: any) => {
-    if (!(await requestLocationPermission()) || !userId) return;
+    if (await requestLocationPermission() && userId) {
 
-    const location = await getCurrentLocation();
-    if (!location?.coords) return;
+      const location = await getCurrentLocation();
 
-    const { latitude, longitude } = location.coords;
+      // Update current location
+      setCurrentLoc(location.coords);
 
-    // Update current location
-    setCurrentLoc(location.coords);
+      // Only update origin if it's still {0,0}
+      setOriginCoordinates((prev) => {
+        if (prev.latitude === 0 && prev.longitude === 0) {
+          console.log("Origin reset", location.coords);
+          return location.coords;
+        }
+        return prev; // Keep the existing value
+      });
 
-    // Only update origin if it's still {0,0}
-    setOriginCoordinates((prev) => {
-      if (prev.latitude === 0 && prev.longitude === 0) {
-        console.log("Origin reset", location.coords);
-        return location.coords;
-      }
-      return prev; // Keep the existing value
-    });
+      // Publish location to PubNub
+      publishLocation(pubnub, userId, user, location.coords.latitude, location.coords.longitude, hideUser);
 
-    // Publish location to PubNub
-    publishLocation(pubnub, userId, user, latitude, longitude, hideUser);
-
-    // Subscribe to live location updates
-    locationSubscription = await watchLocation((position: any) => {
-      setCurrentLoc(position.coords);
-      publishLocation(pubnub, userId, user, position.coords.latitude, position.coords.longitude, hideUser);
-    });
+      // Subscribe to live location updates
+      locationSubscription = await watchLocation((position: any) => {
+        setCurrentLoc(position.coords);
+        publishLocation(pubnub, userId, user, position.coords.latitude, position.coords.longitude, hideUser);
+      });
+    }
   };
 
   useEffect(() => {
@@ -403,18 +401,39 @@ const RescueMapScreen = () => {
   }, []);
 
   useEffect(() => {
-    subscribeToChannel(pubnub, user, (msg: any) => {
-      const message = msg.message;
-      if (message.isHidden === false && message.role === 'Driver')
-        setUsers((prev) => new Map(prev).set(msg.publisher, message));
-    });
-    return () => pubnub.unsubscribeAll();
+    subscribeToChannel(
+      pubnub,
+      user,
+      (msg: any) => {
+        const message = msg.message;
+        // Only the customer & all drivers
+        if (msg.publisher === userId || message.role === 'Driver') {
+          setUsers((prev) => new Map(prev).set(msg.publisher, msg.message));
+        }
+      },
+      (event: any) => {
+        // Handle presence events
+        console.log(event)
+        if (event.action === "leave" || event.action === "timeout") {
+          // Remove user when they disconnect
+          setUsers((prev) => {
+            const updated = new Map(prev);
+            updated.delete(event.uuid);
+            return updated;
+          });
+        }
+      }
+    );
+
+    return () => {
+      pubnub.unsubscribeAll();
+      pubnub.destroy(); // Ensure the client fully stops sending heartbeats
+    };
   }, []);
 
   useEffect(() => {
-    hereNow(pubnub);
-  }, [users]);
-
+    hereNow(pubnub)
+  }, [])
   return (
     <Box className="flex-1">
       {/* Input Container */}
