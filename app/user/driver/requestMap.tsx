@@ -33,8 +33,8 @@ type User = {
 };
 
 interface RequestDetail {
-  fullname: string;
-  phone: string;
+  customername: string;
+  customerphone: string;
   pickuplocation: string;
   destination: string;
   totalprice: number;
@@ -344,10 +344,10 @@ const RequestMap: React.FC = () => {
           ) : (
             <View className="space-y-2">
               <Text className="text-lg font-bold">
-                Full name: {requestDetail?.fullname}
+                Full name: {requestDetail?.customername}
               </Text>
               <Text className="text-gray-600">
-                📞 Phone: {requestDetail?.phone}
+                📞 Phone: {requestDetail?.customerphone}
               </Text>
               <Text className="text-gray-700">
                 📍 Xuất phát ở: {requestDetail?.pickuplocation}
