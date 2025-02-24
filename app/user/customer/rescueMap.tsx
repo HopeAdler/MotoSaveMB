@@ -405,7 +405,7 @@ const RescueMapScreen = () => {
   useEffect(() => {
     subscribeToChannel(pubnub, user, (msg: any) => {
       const message = msg.message;
-      if (message.isHidden === false)
+      if (message.isHidden === false && message.role === 'Driver')
         setUsers((prev) => new Map(prev).set(msg.publisher, message));
     });
     return () => pubnub.unsubscribeAll();
