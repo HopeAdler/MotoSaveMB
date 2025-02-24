@@ -179,7 +179,7 @@ const RequestMap: React.FC = () => {
       case "Processing":
         return "Trả khách";
       default:
-        return "";
+        return "Bạn đã trả khách rồi";
     }
   };
 
@@ -371,6 +371,7 @@ const RequestMap: React.FC = () => {
           className={`${changeButtonColor()} p-2 rounded`}
           size="lg"
           onPress={changeRequestStatus}
+          disabled={requestDetail?.requeststatus === 'Done'? true : false }
         >
           <Text className="text-white text-center">
             {changeButtonTitle()}

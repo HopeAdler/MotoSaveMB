@@ -38,7 +38,7 @@ const MapViewComponent: React.FC<MapViewComponentProps> = ({
   const loadMap = `https://tiles.goong.io/assets/goong_map_web.json?api_key=${GOONG_MAP_KEY}`;
   const mapRef = useRef<MapboxGL.MapView>(null);
   const cameraRef = useRef<MapboxGL.Camera>(null);
-
+  console.log(MAPBOX_ACCESS_TOKEN)
   const focusLoc = () => {
     setFocusOnMe(!focusOnMe);
     if (focusOnMe && cameraRef.current) {
