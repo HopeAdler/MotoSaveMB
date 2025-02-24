@@ -42,9 +42,6 @@ import MapViewComponent from "../../../components/custom/MapViewComponent";
 import { PUBNUB_PUBLISH_KEY, PUBNUB_SUBSCRIBE_KEY } from "../../constant/pubnub";
 
 const { MAPBOX_ACCESS_TOKEN } = process.env;
-// const { GOONG_MAP_KEY } = process.env;
-// const { PUBNUB_PUBLISH_KEY } = process.env;
-// const { PUBNUB_SUBSCRIBE_KEY } = process.env;
 MapboxGL.setAccessToken(`${MAPBOX_ACCESS_TOKEN}`);
 
 type User = {
@@ -58,11 +55,7 @@ type User = {
 const RescueMapScreen = () => {
   const { user, token } = useContext(AuthContext);
   const { PayZaloBridge } = NativeModules;
-  // const loadMap = `https://tiles.goong.io/assets/goong_map_web.json?api_key=${GOONG_MAP_KEY}`;
   const userId = decodedToken(token)?.id;
-
-  // Sử dụng hook lấy vị trí hiện tại
-  // const currentLoc = useLocationTracking();
 
   // Các state cho origin, destination, route, fare, countdown, tracking, …  
   const [currentLoc, setCurrentLoc] = useState({ latitude: 0, longitude: 0 });
@@ -94,6 +87,7 @@ const RescueMapScreen = () => {
     distance: "2.5 km",
     status: "arriving" as const,
   });
+  const [hideUser, setHideUser] = useState<boolean>(false);
   const [zpTransId, setZpTransId] = useState<string | null>(null);
 
   // Refs
@@ -101,20 +95,6 @@ const RescueMapScreen = () => {
 
   // Sử dụng hook zoom camera theo routeCoordinates
   useCameraZoom(camera, routeCoordinates);
-
-  // My Location button animation (vẫn dùng Reanimated tại đây)
-
-
-  // Center camera on current location
-  // const centerOnCurrentLocation = () => {
-  //   if (currentLoc && camera.current) {
-  //     camera.current.setCamera({
-  //       centerCoordinate: [currentLoc.longitude, currentLoc.latitude],
-  //       zoomLevel: 16,
-  //       animationDuration: 1000,
-  //     });
-  //   }
-  // };
 
   // --- Geocoding & Autocomplete ---
   useEffect(() => {
@@ -403,20 +383,18 @@ const RescueMapScreen = () => {
     });
 
     // Publish location to PubNub
-    publishLocation(pubnub, userId, user, latitude, longitude);
+    publishLocation(pubnub, userId, user, latitude, longitude, hideUser);
 
     // Subscribe to live location updates
     locationSubscription = await watchLocation((position: any) => {
       setCurrentLoc(position.coords);
-      publishLocation(pubnub, userId, user, position.coords.latitude, position.coords.longitude);
+      publishLocation(pubnub, userId, user, position.coords.latitude, position.coords.longitude, hideUser);
     });
   };
 
   useEffect(() => {
     let locationSubscription: any;
     updateLocation(locationSubscription);
-    // Set interval for 10s updates
-    // setOriginCoordinates(currentLoc);
     const intervalId = setInterval(updateLocation, 10000);
     return () => {
       clearInterval(intervalId);
@@ -426,9 +404,9 @@ const RescueMapScreen = () => {
 
   useEffect(() => {
     subscribeToChannel(pubnub, user, (msg: any) => {
-      const data = msg.message;
-      console.log(data)
-      setUsers((prev) => new Map(prev).set(msg.publisher, data));
+      const message = msg.message;
+      if (message.isHidden === false)
+        setUsers((prev) => new Map(prev).set(msg.publisher, message));
     });
     return () => pubnub.unsubscribeAll();
   }, []);

@@ -18,7 +18,7 @@ export const setupPubNub = (publishKey: string, subscribeKey: string, userId: st
   });
 };
 
-export const publishLocation = (pubnub: any, userId: string, user: User, latitude: number, longitude: number) => {
+export const publishLocation = (pubnub: any, userId: string, user: User, latitude: number, longitude: number, hideUser: boolean) => {
   pubnub.publish({
     channel: "global",
     message: {
@@ -26,7 +26,8 @@ export const publishLocation = (pubnub: any, userId: string, user: User, latitud
       username: user.username,
       role: user.role,
       latitude,
-      longitude
+      longitude,
+      isHidden: hideUser
     },
   });
 };
@@ -61,7 +62,7 @@ export const hereNow = (pubnub: any) => {
       includeState: true
     },
     function (status: any, response: any) {
-      console.log(response.channels.global.occupants);
+      // console.log(response.channels.global.occupants);
     }
   )
 }

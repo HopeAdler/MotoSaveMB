@@ -22,6 +22,7 @@ import {
   ActionsheetDragIndicatorWrapper,
   ActionsheetSectionHeaderText,
 } from "@/components/ui/actionsheet";
+import { Switch } from "react-native";
 
 const { PUBNUB_PUBLISH_KEY } = process.env;
 const { PUBNUB_SUBSCRIBE_KEY } = process.env;
@@ -90,19 +91,19 @@ const RequestMap: React.FC = () => {
   const userId = decodedToken(token)?.id;
   const [users, setUsers] = useState(new Map<string, User>());
   const pubnub = setupPubNub(PUBNUB_PUBLISH_KEY || "", PUBNUB_SUBSCRIBE_KEY || "", userId || "");
-  const [focusOnMe, setFocusOnMe] = useState(false);
-
+  const [focusOnMe, setFocusOnMe] = useState<boolean>(false);
+  const [hideUser, setHideUser] = useState<boolean>(false);
   //PUBNUB SERVICE
   const updateLocation = async (locationSubscription: any) => {
     if (await requestLocationPermission() && userId) {
       const location = await getCurrentLocation();
       setCurrentLoc(location.coords);
-      publishLocation(pubnub, userId, user, location.coords.latitude, location.coords.longitude);
+      publishLocation(pubnub, userId, user, location.coords.latitude, location.coords.longitude, hideUser);
 
       // Subscribe to live location updates
       locationSubscription = await watchLocation((position: any) => {
         setCurrentLoc(position.coords);
-        publishLocation(pubnub, userId, user, position.coords.latitude, position.coords.longitude);
+        publishLocation(pubnub, userId, user, position.coords.latitude, position.coords.longitude, hideUser);
       });
       console.log('Location updated')
     }
@@ -125,10 +126,10 @@ const RequestMap: React.FC = () => {
 
   useEffect(() => {
     subscribeToChannel(pubnub, user, (msg: any) => {
-      const data = msg.message;
+      const message = msg.message;
       //Only take current user
-      if (msg.publisher === userId)
-        setUsers((prev) => new Map(prev).set(msg.publisher, data));
+      if (msg.publisher === userId && message.isHidden === false)
+        setUsers((prev) => new Map(prev).set(msg.publisher, message));
     });
 
 
@@ -284,6 +285,15 @@ const RequestMap: React.FC = () => {
   return (
     <Box className="flex-1">
       <MapViewComponent users={users} currentLoc={focusOnMe ? currentLoc : originCoordinates} focusMode={[focusOnMe, setFocusOnMe]} isActionSheetOpen={isActionSheetOpen}>
+        {/* <View className="top-[25%] flex-row justify-between items-center mx-[2%]">
+          <View className="flex-row justify-end items-center">
+            <Switch
+              value={hideUser}
+              className="absolute left-[300px]"
+              onValueChange={() => setHideUser(!hideUser)}
+            />
+          </View>
+        </View> */}
         {originCoordinates && (
           <MapboxGL.PointAnnotation id="ori-marker" coordinate={[originCoordinates.longitude, originCoordinates.latitude]}>
             <MapboxGL.Callout title="Origin" />
