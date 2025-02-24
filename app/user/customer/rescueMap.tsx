@@ -78,15 +78,6 @@ const RescueMapScreen = () => {
   const [requestDetailId, setRequestDetailId] = useState<string | null>(null);
   const [showTracking, setShowTracking] = useState(false);
   const [countdown, setCountdown] = useState(10);
-  const [driverInfo, setDriverInfo] = useState({
-
-    name: "SickMaDuck Driver",
-    avatar: "https://pbs.twimg.com/media/GEXDdESbIAAd5Qt?format=jpg&name=large",
-    vehicleInfo: "Honda Wave - 69K1-696969",
-    eta: "10 mins",
-    distance: "2.5 km",
-    status: "arriving" as const,
-  });
   const [hideUser, setHideUser] = useState<boolean>(false);
   const [zpTransId, setZpTransId] = useState<string | null>(null);
 
@@ -547,12 +538,9 @@ const RescueMapScreen = () => {
         <TrackingActionSheet
           isOpen={showTracking}
           onClose={() => setShowTracking(false)}
-          driverName={driverInfo.name}
-          driverAvatar={driverInfo.avatar}
-          vehicleInfo={driverInfo.vehicleInfo}
-          eta={driverInfo.eta}
-          distance={driverInfo.distance}
-          status={driverInfo.status}
+          requestdetailid={requestDetailId}
+          eta={directionsInfo?.distance?.text}
+          distance={directionsInfo?.duration?.text}
         />
       )}
 

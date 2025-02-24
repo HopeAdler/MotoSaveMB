@@ -46,7 +46,7 @@ export default function DRequestScreen() {
 
     const interval = setInterval(() => {
       fetchRequests();
-    }, 20000); // Fetch every 20 seconds
+    }, 5000); // Fetch every 20 seconds
 
     return () => clearInterval(interval); // Cleanup on unmount
   }, []);
