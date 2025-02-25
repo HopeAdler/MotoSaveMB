@@ -39,12 +39,9 @@ import { PayZaloEventData, processPayment, refundTransaction } from "@/app/utils
 import { hereNow, publishLocation, setupPubNub, subscribeToChannel } from "@/app/utils/pubnubService";
 import { decodedToken } from "@/app/utils/utils";
 import MapViewComponent from "../../../components/custom/MapViewComponent";
-import { PUBNUB_PUBLISH_KEY, PUBNUB_SUBSCRIBE_KEY } from "../../constant/pubnub";
+// import { PUBNUB_PUBLISH_KEY, PUBNUB_SUBSCRIBE_KEY } from "../../constant/pubnub";
 
 const { MAPBOX_ACCESS_TOKEN } = process.env;
-// const { GOONG_MAP_KEY } = process.env;
-// const { PUBNUB_PUBLISH_KEY } = process.env;
-// const { PUBNUB_SUBSCRIBE_KEY } = process.env;
 MapboxGL.setAccessToken(`${MAPBOX_ACCESS_TOKEN}`);
 
 type User = {
@@ -58,11 +55,7 @@ type User = {
 const RescueMapScreen = () => {
   const { user, token } = useContext(AuthContext);
   const { PayZaloBridge } = NativeModules;
-  // const loadMap = `https://tiles.goong.io/assets/goong_map_web.json?api_key=${GOONG_MAP_KEY}`;
   const userId = decodedToken(token)?.id;
-
-  // Sử dụng hook lấy vị trí hiện tại
-  // const currentLoc = useLocationTracking();
 
   // Các state cho origin, destination, route, fare, countdown, tracking, …  
   const [currentLoc, setCurrentLoc] = useState({ latitude: 0, longitude: 0 });
@@ -85,15 +78,7 @@ const RescueMapScreen = () => {
   const [requestDetailId, setRequestDetailId] = useState<string | null>(null);
   const [showTracking, setShowTracking] = useState(false);
   const [countdown, setCountdown] = useState(10);
-  const [driverInfo, setDriverInfo] = useState({
-
-    name: "SickMaDuck Driver",
-    avatar: "https://pbs.twimg.com/media/GEXDdESbIAAd5Qt?format=jpg&name=large",
-    vehicleInfo: "Honda Wave - 69K1-696969",
-    eta: "10 mins",
-    distance: "2.5 km",
-    status: "arriving" as const,
-  });
+  const [hideUser, setHideUser] = useState<boolean>(false);
   const [zpTransId, setZpTransId] = useState<string | null>(null);
 
   // Refs
@@ -101,20 +86,6 @@ const RescueMapScreen = () => {
 
   // Sử dụng hook zoom camera theo routeCoordinates
   useCameraZoom(camera, routeCoordinates);
-
-  // My Location button animation (vẫn dùng Reanimated tại đây)
-
-
-  // Center camera on current location
-  // const centerOnCurrentLocation = () => {
-  //   if (currentLoc && camera.current) {
-  //     camera.current.setCamera({
-  //       centerCoordinate: [currentLoc.longitude, currentLoc.latitude],
-  //       zoomLevel: 16,
-  //       animationDuration: 1000,
-  //     });
-  //   }
-  // };
 
   // --- Geocoding & Autocomplete ---
   useEffect(() => {
@@ -381,42 +352,38 @@ const RescueMapScreen = () => {
 
   // --- PubNub Integration ---
   const [users, setUsers] = useState(new Map<string, User>());
-  const pubnub = setupPubNub(PUBNUB_PUBLISH_KEY || "", PUBNUB_SUBSCRIBE_KEY || "", userId || "");
+  const pubnub = setupPubNub(userId || "");
   const updateLocation = async (locationSubscription: any) => {
-    if (!(await requestLocationPermission()) || !userId) return;
+    if (await requestLocationPermission() && userId) {
 
-    const location = await getCurrentLocation();
-    if (!location?.coords) return;
+      const location = await getCurrentLocation();
 
-    const { latitude, longitude } = location.coords;
+      // Update current location
+      setCurrentLoc(location.coords);
 
-    // Update current location
-    setCurrentLoc(location.coords);
+      // Only update origin if it's still {0,0}
+      setOriginCoordinates((prev) => {
+        if (prev.latitude === 0 && prev.longitude === 0) {
+          console.log("Origin reset", location.coords);
+          return location.coords;
+        }
+        return prev; // Keep the existing value
+      });
 
-    // Only update origin if it's still {0,0}
-    setOriginCoordinates((prev) => {
-      if (prev.latitude === 0 && prev.longitude === 0) {
-        console.log("Origin reset", location.coords);
-        return location.coords;
-      }
-      return prev; // Keep the existing value
-    });
+      // Publish location to PubNub
+      publishLocation(pubnub, userId, user, location.coords.latitude, location.coords.longitude, hideUser);
 
-    // Publish location to PubNub
-    publishLocation(pubnub, userId, user, latitude, longitude);
-
-    // Subscribe to live location updates
-    locationSubscription = await watchLocation((position: any) => {
-      setCurrentLoc(position.coords);
-      publishLocation(pubnub, userId, user, position.coords.latitude, position.coords.longitude);
-    });
+      // Subscribe to live location updates
+      locationSubscription = await watchLocation((position: any) => {
+        setCurrentLoc(position.coords);
+        publishLocation(pubnub, userId, user, position.coords.latitude, position.coords.longitude, hideUser);
+      });
+    }
   };
 
   useEffect(() => {
     let locationSubscription: any;
     updateLocation(locationSubscription);
-    // Set interval for 10s updates
-    // setOriginCoordinates(currentLoc);
     const intervalId = setInterval(updateLocation, 10000);
     return () => {
       clearInterval(intervalId);
@@ -425,18 +392,39 @@ const RescueMapScreen = () => {
   }, []);
 
   useEffect(() => {
-    subscribeToChannel(pubnub, user, (msg: any) => {
-      const data = msg.message;
-      console.log(data)
-      setUsers((prev) => new Map(prev).set(msg.publisher, data));
-    });
-    return () => pubnub.unsubscribeAll();
+    subscribeToChannel(
+      pubnub,
+      user,
+      (msg: any) => {
+        const message = msg.message;
+        // Only the customer & all drivers
+        if (msg.publisher === userId || message.role === 'Driver') {
+          setUsers((prev) => new Map(prev).set(msg.publisher, msg.message));
+        }
+      },
+      (event: any) => {
+        // Handle presence events
+        console.log(event)
+        if (event.action === "leave" || event.action === "timeout") {
+          // Remove user when they disconnect
+          setUsers((prev) => {
+            const updated = new Map(prev);
+            updated.delete(event.uuid);
+            return updated;
+          });
+        }
+      }
+    );
+
+    return () => {
+      pubnub.unsubscribeAll();
+      pubnub.destroy(); // Ensure the client fully stops sending heartbeats
+    };
   }, []);
 
   useEffect(() => {
-    hereNow(pubnub);
-  }, [users]);
-
+    hereNow(pubnub)
+  }, [])
   return (
     <Box className="flex-1">
       {/* Input Container */}
@@ -550,12 +538,9 @@ const RescueMapScreen = () => {
         <TrackingActionSheet
           isOpen={showTracking}
           onClose={() => setShowTracking(false)}
-          driverName={driverInfo.name}
-          driverAvatar={driverInfo.avatar}
-          vehicleInfo={driverInfo.vehicleInfo}
-          eta={driverInfo.eta}
-          distance={driverInfo.distance}
-          status={driverInfo.status}
+          requestdetailid={requestDetailId}
+          eta={directionsInfo?.distance?.text}
+          distance={directionsInfo?.duration?.text}
         />
       )}
 

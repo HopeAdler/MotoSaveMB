@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { Avatar } from "react-native-elements";
 import { Box } from "@/components/ui/box";
 import { Text } from "@/components/ui/text";
@@ -18,50 +18,97 @@ import {
   Navigation2,
   CheckCircle2,
 } from "lucide-react-native";
+import axios from "axios";
+import AuthContext from "@/app/context/AuthContext";
 
 interface TrackingActionSheetProps {
   isOpen: boolean;
   onClose: () => void;
-  driverName: string;
-  driverAvatar: string;
-  vehicleInfo: string;
+  requestdetailid: string | null;
   eta: string;
-  distance: string;
-  status: "finding" | "arriving" | "started" | "completed";
+  distance: string
+}
+interface RequestDetail {
+  fullname: string;
+  phone: string;
+  pickuplocation: string;
+  destination: string;
+  totalprice: number;
+  requeststatus: string;
+  drivername: string;
+  driverphone: string;
+  licenseplate: string;
+  brandname: string;
+  vehicletype: string;
+  vehiclestatus: string;
 }
 
 const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
   isOpen,
   onClose,
-  driverName,
-  driverAvatar,
-  vehicleInfo,
+  requestdetailid,
   eta,
   distance,
-  status,
 }) => {
+  const { token } = useContext(AuthContext);
+  const [requestDetail, setRequestDetail] = useState<RequestDetail | null>(
+    null
+  );
+  const [loading, setLoading] = useState<boolean>(true);
+  // console.log("Request detail id: " + requestdetailid)
+
+  const fetchRequestDetail = async () => {
+    try {
+      const response = await axios.get<RequestDetail>(
+        `https://motor-save-be.vercel.app/api/v1/requests/driver/${requestdetailid}`,
+        { headers: { Authorization: "Bearer " + token } }
+      );
+      setRequestDetail(response.data);
+    } catch (error) {
+      console.error("Error fetching request details:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  // Fetch requests every 10 seconds
+  useEffect(() => {
+    fetchRequestDetail(); // Initial fetch
+
+    const interval = setInterval(() => {
+      fetchRequestDetail();
+    }, 5000); // Fetch every 10 seconds
+
+    return () => clearInterval(interval); // Cleanup on unmount
+  }, []);
+
   const getStatusColor = () => {
-    switch (status) {
-      case "finding":
+    switch (requestDetail?.requeststatus) {
+      case "Pending":
+        return "bg-orange-500";
+      case "Accepted":
         return "bg-blue-500";
-      case "arriving":
+      case "Pickup":
         return "bg-yellow-500";
-      case "started":
+      case "Processing":
         return "bg-green-500";
-      case "completed":
+      case "Done":
         return "bg-gray-500";
+      default:
+        return "bg-gray-200";
     }
   };
 
   const renderProgressSteps = () => {
     const steps = [
-      { title: "Finding Driver", status: "finding" },
-      { title: "Driver Arriving", status: "arriving" },
-      { title: "On Rescue Mission", status: "started" },
-      { title: "Completed", status: "completed" },
+      { title: "Driver Accepted", status: "Accepted" },
+      { title: "Driver Arriving", status: "Pickup" },
+      { title: "On Rescue Mission", status: "Processing" },
+      { title: "Completed", status: "Done" },
     ];
 
-    const currentStepIndex = steps.findIndex((step) => step.status === status);
+    const currentStepIndex = steps.findIndex(
+      (step) => step.status === requestDetail?.requeststatus
+    );
 
     return (
       <Box className="mt-6">
@@ -105,7 +152,7 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
     <Actionsheet
       isOpen={isOpen}
       onClose={onClose}
-      snapPoints={[60]}
+      snapPoints={[65]}
       closeOnOverlayClick={true}
       isKeyboardDismissable={true}
     >
@@ -118,13 +165,15 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
         {/* Status Bar */}
         <Box className={`${getStatusColor()} px-6 py-3 w-full`}>
           <Text className="text-white text-lg font-semibold text-center">
-            {status === "finding"
-              ? "Finding your driver..."
-              : status === "arriving"
-                ? "Driver is on the way"
-                : status === "started"
-                  ? "On rescue mission"
-                  : "Completed"}
+            {requestDetail?.requeststatus === "Pending"
+              ? "Tracking driver in progress..."
+              : requestDetail?.requeststatus === "Accepted"
+                ? "Driver accepted your request"
+                : requestDetail?.requeststatus === "Pickup"
+                  ? "Driver is on the way"
+                  : requestDetail?.requeststatus === "Processing"
+                    ? "On rescue mission"
+                    : "Completed"}
           </Text>
         </Box>
 
@@ -135,12 +184,18 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
             <Avatar
               size={80}
               rounded
-              source={{ uri: driverAvatar }}
+              source={{
+                uri: "https://pbs.twimg.com/media/GEXDdESbIAAd5Qt?format=jpg&name=large",
+              }}
               containerStyle={{ borderWidth: 2, borderColor: "#f2f2f2" }}
             />
             <Box className="ml-4 flex-1">
-              <Text className="text-xl font-bold">{driverName}</Text>
-              <Text className="text-gray-600 mt-1">{vehicleInfo}</Text>
+              <Text className="text-xl font-bold">
+                {requestDetail?.drivername || "Awaiting Driver"}
+              </Text>
+              <Text className="text-gray-600 mt-1">
+                {requestDetail?.brandname} {requestDetail?.licenseplate}
+              </Text>
             </Box>
           </Box>
 
@@ -150,7 +205,7 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
               <Box className="items-center flex-1 border-r border-gray-200">
                 <Box className="flex-row items-center">
                   <Clock size={20} color="#4B5563" />
-                  <Text className="text-gray-600 ml-2">Arrival in</Text>
+                  <Text className="text-gray-600 ml-2">Time</Text>
                 </Box>
                 <Text className="text-xl font-bold mt-1">{eta}</Text>
               </Box>
@@ -165,7 +220,7 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
           </Box>
 
           {/* Progress Steps */}
-          {renderProgressSteps()}
+          {requestDetail?.requeststatus !== "Pending" && renderProgressSteps()}
 
           {/* Action Buttons */}
           <Box className="flex-row justify-between w-full mt-6">
