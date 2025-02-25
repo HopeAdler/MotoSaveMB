@@ -16,9 +16,10 @@ export const useCameraZoom = (
       };
       cameraRef.current.setCamera({
         bounds,
-        zoomLevel: 16,
+        zoomLevel: 14, padding: {paddingTop: 200, paddingBottom:350, paddingLeft: 20, paddingRight: 20},
         animationDuration: 1000,
       });
+      // cameraRef.current.zoomTo(16);
     }
   }, [routeCoordinates, cameraRef]);
 };
