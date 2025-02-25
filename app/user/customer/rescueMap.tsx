@@ -6,7 +6,7 @@ import { Pressable } from "@/components/ui/pressable";
 import { Text } from "@/components/ui/text";
 import MapboxGL from "@rnmapbox/maps";
 import { router } from "expo-router";
-import { CircleChevronDown, LocateFixed } from "lucide-react-native";
+import { CircleChevronDown, LocateFixed, ChevronLeft } from "lucide-react-native";
 import React, { useContext, useEffect, useRef, useState } from "react";
 import { FlatList, NativeEventEmitter, NativeModules, View } from "react-native";
 // Import context, services, utils, custom hooks, components
@@ -475,10 +475,22 @@ const RescueMapScreen = () => {
   }, [])
   return (
     <Box className="flex-1">
-      {/* Input Container */}
-      <Box className="absolute top-0 left-0 w-full z-10 p-4">
+      <Box className="absolute top-4 left-4 z-20">
+        <Pressable 
+          onPress={() => router.navigate("/user/customer/servicePackage")}
+          className="w-10 h-10 bg-white rounded-full items-center justify-center shadow-sm"
+        >
+          <ChevronLeft size={24} color="#374151" />
+        </Pressable>
+      </Box>
+
+      <Box className="absolute top-0 left-0 w-full z-10 p-4 pt-16">
         <Input variant="outline" size="md" className="bg-white">
-          <InputField placeholder="Search origin" value={originQuery} onChangeText={handleOriginChange} />
+          <InputField 
+            placeholder="Search origin" 
+            value={originQuery} 
+            onChangeText={handleOriginChange} 
+          />
         </Input>
         {originResults.length > 0 && !originSelected && (
           <FlatList
