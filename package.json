@@ -55,6 +55,7 @@
     "expo-symbols": "~0.2.0",
     "expo-system-ui": "~4.0.6",
     "expo-web-browser": "~14.0.1",
+    "geolib": "^3.3.4",
     "gluestack-ui": "^0.7.20",
     "jwt-decode": "^4.0.0",
     "lucide-react-native": "^0.471.0",
