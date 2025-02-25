@@ -23,7 +23,7 @@ export const setupPubNub = (userId: string) => {
   });
 };
 
-export const publishLocation = (pubnub: any, userId: string, user: User, latitude: number, longitude: number, hideUser: boolean) => {
+export const publishLocation = (pubnub: any, userId: string, user: User, latitude: number, longitude: number) => {
   pubnub.publish({
     channel: "global",
     message: {
@@ -32,7 +32,6 @@ export const publishLocation = (pubnub: any, userId: string, user: User, latitud
       role: user.role,
       latitude,
       longitude,
-      isHidden: hideUser
     },
   });
 };
