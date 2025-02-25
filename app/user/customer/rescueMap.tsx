@@ -6,7 +6,7 @@ import { Pressable } from "@/components/ui/pressable";
 import { Text } from "@/components/ui/text";
 import MapboxGL from "@rnmapbox/maps";
 import { router } from "expo-router";
-import { CircleChevronDown, LocateFixed, ChevronLeft } from "lucide-react-native";
+import { CircleChevronDown, LocateFixed, ChevronLeft, ChevronUp } from "lucide-react-native";
 import React, { useContext, useEffect, useRef, useState } from "react";
 import { FlatList, NativeEventEmitter, NativeModules, View } from "react-native";
 // Import context, services, utils, custom hooks, components
@@ -199,14 +199,13 @@ const RescueMapScreen = () => {
   }, [originCoordinates, destinationCoordinates, originSelected, destinationSelected]);
 
   useEffect(() => {
-    if (directionsInfo) {
-      setShowActionsheet(true);
+    if (directionsInfo && !showActionsheet) {
       const distanceValue = directionsInfo.distance?.value || 0;
       setFareLoading(true);
       calculateFare(distanceValue)
         .then((money) => {
           setFare(money);
-          // console.log(money);
+          setShowActionsheet(true); // Set to true after fare calculation
           setFareLoading(false);
         })
         .catch((error) => {
@@ -215,6 +214,13 @@ const RescueMapScreen = () => {
         });
     }
   }, [directionsInfo]);
+
+  // Add a function to handle reopening the ActionSheet
+  const handleReopenActionSheet = () => {
+    if (directionsInfo && fare) {
+      setShowActionsheet(true);
+    }
+  };
 
   // --- Payment & Request ---
   const handleCreateRequest = async () => {
@@ -566,6 +572,7 @@ const RescueMapScreen = () => {
       {showActionsheet && (
         <TripDetailsActionSheet
           isOpen={showActionsheet}
+          onClose={() => setShowActionsheet(false)}  // Add onClose handler
           onPayment={paymentMethod === "Tiền mặt" ? handleFindDriver : handlePayment}
           fare={fare}
           fareLoading={fareLoading}
@@ -607,6 +614,15 @@ const RescueMapScreen = () => {
       <View className="absolute top-[15%] flex flex-col items-end w-full px-[5%] z-20">
         <Text>Số người online: {users.size}</Text>
       </View>
+
+      {!showActionsheet && directionsInfo && (
+        <Pressable
+          onPress={handleReopenActionSheet}
+          className="absolute bottom-20 right-2 w-10 h-10 bg-white rounded-full items-center justify-center shadow-sm"
+        >
+          <ChevronUp size={24} color="#3B82F6" />
+        </Pressable>
+      )}
     </Box>
   );
 };
