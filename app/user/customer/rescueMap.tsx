@@ -117,11 +117,14 @@ const RescueMapScreen = () => {
         setDestinationResults([]);
         setDestinationSelected(true);
       }
-      camera.current?.setCamera({
-        centerCoordinate: [lng, lat],
-        zoomLevel: 16,
-        animationDuration: 1000,
-      });
+
+      // camera.current?.setCamera({
+      //   centerCoordinate: [lng, lat],
+      //   // zoomLevel: 0,
+      //   animationDuration: 1000,
+      // });
+      camera.current?.flyTo([lng, lat,1000]) // eases camera to new location based on duration
+      // camera.moveTo([lng, lat]) // snaps camera to new location without any easing
     }
   };
 
@@ -476,7 +479,7 @@ const RescueMapScreen = () => {
   return (
     <Box className="flex-1">
       <Box className="absolute top-4 left-4 z-20">
-        <Pressable 
+        <Pressable
           onPress={() => router.navigate("/user/customer/servicePackage")}
           className="w-10 h-10 bg-white rounded-full items-center justify-center shadow-sm"
         >
@@ -486,10 +489,10 @@ const RescueMapScreen = () => {
 
       <Box className="absolute top-0 left-0 w-full z-10 p-4 pt-16">
         <Input variant="outline" size="md" className="bg-white">
-          <InputField 
-            placeholder="Search origin" 
-            value={originQuery} 
-            onChangeText={handleOriginChange} 
+          <InputField
+            placeholder="Search origin"
+            value={originQuery}
+            onChangeText={handleOriginChange}
           />
         </Input>
         {originResults.length > 0 && !originSelected && (
@@ -527,7 +530,7 @@ const RescueMapScreen = () => {
       <Box className="flex-1">
         <MapViewComponent users={users} currentLoc={currentLoc} isActionSheetOpen={showActionsheet} focusMode={[true, () => { }]}>
           {originCoordinates.latitude !== 0 && (
-            <MapboxGL.Camera ref={camera} zoomLevel={12} centerCoordinate={[originCoordinates.longitude, originCoordinates.latitude]} />
+            <MapboxGL.Camera ref={camera} centerCoordinate={[originCoordinates.longitude, originCoordinates.latitude]} />
           )}
           {currentLoc.latitude !== 0 && (
             <MapboxGL.PointAnnotation id="current-location" coordinate={[currentLoc.longitude, currentLoc.latitude]}>
