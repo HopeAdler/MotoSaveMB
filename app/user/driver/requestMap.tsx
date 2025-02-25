@@ -9,6 +9,7 @@ import React, { useContext, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, TouchableOpacity, View } from "react-native";
 import Icon from "react-native-vector-icons/Feather";
 // Import the ActionSheet components from gluestack-ui
+import { updateRequestStatus } from "@/app/services/beAPI";
 import { getDirections } from "@/app/services/goongAPI";
 import { getCurrentLocation, requestLocationPermission, watchLocation } from "@/app/utils/locationService";
 import { hereNow, publishLocation, setupPubNub, subscribeToChannel } from "@/app/utils/pubnubService";
@@ -23,9 +24,6 @@ import {
   ActionsheetSectionHeaderText,
 } from "@/components/ui/actionsheet";
 
-const { PUBNUB_PUBLISH_KEY } = process.env;
-const { PUBNUB_SUBSCRIBE_KEY } = process.env;
-
 type User = {
   uuid: string;
   username: string;
@@ -35,8 +33,8 @@ type User = {
 };
 
 interface RequestDetail {
-  fullname: string;
-  phone: string;
+  customername: string;
+  customerphone: string;
   pickuplocation: string;
   destination: string;
   totalprice: number;
@@ -44,14 +42,13 @@ interface RequestDetail {
   pickuplat: number;
   deslng: number;
   deslat: number;
+  requeststatus: string;
 }
 
 interface DirectionsLeg {
   distance: { text: string };
   duration: { text: string };
 }
-
-type ProgressState = "Accepted" | "Picking Up" | "Processing" | "Done";
 
 interface CameraOptions {
   centerCoordinate?: [number, number];
@@ -80,7 +77,6 @@ const RequestMap: React.FC = () => {
 
   const [routeCoordinates, setRouteCoordinates] = useState<[number, number][]>([]);
   const [directionsInfo, setDirectionsInfo] = useState<DirectionsLeg | null>(null);
-  const [progress, setProgress] = useState<ProgressState>("Accepted");
   // State to control the open/close state of the ActionSheet.
   const [isActionSheetOpen, setIsActionSheetOpen] = useState<boolean>(true);
 
@@ -89,20 +85,20 @@ const RequestMap: React.FC = () => {
   //PUBNUB integration:
   const userId = decodedToken(token)?.id;
   const [users, setUsers] = useState(new Map<string, User>());
-  const pubnub = setupPubNub(PUBNUB_PUBLISH_KEY || "", PUBNUB_SUBSCRIBE_KEY || "", userId || "");
-  const [focusOnMe, setFocusOnMe] = useState(false);
-
+  const pubnub = setupPubNub(userId || "");
+  const [focusOnMe, setFocusOnMe] = useState<boolean>(false);
+  const [hideUser, setHideUser] = useState<boolean>(false);
   //PUBNUB SERVICE
   const updateLocation = async (locationSubscription: any) => {
     if (await requestLocationPermission() && userId) {
       const location = await getCurrentLocation();
       setCurrentLoc(location.coords);
-      publishLocation(pubnub, userId, user, location.coords.latitude, location.coords.longitude);
+      publishLocation(pubnub, userId, user, location.coords.latitude, location.coords.longitude, hideUser);
 
       // Subscribe to live location updates
       locationSubscription = await watchLocation((position: any) => {
         setCurrentLoc(position.coords);
-        publishLocation(pubnub, userId, user, position.coords.latitude, position.coords.longitude);
+        publishLocation(pubnub, userId, user, position.coords.latitude, position.coords.longitude, hideUser);
       });
       console.log('Location updated')
     }
@@ -124,46 +120,64 @@ const RequestMap: React.FC = () => {
 
 
   useEffect(() => {
-    subscribeToChannel(pubnub, user, (msg: any) => {
-      const data = msg.message;
-      //Only take current user
-      if (msg.publisher === userId)
-        setUsers((prev) => new Map(prev).set(msg.publisher, data));
-    });
+    subscribeToChannel(
+      pubnub,
+      user,
+      (msg: any) => {
+        // Only the driver
+        if (msg.publisher === userId) {
+          setUsers((prev) => new Map(prev).set(msg.publisher, msg.message));
+        }
+      },
+      (event: any) => {
+        // Handle presence events
+        console.log(event)
+        if (event.action === "leave" || event.action === "timeout") {
+          // Remove user when they disconnect
+          setUsers((prev) => {
+            const updated = new Map(prev);
+            updated.delete(event.uuid);
+            return updated;
+          });
+        }
+      }
+    );
 
-
-    return () => pubnub.unsubscribeAll();
+    return () => {
+      pubnub.unsubscribeAll();
+      pubnub.destroy(); // Ensure the client fully stops sending heartbeats
+    };
   }, []);
+
 
   useEffect(() => {
     hereNow(pubnub)
   }, [])
 
-  const changeProgressState = () => {
-    switch (progress) {
+  const changeRequestStatus = async () => {
+    let newStatus = "";
+    switch (requestDetail?.requeststatus) {
       case "Accepted":
-        setProgress("Picking Up");
+        newStatus = "Pickup";
         break;
-      case "Picking Up":
-        setProgress("Processing");
+      case "Pickup":
+        newStatus = "Processing";
         break;
       case "Processing":
-        setProgress("Done");
+        newStatus = "Done";
         break;
       default:
         break;
     }
-  };
-
-  const resetProgress = () => {
-    setProgress("Accepted");
+    const result = await updateRequestStatus(requestdetailid, token, newStatus);
+    fetchRequestDetail();
   };
 
   const changeButtonColor = (): string => {
-    switch (progress) {
+    switch (requestDetail?.requeststatus) {
       case "Accepted":
         return "bg-yellow-500";
-      case "Picking Up":
+      case "Pickup":
         return "bg-blue-500";
       case "Processing":
         return "bg-green-500";
@@ -173,45 +187,40 @@ const RequestMap: React.FC = () => {
   };
 
   const changeButtonTitle = (): string => {
-    switch (progress) {
+    switch (requestDetail?.requeststatus) {
       case "Accepted":
         return "Đi đến điểm đón";
-      case "Picking Up":
+      case "Pickup":
         return "Tiến hành chở khách";
       case "Processing":
         return "Trả khách";
       default:
-        return "";
+        return "Bạn đã trả khách rồi";
     }
   };
 
+  const fetchRequestDetail = async () => {
+    try {
+      const response = await axios.get<RequestDetail>(
+        `https://motor-save-be.vercel.app/api/v1/requests/driver/${requestdetailid}`,
+        { headers: { Authorization: "Bearer " + token } }
+      );
+      setRequestDetail(response.data);
+      setOriginCoordinates({
+        latitude: response.data.pickuplat,
+        longitude: response.data.pickuplong,
+      });
+      setDestinationCoordinates({
+        latitude: response.data.deslat,
+        longitude: response.data.deslng,
+      });
+    } catch (error) {
+      console.error("Error fetching request details:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
   useEffect(() => {
-    console.log(progress);
-  }, [progress]);
-
-  useEffect(() => {
-    const fetchRequestDetail = async () => {
-      try {
-        const response = await axios.get<RequestDetail>(
-          `https://motor-save-be.vercel.app/api/v1/requests/driver/${requestdetailid}`,
-          { headers: { Authorization: "Bearer " + token } }
-        );
-        setRequestDetail(response.data);
-        setOriginCoordinates({
-          latitude: response.data.pickuplat,
-          longitude: response.data.pickuplong,
-        });
-        setDestinationCoordinates({
-          latitude: response.data.deslat,
-          longitude: response.data.deslng,
-        });
-      } catch (error) {
-        console.error("Error fetching request details:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchRequestDetail();
   }, [requestdetailid, token]);
 
@@ -224,12 +233,12 @@ const RequestMap: React.FC = () => {
     let startStr = "";
     let endStr = "";
 
-    switch (progress) {
+    switch (requestDetail?.requeststatus) {
       case "Accepted":
         startStr = originStr;
         endStr = destinationStr;
         break; // ✅ Use break instead of return
-      case "Picking Up":
+      case "Pickup":
         startStr = currentLocStr;
         endStr = originStr;
         break; // ✅ Use break instead of return
@@ -238,7 +247,7 @@ const RequestMap: React.FC = () => {
         endStr = destinationStr;
         break; // ✅ Use break instead of return
       default:
-        console.warn("Unknown progress state:", progress);
+        console.warn("Unknown status:", requestDetail?.requeststatus);
         return; // Keep return only if progress is unknown
     }
 
@@ -263,7 +272,7 @@ const RequestMap: React.FC = () => {
 
   useEffect(() => {
     fetchRoute();
-  }, [currentLoc, progress])
+  }, [currentLoc, requestDetail?.requeststatus])
 
   useEffect(() => {
     if (routeCoordinates.length > 0 && camera.current) {
@@ -284,6 +293,15 @@ const RequestMap: React.FC = () => {
   return (
     <Box className="flex-1">
       <MapViewComponent users={users} currentLoc={focusOnMe ? currentLoc : originCoordinates} focusMode={[focusOnMe, setFocusOnMe]} isActionSheetOpen={isActionSheetOpen}>
+        {/* <View className="top-[25%] flex-row justify-between items-center mx-[2%]">
+          <View className="flex-row justify-end items-center">
+            <Switch
+              value={hideUser}
+              className="absolute left-[300px]"
+              onValueChange={() => setHideUser(!hideUser)}
+            />
+          </View>
+        </View> */}
         {originCoordinates && (
           <MapboxGL.PointAnnotation id="ori-marker" coordinate={[originCoordinates.longitude, originCoordinates.latitude]}>
             <MapboxGL.Callout title="Origin" />
@@ -326,10 +344,10 @@ const RequestMap: React.FC = () => {
           ) : (
             <View className="space-y-2">
               <Text className="text-lg font-bold">
-                Full name: {requestDetail?.fullname}
+                Full name: {requestDetail?.customername}
               </Text>
               <Text className="text-gray-600">
-                📞 Phone: {requestDetail?.phone}
+                📞 Phone: {requestDetail?.customerphone}
               </Text>
               <Text className="text-gray-700">
                 📍 Xuất phát ở: {requestDetail?.pickuplocation}
@@ -368,18 +386,12 @@ const RequestMap: React.FC = () => {
         <Button
           className={`${changeButtonColor()} p-2 rounded`}
           size="lg"
-          onPress={changeProgressState}
+          onPress={changeRequestStatus}
+          disabled={requestDetail?.requeststatus === 'Done' ? true : false}
         >
           <Text className="text-white text-center">
             {changeButtonTitle()}
           </Text>
-        </Button>
-        <Button
-          className="bg-green-500 p-2 rounded"
-          size="lg"
-          onPress={resetProgress}
-        >
-          <Text className="text-white text-center">Reset Progress</Text>
         </Button>
       </View>
     </Box>
