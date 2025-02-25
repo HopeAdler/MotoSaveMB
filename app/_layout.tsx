@@ -1,4 +1,3 @@
-
 // import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
 // import { Stack } from "expo-router";
 // import { AuthContext, AuthContextProvider } from "./context/AuthContext";
@@ -47,7 +46,6 @@
 //   );
 // }
 
-
 // import React, { useContext } from "react";
 // import { Stack } from "expo-router";
 // import { AuthContext } from "@/app/context/AuthContext";
@@ -82,10 +80,6 @@
 // };
 
 // export default StackLayout;
-
-
-
-
 
 // import React, { useContext, useEffect } from "react";
 // import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
@@ -156,9 +150,16 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <GluestackUIProvider mode="light">
         <AuthContextProvider>
-          <Stack>
+          <Stack
+            screenOptions={{
+              headerShown: false,
+            }}
+          >
             <Stack.Screen name="index" options={{ headerShown: false }} />
-            <Stack.Screen name="onboard/index" options={{ headerShown: false }} />
+            <Stack.Screen
+              name="onboard/index"
+              options={{ headerShown: false }}
+            />
             <Stack.Screen name="auth" options={{ headerShown: false }} />
             <Stack.Screen name="error" options={{ headerShown: false }} />
           </Stack>

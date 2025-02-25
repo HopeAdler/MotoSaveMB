@@ -1,37 +1,78 @@
-import React from 'react'
+import React from "react";
 import { Box } from "@/components/ui/box";
-import { Card } from '@/components/ui/card'
+import { Card } from "@/components/ui/card";
 import { Text } from "@/components/ui/text";
-import { Image, View } from 'react-native';
+import { Image, View, Pressable } from "react-native";
 import { router } from "expo-router";
+import { ChevronLeft, Zap, Clock } from "lucide-react-native";
 
-const servicePackage = () => {
+const ServicePackage = () => {
   return (
-    <Box className="flex-1 p-5">
-      <Text bold size="2xl" className='text-center'>
-        Chọn loại hình dịch vụ
-      </Text>
-      <View className="mt-6 p-10 flex-row justify-center items-center">
-        <Card className="w-400 bg-gray-300 rounded-lg items-center p-4 mr-7">
-          <Image
-            source={require("../../../assets/images/emergency.png")}
-            className="w-12 h-12 mb-4"
-            resizeMode="contain"
-          />
-          <Text className="text-gray-700 font-semibold" onPress={() => router.navigate('/user/customer/rescueMap')}>Cứu hộ khẩn cấp</Text>
-        </Card>
+    <Box className="flex-1 bg-gray-50">
+      <Box className="bg-white p-5 shadow-sm">
+        <Box className="flex-row items-center">
+          <Pressable 
+            onPress={() => router.back()}
+            className="w-10 h-10 bg-gray-50 rounded-full items-center justify-center"
+          >
+            <ChevronLeft size={24} color="#374151" />
+          </Pressable>
+          <Text bold size="xl" className="flex-1 text-center mr-10">
+            Chọn dịch vụ cứu hộ
+          </Text>
+        </Box>
+      </Box>
 
-        <Card className="w-400 bg-gray-300 rounded-lg items-center p-4">
-          <Image
-            source={require("../../../assets/images/emergency.png")}
-            className="w-12 h-12 mb-4"
-            resizeMode="contain"
-          />
-          <Text className="text-gray-700 font-semibold">Cứu hộ thường</Text>
-        </Card>
-      </View>
+      <Box className="p-6">
+        <Text className="text-gray-600 text-base mb-6 text-center">
+          Chọn loại hình dịch vụ phù hợp với nhu cầu của bạn
+        </Text>
+
+        <View className="space-y-4">
+          <Pressable onPress={() => router.navigate("/user/customer/rescueMap")}>
+            <Card className="bg-white rounded-2xl p-6 shadow-md border border-gray-100">
+              <Box className="flex-row items-center">
+                <Box className="bg-red-50 p-4 rounded-xl">
+                  <Zap size={28} color="#EF4444" />
+                </Box>
+                <Box className="ml-4 flex-1">
+                  <Text className="text-lg font-bold text-gray-900 mb-1">
+                    Cứu hộ khẩn cấp
+                  </Text>
+                  <Text className="text-gray-600 text-sm">
+                    Ưu tiên xử lý nhanh • Hỗ trợ 24/7
+                  </Text>
+                </Box>
+              </Box>
+            </Card>
+          </Pressable>
+
+          <Card className="bg-white rounded-2xl p-6 shadow-md border border-gray-100">
+            <Box className="flex-row items-center">
+              <Box className="bg-blue-50 p-4 rounded-xl">
+                <Clock size={28} color="#3B82F6" />
+              </Box>
+              <Box className="ml-4 flex-1">
+                <Text className="text-lg font-bold text-gray-900 mb-1">
+                  Cứu hộ thường
+                </Text>
+                <Text className="text-gray-600 text-sm">
+                  Giá ưu đãi • Thời gian linh hoạt
+                </Text>
+              </Box>
+            </Box>
+          </Card>
+        </View>
+
+        {/* Additional Info */}
+        <Box className="mt-8">
+          <Text className="text-xs text-gray-500 text-center">
+            Chọn cứu hộ khẩn cấp để được ưu tiên xử lý ngay lập tức
+          </Text>
+        </Box>
+      </Box>
     </Box>
-  )
-}
+  );
+};
 
-export default servicePackage
+export default ServicePackage;

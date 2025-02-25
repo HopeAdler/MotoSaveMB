@@ -29,7 +29,7 @@ export default function DRequestScreen() {
   const fetchRequests = async () => {
     try {
       const response = await axios.get(
-        "https://motor-save-be.vercel.app/api/v1/requests",
+        "https://motor-save-be.vercel.app/api/v1/requests/driver",
         { headers: { Authorization: "Bearer " + token } }
       );
       setRequests(response.data);
