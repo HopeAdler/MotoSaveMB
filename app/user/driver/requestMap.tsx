@@ -11,9 +11,7 @@ import Icon from "react-native-vector-icons/Feather";
 // Import the ActionSheet components from gluestack-ui
 import { updateRequestStatus } from "@/app/services/beAPI";
 import { getDirections } from "@/app/services/goongAPI";
-import { getCurrentLocation, requestLocationPermission, watchLocation } from "@/app/utils/locationService";
-import { hereNow, publishLocation, setupPubNub, subscribeToChannel } from "@/app/utils/pubnubService";
-import { decodedToken, decodePolyline } from "@/app/utils/utils";
+import { decodePolyline } from "@/app/utils/utils";
 import MapViewComponent from "@/components/custom/MapViewComponent";
 import {
   Actionsheet,
@@ -67,11 +65,16 @@ interface ICamera {
 const RequestMap: React.FC = () => {
   // Inline generic type for search params to satisfy the constraint.
   const { requestdetailid } = useLocalSearchParams<{ requestdetailid: string }>();
-  const { user, token } = useContext(AuthContext);
+  const { token } = useContext(AuthContext);
+  const { jsonUsers, jsonCurLoc } = useLocalSearchParams<any>();
+  // Parse users from JSON and reconstruct the Map
+  const parsedJsonUsers = jsonUsers ? JSON.parse(jsonUsers) : [];
+  const users = new Map<string, User>(parsedJsonUsers.map((user: any) => [user.uId, user]));
+  // Parse currentLoc
+  const [currentLoc, setCurrentLoc] = useState(jsonCurLoc ? JSON.parse(jsonCurLoc) : { latitude: 0, longitude: 0 });
 
   const [requestDetail, setRequestDetail] = useState<RequestDetail | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [currentLoc, setCurrentLoc] = useState({ latitude: 0, longitude: 0 });
   const [originCoordinates, setOriginCoordinates] = useState({ latitude: 0, longitude: 0 });
   const [destinationCoordinates, setDestinationCoordinates] = useState({ latitude: 0, longitude: 0 });
 
@@ -82,77 +85,8 @@ const RequestMap: React.FC = () => {
 
   const camera = useRef<ICamera | null>(null);
 
-  //PUBNUB integration:
-  const userId = decodedToken(token)?.id;
-  const [users, setUsers] = useState(new Map<string, User>());
-  const pubnub = setupPubNub(userId || "");
   const [focusOnMe, setFocusOnMe] = useState<boolean>(false);
-  const [hideUser, setHideUser] = useState<boolean>(false);
-  //PUBNUB SERVICE
-  const updateLocation = async (locationSubscription: any) => {
-    if (await requestLocationPermission() && userId) {
-      const location = await getCurrentLocation();
-      setCurrentLoc(location.coords);
-      publishLocation(pubnub, userId, user, location.coords.latitude, location.coords.longitude, hideUser);
-
-      // Subscribe to live location updates
-      locationSubscription = await watchLocation((position: any) => {
-        setCurrentLoc(position.coords);
-        publishLocation(pubnub, userId, user, position.coords.latitude, position.coords.longitude, hideUser);
-      });
-      console.log('Location updated')
-    }
-  };
-
-  useEffect(() => {
-    let locationSubscription: any;
-
-    // Initial call
-    updateLocation(locationSubscription);
-    fetchRoute();
-    // Set interval for 10s updates
-    const intervalId = setInterval(updateLocation, 10000);
-    return () => {
-      clearInterval(intervalId);
-      if (locationSubscription) locationSubscription.remove(); // Cleanup
-    };
-  }, []);
-
-
-  useEffect(() => {
-    subscribeToChannel(
-      pubnub,
-      user,
-      (msg: any) => {
-        // Only the driver
-        if (msg.publisher === userId) {
-          setUsers((prev) => new Map(prev).set(msg.publisher, msg.message));
-        }
-      },
-      (event: any) => {
-        // Handle presence events
-        console.log(event)
-        if (event.action === "leave" || event.action === "timeout") {
-          // Remove user when they disconnect
-          setUsers((prev) => {
-            const updated = new Map(prev);
-            updated.delete(event.uuid);
-            return updated;
-          });
-        }
-      }
-    );
-
-    return () => {
-      pubnub.unsubscribeAll();
-      pubnub.destroy(); // Ensure the client fully stops sending heartbeats
-    };
-  }, []);
-
-
-  useEffect(() => {
-    hereNow(pubnub)
-  }, [])
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const changeRequestStatus = async () => {
     let newStatus = "";
@@ -233,6 +167,7 @@ const RequestMap: React.FC = () => {
     let startStr = "";
     let endStr = "";
 
+    if (requestDetail?.requeststatus === 'Done') return setRouteCoordinates([]);
     switch (requestDetail?.requeststatus) {
       case "Accepted":
         startStr = originStr;
@@ -246,9 +181,6 @@ const RequestMap: React.FC = () => {
         startStr = currentLocStr;
         endStr = destinationStr;
         break; // ✅ Use break instead of return
-      default:
-        console.warn("Unknown status:", requestDetail?.requeststatus);
-        return; // Keep return only if progress is unknown
     }
 
     getDirections(startStr, endStr)
@@ -271,8 +203,15 @@ const RequestMap: React.FC = () => {
   };
 
   useEffect(() => {
+    if (jsonCurLoc) {
+      setCurrentLoc(JSON.parse(jsonCurLoc));
+    }
+  }, [jsonCurLoc]);
+
+  useEffect(() => {
     fetchRoute();
-  }, [currentLoc, requestDetail?.requeststatus])
+  }, [currentLoc, requestDetail?.requeststatus]);
+
 
   useEffect(() => {
     if (routeCoordinates.length > 0 && camera.current) {
@@ -293,15 +232,6 @@ const RequestMap: React.FC = () => {
   return (
     <Box className="flex-1">
       <MapViewComponent users={users} currentLoc={focusOnMe ? currentLoc : originCoordinates} focusMode={[focusOnMe, setFocusOnMe]} isActionSheetOpen={isActionSheetOpen}>
-        {/* <View className="top-[25%] flex-row justify-between items-center mx-[2%]">
-          <View className="flex-row justify-end items-center">
-            <Switch
-              value={hideUser}
-              className="absolute left-[300px]"
-              onValueChange={() => setHideUser(!hideUser)}
-            />
-          </View>
-        </View> */}
         {originCoordinates && (
           <MapboxGL.PointAnnotation id="ori-marker" coordinate={[originCoordinates.longitude, originCoordinates.latitude]}>
             <MapboxGL.Callout title="Origin" />
