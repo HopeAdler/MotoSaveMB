@@ -35,6 +35,16 @@ export const publishLocation = (pubnub: any, userId: string, user: User, latitud
     },
   });
 };
+export const publishRescueRequest = (pubnub: any, customerId: string, driverId: string, requestDetailId: string) => {
+  pubnub.publish({
+    channel: "rescue-service",
+    message: {
+      customerId,
+      driverId,
+      requestDetailId
+    },
+  });
+};
 
 export const subscribeToChannel = (
   pubnub: any,
@@ -46,19 +56,22 @@ export const subscribeToChannel = (
 
   pubnub.addListener({
     message: (msg: any) => {
-      messageCallback(msg);
+      // 🔹 Ensure this listener only processes messages from "global"
+      if (msg.channel === "global") {
+        messageCallback(msg);
 
-      // Update UUID metadata (if needed)
-      pubnub.objects.setUUIDMetadata({
-        data: {
-          name: user.username,
-          email: user.email,
-          custom: {
-            fullname: user.fullname,
-            role: user.role,
+        // Update UUID metadata (if needed)
+        pubnub.objects.setUUIDMetadata({
+          data: {
+            name: user.username,
+            email: user.email,
+            custom: {
+              fullname: user.fullname,
+              role: user.role,
+            },
           },
-        },
-      });
+        });
+      }
     },
     presence: (event: any) => {
       // Forward the presence event if a callback is provided
@@ -69,6 +82,21 @@ export const subscribeToChannel = (
   });
 };
 
+export const subscribeToRescueChannel = (
+  pubnub: any,
+  messageCallback: (msg: any) => void,
+) => {
+  pubnub.subscribe({ channels: ["rescue-service"], withPresence: true });
+
+  pubnub.addListener({
+    message: (msg: any) => {
+      // 🔹 Ensure this listener only processes messages from "rescue-service"
+      if (msg.channel === "rescue-service") {
+        messageCallback(msg);
+      }
+    },
+  });
+};
 
 
 export const hereNow = (pubnub: any) => {

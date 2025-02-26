@@ -68,8 +68,7 @@ const RequestMap: React.FC = () => {
   const { token } = useContext(AuthContext);
   const { jsonUsers, jsonCurLoc } = useLocalSearchParams<any>();
   // Parse users from JSON and reconstruct the Map
-  const parsedJsonUsers = jsonUsers ? JSON.parse(jsonUsers) : [];
-  const users = new Map<string, User>(parsedJsonUsers.map((user: any) => [user.uId, user]));
+  const users = new Map<string, User>(Object.entries(JSON.parse(jsonUsers)));
   // Parse currentLoc
   const [currentLoc, setCurrentLoc] = useState(jsonCurLoc ? JSON.parse(jsonCurLoc) : { latitude: 0, longitude: 0 });
 

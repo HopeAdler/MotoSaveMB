@@ -1,12 +1,12 @@
-import { Tabs, useRouter, useSegments } from "expo-router";
+import AuthContext from "@/app/context/AuthContext";
+import { getCurrentLocation, requestLocationPermission, watchLocation } from "@/app/utils/locationService";
+import { hereNow, publishLocation, setupPubNub, subscribeToChannel, subscribeToRescueChannel } from "@/app/utils/pubnubService";
+import { decodedToken } from "@/app/utils/utils";
 import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
 import "@/global.css";
-import { ChartArea, DollarSign, House, List, LucideLocateFixed } from "lucide-react-native";
-import { getCurrentLocation, requestLocationPermission, watchLocation } from "@/app/utils/locationService";
+import { Tabs, useRouter, useSegments } from "expo-router";
+import { ChartArea, DollarSign, House, List } from "lucide-react-native";
 import { useContext, useEffect, useRef, useState } from "react";
-import AuthContext from "@/app/context/AuthContext";
-import { decodedToken } from "@/app/utils/utils";
-import { hereNow, publishLocation, setupPubNub, subscribeToChannel } from "@/app/utils/pubnubService";
 
 type User = {
   uuid: string;
@@ -24,6 +24,7 @@ export default function DriverLayout() {
   const lastLocation = useRef({ latitude: 0, longitude: 0 });
   const userId = decodedToken(token)?.id;
   const [users, setUsers] = useState(new Map<string, User>());
+  const [pendingReqDetailIds, setPendingReqDetailIds] = useState(new Map<string, string>());
   //PUBNUB intergration to publish location right after driver logged in
   const pubnub = setupPubNub(userId || "");
   const updateLocation = async (locationSubscription: any) => {
@@ -35,8 +36,8 @@ export default function DriverLayout() {
       ) {
         lastLocation.current = location.coords;
         setCurrentLoc(location.coords); // Only update state if the location actually changed
-        publishLocation(pubnub, userId, user, location.coords.latitude, location.coords.longitude);
       }
+      publishLocation(pubnub, userId, user, location.coords.latitude, location.coords.longitude);
 
       // Subscribe to live location updates
       locationSubscription = await watchLocation((position: any) => {
@@ -46,11 +47,9 @@ export default function DriverLayout() {
         ) {
           lastLocation.current = position.coords;
           setCurrentLoc(position.coords);
-          publishLocation(pubnub, userId, user, position.coords.latitude, position.coords.longitude);
         }
+        publishLocation(pubnub, userId, user, position.coords.latitude, position.coords.longitude);
       });
-
-      console.log("Location updated");
     }
   };
   useEffect(() => {
@@ -76,6 +75,7 @@ export default function DriverLayout() {
   }, [currentLoc]);
 
   useEffect(() => {
+    //Render Users
     subscribeToChannel(
       pubnub,
       user,
@@ -87,7 +87,6 @@ export default function DriverLayout() {
       },
       (event: any) => {
         // Handle presence events
-        console.log(event)
         if (event.action === "leave" || event.action === "timeout") {
           // Remove user when they disconnect
           setUsers((prev) => {
@@ -98,12 +97,27 @@ export default function DriverLayout() {
         }
       }
     );
-
+    //Render requests
+    subscribeToRescueChannel(pubnub,
+      (msg: any) => {
+        console.log(msg)
+        if (msg.message.driverId === userId)
+          setPendingReqDetailIds((prev) => new Map(prev).set(msg.publisher, msg.message.requestDetailId));
+      }
+    )
     return () => {
       pubnub.unsubscribeAll();
       pubnub.destroy(); // Ensure the client fully stops sending heartbeats
     };
   }, []);
+
+  useEffect(() => {
+    if (segment.includes("home")) {
+      router.setParams({
+        jsonPendingReqDetailIds: JSON.stringify(Object.fromEntries(pendingReqDetailIds)),
+      });
+    }
+  }, [pendingReqDetailIds]);
 
   useEffect(() => {
     hereNow(pubnub)
@@ -135,7 +149,7 @@ export default function DriverLayout() {
             href: null,
           }}
           initialParams={{
-            jsonUsers: JSON.stringify(Array.from(users, ([key, value]) => ({ uId: key, ...value }))),
+            jsonUsers: JSON.stringify(Object.fromEntries(users)),
           }}
         />
         <Tabs.Screen
