@@ -2,7 +2,7 @@ import { AuthContext } from "@/app/context/AuthContext";
 import { Box } from "@/components/ui/box";
 import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import {
   ArchiveRestore,
   GalleryThumbnails,
@@ -58,12 +58,22 @@ const RecentLocation: React.FC<LocationProps> = ({ name, distance }) => (
 export default function DHomeScreen() {
   const { user, dispatch } = useContext(AuthContext);
   const [isLoading, setIsLoading] = useState(true);
+  const { jsonPendingReqDetailIds } = useLocalSearchParams<any>();
+  const [pendingReqDetailIds, setPendingReqDetailIds] = useState(new Map<string, string>());
 
+  // Parse users from JSON and reconstruct the Map
   useEffect(() => {
     if (!user) return;
     setIsLoading(false);
     if (user.role !== "Driver") router.replace("/error/403");
   }, [user]);
+
+  useEffect(() => {
+    if (jsonPendingReqDetailIds) {
+      const parsedObject = JSON.parse(jsonPendingReqDetailIds);
+      setPendingReqDetailIds(new Map(Object.entries(parsedObject)));
+    }
+  }, [jsonPendingReqDetailIds]);
 
   if (isLoading) return <LoadingScreen />;
 
@@ -92,6 +102,28 @@ export default function DHomeScreen() {
         <Box className="p-4">
           <Box className="mb-6">
             <Text className="text-lg font-bold mb-4">Hàng chờ yêu cầu</Text>
+            {pendingReqDetailIds && pendingReqDetailIds.size > 0 ? (
+              Array.from(pendingReqDetailIds.values()).map((reqId) => (
+                <Button
+                  key={reqId} // Always add a key when mapping over elements
+                  className="bg-blue-500 p-2 rounded"
+                  size="lg"
+                  onPress={() =>
+                    router.push({
+                      pathname: "/user/driver/requestMap",
+                      params: { requestdetailid: reqId },
+                    })
+                  }
+                >
+                  <Text className="text-white">
+                    {`${reqId}`}
+                  </Text>
+                </Button>
+              ))
+            ) : (
+              <Text>Hiện chưa có yêu cầu nào</Text>
+            )}
+
             <Box className="flex flex-row flex-wrap">
               <ServiceCard icon={Siren} title="Cứu hộ xe" color="#ef4444" />
               <ServiceCard icon={Route} title="Vận chuyển" color="#3b82f6" />
