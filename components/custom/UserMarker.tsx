@@ -13,19 +13,19 @@ type UserMarkerComponentProps = {
   user: User;
 };
 const UserMarker: React.FC<UserMarkerComponentProps> = ({ user }) => {
-  return (
-    <MapboxGL.PointAnnotation id={user.uuid} coordinate={[user.longitude, user.latitude]}>
-      <MapboxGL.Callout title={`${user.username} - ${user.role}`} />
-      <View style={styles.iconContainer}>
-        {user.role === "Customer" ? (
-          <Bike color="#0080FF" size={28} style={styles.icon} />
-        ) : (
+  if (user.role === "Driver") {
+    return (
+      <MapboxGL.PointAnnotation id={user.uuid} coordinate={[user.longitude, user.latitude]}>
+        <View style={styles.iconContainer}>
           <Truck color="#FF8000" size={28} style={styles.icon} />
-        )}
-      </View>
-    </MapboxGL.PointAnnotation>
-  );
+        </View>
+      </MapboxGL.PointAnnotation>
+    );
+  } else {
+    return null;
+  }
 };
+
 
 const styles = StyleSheet.create({
   iconContainer: {

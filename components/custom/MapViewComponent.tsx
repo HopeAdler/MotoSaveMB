@@ -90,7 +90,4 @@ const MapViewComponent: React.FC<MapViewComponentProps> = ({
 // });
 
 export default MapViewComponent;
-function useState(arg0: boolean): [any, any] {
-  throw new Error("Function not implemented.");
-}
 
