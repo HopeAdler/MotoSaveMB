@@ -3,13 +3,11 @@ import { Box } from "@/components/ui/box";
 import { Button, ButtonText } from "@/components/ui/button";
 import { Input, InputField } from "@/components/ui/input";
 import { Pressable } from "@/components/ui/pressable";
-import { Text } from "@/components/ui/text";
+import { Text, Alert, FlatList, NativeEventEmitter, NativeModules, View } from "react-native";
 import MapboxGL from "@rnmapbox/maps";
 import { router } from "expo-router";
 import { CircleChevronDown, LocateFixed, ChevronLeft, ChevronUp } from "lucide-react-native";
 import React, { useContext, useEffect, useRef, useState } from "react";
-import { FlatList, NativeEventEmitter, NativeModules, View } from "react-native";
-// Import context, services, utils, custom hooks, components
 import { AuthContext } from "@/app/context/AuthContext";
 import { useCameraZoom } from "@/app/hooks/useCameraZoom";
 import {
@@ -26,13 +24,12 @@ import {
   getReverseGeocode,
 } from "@/app/services/goongAPI";
 import { decodePolyline } from "@/app/utils/utils";
-import { getDistance } from "geolib"; // <-- NEW: Import thư viện geolib
+import { getDistance } from "geolib";
 
-// import MyLocationButton from "@/components/custom/MyLocationButton";
 import TrackingActionSheet from "@/components/custom/TrackingActionSheet";
 import TripDetailsActionSheet from "@/components/custom/TripDetailsActionSheet";
 
-// Các import liên quan đến PubNub và Payment (nếu cần)
+// Các import liên quan đến PubNub và Payment
 import { getCurrentLocation, requestLocationPermission, watchLocation } from "@/app/utils/locationService";
 import { PayZaloEventData, processPayment, refundTransaction } from "@/app/utils/payment";
 import { hereNow, publishLocation, publishRescueRequest, setupPubNub, subscribeToChannel, subscribeToRescueChannel } from "@/app/utils/pubnubService";
@@ -52,16 +49,19 @@ type User = {
   longitude: number;
 };
 
-// NEW: Định nghĩa hằng số bán kính
 const INITIAL_RADIUS = 5000; // 5 km
 const MAX_RADIUS = 15000;    // 15 km
+
+// Các hằng số cảnh báo khoảng cách (đơn vị mét)
+const MAX_WARN_PICKUP_DISTANCE = 2000;       // 2 km cho điểm đón
+const MAX_WARN_DESTINATION_DISTANCE = 50000;   // 50 km cho điểm đến
 
 const RescueMapScreen = () => {
   const { user, token } = useContext(AuthContext);
   const { PayZaloBridge } = NativeModules;
   const userId = decodedToken(token)?.id;
 
-  // Các state cho origin, destination, route, fare, countdown, tracking, …  
+  // Các state chính
   const [currentLoc, setCurrentLoc] = useState({ latitude: 0, longitude: 0 });
   const [originCoordinates, setOriginCoordinates] = useState({ latitude: 0, longitude: 0 });
   const [destinationCoordinates, setDestinationCoordinates] = useState({ latitude: 0, longitude: 0 });
@@ -84,7 +84,7 @@ const RescueMapScreen = () => {
   const [countdown, setCountdown] = useState(10);
   const [zpTransId, setZpTransId] = useState<string | null>(null);
 
-  // --- PubNub Integration ---
+  // PubNub
   const [users, setUsers] = useState(new Map<string, User>());
   const pubnub = setupPubNub(userId || "");
 
@@ -92,7 +92,7 @@ const RescueMapScreen = () => {
   const camera = useRef<MapboxGL.Camera>(null);
   useCameraZoom(camera, routeCoordinates);
 
-  // --- Geocoding & Autocomplete ---
+  // Khi originCoordinates chưa có query thì reverse geocode
   useEffect(() => {
     if (!originQuery && originCoordinates.latitude && originCoordinates.longitude) {
       getReverseGeocode(originCoordinates.latitude, originCoordinates.longitude).then((address) => {
@@ -104,27 +104,43 @@ const RescueMapScreen = () => {
     }
   }, [originCoordinates]);
 
+  // Hàm xử lý khi fetch địa chỉ từ geocode
   const handleFetchLocation = async (address: string, isOrigin: boolean) => {
     const result = await geocodeAddress(address);
     if (result) {
       const { lat, lng } = result;
       if (isOrigin) {
+        // Kiểm tra khoảng cách giữa vị trí hiện tại và điểm đón mới
+        if (currentLoc.latitude !== 0 && currentLoc.longitude !== 0) {
+          const distance = getDistance(currentLoc, { latitude: lat, longitude: lng });
+          if (distance > MAX_WARN_PICKUP_DISTANCE) {
+            Alert.alert(
+              "Điểm đón quá xa",
+              "Điểm đón bạn chọn quá xa vị trí hiện tại. Vui lòng chọn lại vị trí gần hơn."
+            );
+            return;
+          }
+        }
         setOriginCoordinates({ latitude: lat, longitude: lng });
         setOriginResults([]);
         setOriginSelected(true);
       } else {
+        // Kiểm tra khoảng cách giữa điểm đón và điểm đến mới
+        if (originCoordinates.latitude !== 0 && originCoordinates.longitude !== 0) {
+          const distance = getDistance(originCoordinates, { latitude: lat, longitude: lng });
+          if (distance > MAX_WARN_DESTINATION_DISTANCE) {
+            Alert.alert(
+              "Điểm đến quá xa",
+              "Điểm đến bạn chọn quá xa so với điểm đón. Vui lòng chọn lại điểm đến hợp lý hơn."
+            );
+            return;
+          }
+        }
         setDestinationCoordinates({ latitude: lat, longitude: lng });
         setDestinationResults([]);
         setDestinationSelected(true);
       }
-
-      // camera.current?.setCamera({
-      //   centerCoordinate: [lng, lat],
-      //   // zoomLevel: 0,
-      //   animationDuration: 1000,
-      // });
-      camera.current?.flyTo([lng, lat, 1000]) // eases camera to new location based on duration
-      // camera.moveTo([lng, lat]) // snaps camera to new location without any easing
+      camera.current?.flyTo([lng, lat, 1000]);
     }
   };
 
@@ -170,7 +186,7 @@ const RescueMapScreen = () => {
     return () => clearTimeout(timeout);
   }, [destinationQuery, originCoordinates]);
 
-  // --- Directions & Fare ---
+  // Lấy đường đi và tính toán cước
   useEffect(() => {
     if (
       originSelected &&
@@ -205,7 +221,7 @@ const RescueMapScreen = () => {
       calculateFare(distanceValue)
         .then((money) => {
           setFare(money);
-          setShowActionsheet(true); // Set to true after fare calculation
+          setShowActionsheet(true);
           setFareLoading(false);
         })
         .catch((error) => {
@@ -215,14 +231,25 @@ const RescueMapScreen = () => {
     }
   }, [directionsInfo]);
 
-  // Add a function to handle reopening the ActionSheet
+  // Hàm kiểm tra hợp lệ vị trí (cho nút confirm)
+  const isLocationValid = () => {
+    if (originCoordinates.latitude === 0 || destinationCoordinates.latitude === 0) return false;
+    if (currentLoc.latitude !== 0 && currentLoc.longitude !== 0) {
+      const distanceFromCurrent = getDistance(currentLoc, originCoordinates);
+      if (distanceFromCurrent > MAX_WARN_PICKUP_DISTANCE) return false;
+    }
+    const distanceOriginToDest = getDistance(originCoordinates, destinationCoordinates);
+    if (distanceOriginToDest > MAX_WARN_DESTINATION_DISTANCE) return false;
+    return true;
+  };
+
   const handleReopenActionSheet = () => {
     if (directionsInfo && fare) {
       setShowActionsheet(true);
     }
   };
 
-  // --- Payment & Request ---
+  // Tạo yêu cầu cứu hộ
   const handleCreateRequest = async () => {
     if (!token) return;
     const payload: RescueRequestPayload = {
@@ -266,7 +293,6 @@ const RescueMapScreen = () => {
       setShowActionsheet(false);
       processPayment(fare);
       handleRequestSuccess(reqId);
-      // Lắng nghe sự kiện thanh toán từ PayZalo
       const payZaloEmitter = new NativeEventEmitter(PayZaloBridge);
       const subscription = payZaloEmitter.addListener("EventPayZalo", async (data: PayZaloEventData) => {
         if (data.returnCode === "1") {
@@ -286,7 +312,7 @@ const RescueMapScreen = () => {
             );
             if (transactionResponse) {
               handleRequestSuccess(reqId);
-              handleFindDriver()
+              handleFindDriver();
             }
             console.log("Transaction created:", transactionResponse);
           } catch (error) {
@@ -305,7 +331,6 @@ const RescueMapScreen = () => {
     }
   };
 
-  // --- Countdown ---
   const startCountdown = (requestId: any) => {
     setRequestDetailId(requestId);
     setShowCountdownSheet(true);
@@ -315,18 +340,15 @@ const RescueMapScreen = () => {
       setCountdown((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
-          setShowCountdownSheet(false); // Auto-close after countdown
-          setShowTracking(true); // Open tracking sheet
+          setShowCountdownSheet(false);
+          setShowTracking(true);
         }
         return prev - 1;
       });
     }, 1000);
   };
 
-  // NEW: Hàm gửi yêu cầu cho các driver trong bán kính xác định sử dụng geolib
   const sendRideRequestToDrivers = async (radius: number) => {
-    // let radius = INITIAL_RADIUS
-    // Sử dụng originCoordinates nếu có, nếu không thì dùng currentLoc
     const baseLocation =
       originCoordinates.latitude !== 0 && originCoordinates.longitude !== 0
         ? originCoordinates
@@ -334,7 +356,6 @@ const RescueMapScreen = () => {
 
     const nearbyDrivers: (User & { distance: number })[] = [];
     users.forEach((userData) => {
-      // Kiểm tra role (sau khi chuyển về lowercase)
       if (userData.role && userData.role.toLowerCase() === "driver") {
         const distance = getDistance(
           { latitude: baseLocation.latitude, longitude: baseLocation.longitude },
@@ -347,13 +368,10 @@ const RescueMapScreen = () => {
       }
     });
 
-    // Sắp xếp theo khoảng cách tăng dần
     nearbyDrivers.sort((a, b) => a.distance - b.distance);
-
     console.log(nearbyDrivers);
     if (nearbyDrivers.length > 0) {
-      // Gửi yêu cầu đến từng driver (chuyển message thành string)
-      const reqId = await handleCreateRequest(); // Await the request ID before proceeding
+      const reqId = await handleCreateRequest();
       if (reqId && userId) {
         nearbyDrivers.forEach((driver) => {
           console.log("Request " + reqId + " sent to driver: " + driver.uuid);
@@ -363,7 +381,7 @@ const RescueMapScreen = () => {
       }
     } else {
       console.log(`No drivers found within ${radius} meters.`);
-      const newRadius = radius + 2000; // Mở rộng bán kính thêm 2 km
+      const newRadius = radius + 2000;
       if (newRadius <= MAX_RADIUS) {
         setTimeout(() => {
           sendRideRequestToDrivers(newRadius);
@@ -374,7 +392,6 @@ const RescueMapScreen = () => {
     }
   };
 
-  // Sửa handleRequestSuccess để bắt đầu countdown và gửi yêu cầu đến driver
   const handleRequestSuccess = (reqId: string) => {
     startCountdown(reqId);
   };
@@ -382,12 +399,9 @@ const RescueMapScreen = () => {
     sendRideRequestToDrivers(INITIAL_RADIUS);
   };
 
-
-  // --- handleCancel (lấy nguyên code của bạn) ---
   const handleCancel = async () => {
     if (!requestDetailId) return;
     try {
-      // Update request status to "Cancel"
       const result = await updateRequestStatus(requestDetailId, token, "Cancel");
       console.log(result.message);
       alert("Request cancel");
@@ -404,31 +418,26 @@ const RescueMapScreen = () => {
     }
   };
 
-  // --- PubNub Integration ---
-
   const updateLocation = async (locationSubscription: any) => {
     if (await requestLocationPermission() && userId) {
-
       const location = await getCurrentLocation();
       if (!location?.coords) return;
 
       setCurrentLoc({
         latitude: location.coords.latitude,
-        longitude: location.coords.longitude});
+        longitude: location.coords.longitude
+      });
 
-      // Only update origin if it's still {0,0}
       setOriginCoordinates((prev) => {
         if (prev.latitude === 0 && prev.longitude === 0) {
           console.log("Origin reset", location.coords);
           return location.coords;
         }
-        return prev; // Keep the existing value
+        return prev;
       });
 
-      // Publish location to PubNub
       publishLocation(pubnub, userId, user, location.coords.latitude, location.coords.longitude);
 
-      // Subscribe to live location updates
       locationSubscription = await watchLocation((position: any) => {
         setCurrentLoc(position.coords);
         publishLocation(pubnub, userId, user, position.coords.latitude, position.coords.longitude);
@@ -452,16 +461,12 @@ const RescueMapScreen = () => {
       user,
       (msg: any) => {
         const message = msg.message;
-        // Only the customer & all drivers
         if (msg.publisher === userId || message.role === 'Driver') {
           setUsers((prev) => new Map(prev).set(msg.publisher, msg.message));
         }
       },
       (event: any) => {
-        // Handle presence events
-        // console.log(event)
         if (event.action === "leave" || event.action === "timeout") {
-          // Remove user when they disconnect
           setUsers((prev) => {
             const updated = new Map(prev);
             updated.delete(event.uuid);
@@ -470,20 +475,19 @@ const RescueMapScreen = () => {
         }
       }
     );
-    subscribeToRescueChannel(pubnub,
-      (msg: any) => {
-        // console.log(msg.message)
-      }
-    )
+    subscribeToRescueChannel(pubnub, (msg: any) => {
+      // Handle rescue channel messages if needed
+    });
     return () => {
       pubnub.unsubscribeAll();
-      pubnub.destroy(); // Ensure the client fully stops sending heartbeats
+      pubnub.destroy();
     };
   }, []);
 
   useEffect(() => {
-    hereNow(pubnub)
-  }, [])
+    hereNow(pubnub);
+  }, []);
+
   return (
     <Box className="flex-1">
       <Box className="absolute top-4 left-4 z-20">
@@ -534,7 +538,6 @@ const RescueMapScreen = () => {
         )}
       </Box>
 
-      {/* Map Component */}
       <Box className="flex-1">
         <MapViewComponent users={users} currentLoc={currentLoc} isActionSheetOpen={showActionsheet} focusMode={[true, () => { }]}>
           {originCoordinates.latitude !== 0 && (
@@ -570,21 +573,20 @@ const RescueMapScreen = () => {
         </MapViewComponent>
       </Box>
 
-      {/* Trip Details & Payment ActionSheet */}
       {showActionsheet && (
         <TripDetailsActionSheet
           isOpen={showActionsheet}
-          onClose={() => setShowActionsheet(false)}  // Add onClose handler
+          onClose={() => setShowActionsheet(false)}
           onPayment={paymentMethod === "Tiền mặt" ? handleFindDriver : handlePayment}
           fare={fare}
           fareLoading={fareLoading}
           paymentLoading={paymentLoading}
           directionsInfo={directionsInfo}
           paymentMethodState={[paymentMethod, setPaymentMethod]}
+          confirmDisabled={!isLocationValid()}
         />
       )}
 
-      {/* Countdown ActionSheet */}
       {showCountdownSheet && (
         <Actionsheet isOpen={showCountdownSheet} onClose={() => setShowCountdownSheet(false)}>
           <ActionsheetContent className="bg-white rounded-t-xl">
@@ -601,7 +603,6 @@ const RescueMapScreen = () => {
         </Actionsheet>
       )}
 
-      {/* Tracking ActionSheet */}
       {showTracking && (
         <TrackingActionSheet
           isOpen={showTracking}
@@ -612,7 +613,6 @@ const RescueMapScreen = () => {
         />
       )}
 
-      {/* PubNub Info */}
       <View className="absolute top-[15%] flex flex-col items-end w-full px-[5%] z-20">
         <Text>Số người online: {users.size}</Text>
       </View>
