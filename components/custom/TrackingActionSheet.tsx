@@ -112,10 +112,19 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
 
     return (
       <Box className="mt-6">
-        <Box className="flex-row justify-between items-center">
+        <Box className="flex-row justify-between items-center relative">
+          <Box className="absolute top-4 left-[10%] right-[10%] h-[1px]">
+            <Box className="w-full h-0.5 bg-gray-200">
+              <Box
+                className={`h-full ${getStatusColor()}`}
+                style={{ width: `${(currentStepIndex / (steps.length - 1)) * 100}%` }}
+              />
+            </Box>
+          </Box>
+
           {steps.map((step, index) => (
             <Box key={step.status} className="items-center flex-1">
-              <Box className="relative">
+              <Box className="h-8 flex items-center justify-center relative z-10">
                 <Box
                   className={`w-8 h-8 rounded-full ${
                     index <= currentStepIndex ? getStatusColor() : "bg-gray-200"
@@ -123,24 +132,17 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
                 >
                   <CheckCircle2 size={16} color="white" />
                 </Box>
-                {index < steps.length - 1 && (
-                  <Box
-                    className={`h-0.5 w-full absolute top-1/2 left-full ${
-                      index < currentStepIndex
-                        ? getStatusColor()
-                        : "bg-gray-200"
-                    }`}
-                    style={{ transform: [{ translateY: -1 }] }}
-                  />
-                )}
               </Box>
-              <Text
-                className={`text-xs mt-2 text-center ${
-                  index <= currentStepIndex ? "text-gray-900" : "text-gray-500"
-                }`}
-              >
-                {step.title}
-              </Text>
+              <Box className="h-12 justify-start pt-2">
+                <Text
+                  className={`text-xs text-center px-1 ${
+                    index <= currentStepIndex ? "text-gray-900" : "text-gray-500"
+                  }`}
+                  numberOfLines={2}
+                >
+                  {step.title}
+                </Text>
+              </Box>
             </Box>
           ))}
         </Box>

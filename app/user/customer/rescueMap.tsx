@@ -615,9 +615,18 @@ const RescueMapScreen = () => {
         <Text>Số người online: {users.size}</Text>
       </View>
 
-      {!showActionsheet && directionsInfo && (
+      {!showActionsheet && directionsInfo && !requestDetailId && (
         <Pressable
-          onPress={handleReopenActionSheet}
+          onPress={() => setShowActionsheet(true)}
+          className="absolute bottom-20 right-2 w-10 h-10 bg-white rounded-full items-center justify-center shadow-sm"
+        >
+          <ChevronUp size={24} color="#3B82F6" />
+        </Pressable>
+      )}
+
+      {!showTracking && requestDetailId && (
+        <Pressable
+          onPress={() => setShowTracking(true)}
           className="absolute bottom-20 right-2 w-10 h-10 bg-white rounded-full items-center justify-center shadow-sm"
         >
           <ChevronUp size={24} color="#3B82F6" />
