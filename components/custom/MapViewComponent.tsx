@@ -43,8 +43,8 @@ const MapViewComponent: React.FC<MapViewComponentProps> = ({
     if (focusOnMe && cameraRef.current) {
       cameraRef.current.setCamera({
         centerCoordinate: [currentLoc.longitude, currentLoc.latitude],
-        zoomLevel:14,
-        animationDuration: 20000,
+        zoomLevel: 14,
+        animationDuration: 2000,
       });
     }
     console.log("Current Users: " + users.size);
@@ -56,14 +56,13 @@ const MapViewComponent: React.FC<MapViewComponentProps> = ({
     locationButtonOffset.value = withTiming(isActionSheetOpen ? 150 : 10, { duration: 300 });
   }, [isActionSheetOpen]);
   const animatedButtonStyle = useAnimatedStyle(() => ({ bottom: locationButtonOffset.value }));
-
   return (
     <View className="flex-1" >
       <MapboxGL.MapView styleURL={loadMap} ref={mapRef} style={{ flex: 1 }}>
         <MapboxGL.Camera
           ref={cameraRef}
           zoomLevel={14}
-          // centerCoordinate={[currentLoc.longitude, currentLoc.latitude]}
+        // centerCoordinate={[currentLoc.longitude, currentLoc.latitude]}
         />
         {Array.from(users.values()).map((user) => (
           <UserMarker key={user.uuid} user={user} />

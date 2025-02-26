@@ -35,7 +35,7 @@ import TripDetailsActionSheet from "@/components/custom/TripDetailsActionSheet";
 // Các import liên quan đến PubNub và Payment (nếu cần)
 import { getCurrentLocation, requestLocationPermission, watchLocation } from "@/app/utils/locationService";
 import { PayZaloEventData, processPayment, refundTransaction } from "@/app/utils/payment";
-import { hereNow, publishLocation, setupPubNub, subscribeToChannel } from "@/app/utils/pubnubService";
+import { hereNow, publishLocation, publishRescueRequest, setupPubNub, subscribeToChannel, subscribeToRescueChannel } from "@/app/utils/pubnubService";
 import { decodedToken } from "@/app/utils/utils";
 import MapViewComponent from "../../../components/custom/MapViewComponent";
 import { PUBNUB_PUBLISH_KEY, PUBNUB_SUBSCRIBE_KEY } from "../../constant/pubnub";
@@ -123,7 +123,7 @@ const RescueMapScreen = () => {
       //   // zoomLevel: 0,
       //   animationDuration: 1000,
       // });
-      camera.current?.flyTo([lng, lat,1000]) // eases camera to new location based on duration
+      camera.current?.flyTo([lng, lat, 1000]) // eases camera to new location based on duration
       // camera.moveTo([lng, lat]) // snaps camera to new location without any easing
     }
   };
@@ -241,6 +241,7 @@ const RescueMapScreen = () => {
       setShowActionsheet(false);
       setShowCountdownSheet(true);
       setRequestDetailId(result.requestdetailid);
+      return result.requestdetailid;
     } catch (error) {
       console.error("Error creating request:", error);
     }
@@ -283,11 +284,14 @@ const RescueMapScreen = () => {
               },
               token
             );
+            if (transactionResponse) {
+              handleRequestSuccess(reqId);
+              handleFindDriver()
+            }
             console.log("Transaction created:", transactionResponse);
           } catch (error) {
             console.error("Error creating transaction:", error);
           }
-          handleRequestSuccess(reqId);
         } else {
           router.navigate("/user/customer/rescueMap");
           alert("Payment failed! Return code: " + data.returnCode);
@@ -320,7 +324,7 @@ const RescueMapScreen = () => {
   };
 
   // NEW: Hàm gửi yêu cầu cho các driver trong bán kính xác định sử dụng geolib
-  const sendRideRequestToDrivers = (radius: number) => {
+  const sendRideRequestToDrivers = async (radius: number) => {
     // let radius = INITIAL_RADIUS
     // Sử dụng originCoordinates nếu có, nếu không thì dùng currentLoc
     const baseLocation =
@@ -349,22 +353,14 @@ const RescueMapScreen = () => {
     console.log(nearbyDrivers);
     if (nearbyDrivers.length > 0) {
       // Gửi yêu cầu đến từng driver (chuyển message thành string)
-      nearbyDrivers.forEach((driver) => {
-        //   pubnub.publish({
-        //     channel: `global`,
-        //     message: {
-        //       type: "rideRequest",
-        //       requestId: requestDetailId,
-        //       customerId: userId,
-        //       pickup: originCoordinates,
-        //       destination: destinationCoordinates,
-        //       fare: fare,
-        //     } as Payload,
-        //   });
-
-        handleCreateRequest();
-      });
-      console.log(`Sent ride request to drivers within ${radius} meters: ${nearbyDrivers.map((d) => d.uuid)}`);
+      const reqId = await handleCreateRequest(); // Await the request ID before proceeding
+      if (reqId && userId) {
+        nearbyDrivers.forEach((driver) => {
+          console.log("Request " + reqId + " sent to driver: " + driver.uuid);
+          publishRescueRequest(pubnub, userId, driver.uuid, reqId);
+        });
+        console.log(`Sent ride request to drivers within ${radius} meters: ${nearbyDrivers.map((d) => d.uuid)}`);
+      }
     } else {
       console.log(`No drivers found within ${radius} meters.`);
       const newRadius = radius + 2000; // Mở rộng bán kính thêm 2 km
@@ -416,7 +412,9 @@ const RescueMapScreen = () => {
       const location = await getCurrentLocation();
       if (!location?.coords) return;
 
-      setCurrentLoc(location.coords);
+      setCurrentLoc({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude});
 
       // Only update origin if it's still {0,0}
       setOriginCoordinates((prev) => {
@@ -461,7 +459,7 @@ const RescueMapScreen = () => {
       },
       (event: any) => {
         // Handle presence events
-        console.log(event)
+        // console.log(event)
         if (event.action === "leave" || event.action === "timeout") {
           // Remove user when they disconnect
           setUsers((prev) => {
@@ -472,7 +470,11 @@ const RescueMapScreen = () => {
         }
       }
     );
-
+    subscribeToRescueChannel(pubnub,
+      (msg: any) => {
+        // console.log(msg.message)
+      }
+    )
     return () => {
       pubnub.unsubscribeAll();
       pubnub.destroy(); // Ensure the client fully stops sending heartbeats
@@ -615,9 +617,18 @@ const RescueMapScreen = () => {
         <Text>Số người online: {users.size}</Text>
       </View>
 
-      {!showActionsheet && directionsInfo && (
+      {!showActionsheet && directionsInfo && !requestDetailId && (
         <Pressable
-          onPress={handleReopenActionSheet}
+          onPress={() => setShowActionsheet(true)}
+          className="absolute bottom-20 right-2 w-10 h-10 bg-white rounded-full items-center justify-center shadow-sm"
+        >
+          <ChevronUp size={24} color="#3B82F6" />
+        </Pressable>
+      )}
+
+      {!showTracking && requestDetailId && (
+        <Pressable
+          onPress={() => setShowTracking(true)}
           className="absolute bottom-20 right-2 w-10 h-10 bg-white rounded-full items-center justify-center shadow-sm"
         >
           <ChevronUp size={24} color="#3B82F6" />

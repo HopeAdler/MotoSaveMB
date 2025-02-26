@@ -49,7 +49,7 @@ export async function getAutocomplete(query: string, location?: string): Promise
 }
 
 export async function getDirections(origin: string, destination: string): Promise<any> {
-  console.log(GOONG_API_KEY)
+  // console.log(GOONG_API_KEY)
   try {
     const response = await fetch(
       `https://rsapi.goong.io/direction?origin=${origin}&destination=${destination}&vehicle=truck&api_key=${GOONG_API_KEY}`
