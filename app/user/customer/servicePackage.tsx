@@ -2,7 +2,8 @@ import React from "react";
 import { Box } from "@/components/ui/box";
 import { Card } from "@/components/ui/card";
 import { Text } from "@/components/ui/text";
-import { Image, View, Pressable } from "react-native";
+import { Image, View} from "react-native";
+import { Pressable } from "@/components/ui/pressable";
 import { router } from "expo-router";
 import { ChevronLeft, Zap, Clock } from "lucide-react-native";
 
@@ -30,7 +31,7 @@ const ServicePackage = () => {
 
         <View className="space-y-4">
           <Pressable onPress={() => router.navigate("/user/customer/rescueMap")}>
-            <Card className="bg-white rounded-2xl p-6 shadow-md border border-gray-100">
+            <Card className="bg-white rounded-2xl p-6 shadow-md border border-gray-100 mb-2">
               <Box className="flex-row items-center">
                 <Box className="bg-red-50 p-4 rounded-xl">
                   <Zap size={28} color="#EF4444" />
@@ -64,7 +65,6 @@ const ServicePackage = () => {
           </Card>
         </View>
 
-        {/* Additional Info */}
         <Box className="mt-8">
           <Text className="text-xs text-gray-500 text-center">
             Chọn cứu hộ khẩn cấp để được ưu tiên xử lý ngay lập tức
