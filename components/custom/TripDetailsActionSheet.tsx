@@ -22,6 +22,7 @@ interface TripDetailsActionSheetProps {
   paymentLoading: boolean;
   directionsInfo: any;
   paymentMethodState: [string, React.Dispatch<React.SetStateAction<string>>];
+  confirmDisabled?: boolean;//cho button type error
 }
 
 const TripDetailsActionSheet: React.FC<TripDetailsActionSheetProps> = ({
