@@ -35,8 +35,8 @@ export default function DriverLayout() {
       ) {
         lastLocation.current = location.coords;
         setCurrentLoc(location.coords); // Only update state if the location actually changed
-        publishLocation(pubnub, userId, user, location.coords.latitude, location.coords.longitude);
       }
+      publishLocation(pubnub, userId, user, location.coords.latitude, location.coords.longitude);
 
       // Subscribe to live location updates
       locationSubscription = await watchLocation((position: any) => {
@@ -46,8 +46,8 @@ export default function DriverLayout() {
         ) {
           lastLocation.current = position.coords;
           setCurrentLoc(position.coords);
-          publishLocation(pubnub, userId, user, position.coords.latitude, position.coords.longitude);
         }
+        publishLocation(pubnub, userId, user, position.coords.latitude, position.coords.longitude);
       });
 
       console.log("Location updated");
@@ -135,7 +135,7 @@ export default function DriverLayout() {
             href: null,
           }}
           initialParams={{
-            jsonUsers: JSON.stringify(Array.from(users, ([key, value]) => ({ uId: key, ...value }))),
+            jsonUsers: JSON.stringify(Object.fromEntries(users)),
           }}
         />
         <Tabs.Screen
