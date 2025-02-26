@@ -83,6 +83,8 @@ const RescueMapScreen = () => {
   const [showTracking, setShowTracking] = useState(false);
   const [countdown, setCountdown] = useState(10);
   const [zpTransId, setZpTransId] = useState<string | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
+  const [isCancel, setIsCancel] = useState(false);
 
   // PubNub
   const [users, setUsers] = useState(new Map<string, User>());
@@ -312,6 +314,7 @@ const RescueMapScreen = () => {
             );
             if (transactionResponse) {
               handleRequestSuccess(reqId);
+              setIsSearching(true);
               handleFindDriver();
             }
             console.log("Transaction created:", transactionResponse);
@@ -348,7 +351,10 @@ const RescueMapScreen = () => {
     }, 1000);
   };
 
-  const sendRideRequestToDrivers = async (radius: number) => {
+  // NEW: Hàm gửi yêu cầu cho các driver trong bán kính xác định sử dụng geolib
+  const sendRideRequestToDrivers = async (radius: number) => {    
+    // let radius = INITIAL_RADIUS
+    // Sử dụng originCoordinates nếu có, nếu không thì dùng currentLoc
     const baseLocation =
       originCoordinates.latitude !== 0 && originCoordinates.longitude !== 0
         ? originCoordinates
@@ -396,6 +402,7 @@ const RescueMapScreen = () => {
     startCountdown(reqId);
   };
   const handleFindDriver = () => {
+    setIsSearching(true);
     sendRideRequestToDrivers(INITIAL_RADIUS);
   };
 
@@ -417,6 +424,12 @@ const RescueMapScreen = () => {
       console.error("Error canceling request:", error);
     }
   };
+
+  const handleCancelSearch = async () => {
+    setIsSearching(false);
+  };
+
+  // --- PubNub Integration ---
 
   const updateLocation = async (locationSubscription: any) => {
     if (await requestLocationPermission() && userId) {
@@ -578,9 +591,11 @@ const RescueMapScreen = () => {
           isOpen={showActionsheet}
           onClose={() => setShowActionsheet(false)}
           onPayment={paymentMethod === "Tiền mặt" ? handleFindDriver : handlePayment}
+          onCancelSearch={handleCancelSearch}
           fare={fare}
           fareLoading={fareLoading}
           paymentLoading={paymentLoading}
+          isSearching={isSearching}
           directionsInfo={directionsInfo}
           paymentMethodState={[paymentMethod, setPaymentMethod]}
           confirmDisabled={!isLocationValid()}
