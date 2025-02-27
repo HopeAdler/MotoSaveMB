@@ -20,6 +20,7 @@ import {
 } from "lucide-react-native";
 import axios from "axios";
 import AuthContext from "@/app/context/AuthContext";
+import { router } from "expo-router";
 
 interface TrackingActionSheetProps {
   isOpen: boolean;
@@ -80,6 +81,20 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
 
     return () => clearInterval(interval); // Cleanup on unmount
   }, []);
+
+  useEffect(() => {
+    if (requestDetail?.requeststatus === "Done") {
+      const timer = setTimeout(() => {
+        onClose(); // Close Action Sheet
+        router.push({
+          pathname: "/user/customer/feedback",
+          params: { requestdetailid: requestdetailid },
+        }) // Navigate to feedback screen
+      }, 5000); // Delay of 5 seconds
+
+      return () => clearTimeout(timer); // Cleanup timer on unmount
+    }
+  }, [requestDetail?.requeststatus]); // Runs when request status changes
 
   const getStatusColor = () => {
     switch (requestDetail?.requeststatus) {
