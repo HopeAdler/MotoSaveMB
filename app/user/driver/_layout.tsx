@@ -98,13 +98,15 @@ export default function DriverLayout() {
       }
     );
     //Render requests
-    subscribeToRescueChannel(pubnub,
-      (msg: any) => {
-        console.log(msg)
-        if (msg.message.driverId === userId)
-          setPendingReqDetailIds((prev) => new Map(prev).set(msg.publisher, msg.message.requestDetailId));
+    subscribeToRescueChannel(pubnub, (msg: any) => {
+      if (msg.message.driverId === userId) {
+        setPendingReqDetailIds((prev) => {
+          const updatedMap = new Map(prev);
+          updatedMap.set(msg.publisher, msg.message.requestDetailId);
+          return new Map(updatedMap); // Ensures state change is detected
+        });
       }
-    )
+    });
     return () => {
       pubnub.unsubscribeAll();
       pubnub.destroy(); // Ensure the client fully stops sending heartbeats
