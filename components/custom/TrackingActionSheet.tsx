@@ -21,6 +21,7 @@ import {
 import axios from "axios";
 import AuthContext from "@/app/context/AuthContext";
 import { router } from "expo-router";
+import { Alert, Linking, Platform } from "react-native";
 
 interface TrackingActionSheetProps {
   isOpen: boolean;
@@ -165,6 +166,46 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
     );
   };
 
+  const handleCall = () => {
+    if (!requestDetail?.driverphone) {
+      Alert.alert('Error', 'Driver phone number not available');
+      return;
+    }
+  
+    const phoneNumber = requestDetail.driverphone.replace(/[^\d+]/g, '');
+    if (!phoneNumber) {
+      Alert.alert('Error', 'Invalid phone number format');
+      return;
+    }
+  
+    const phoneUrl = Platform.select({
+      ios: `tel:${phoneNumber}`,
+      android: `tel:${phoneNumber}`
+    });
+  
+    if (!phoneUrl) {
+      Alert.alert('Error', 'Phone calls not supported on this device');
+      return;
+    }
+  
+    Linking.canOpenURL(phoneUrl)
+      .then(supported => {
+        if (!supported) {
+          Alert.alert('Error', 'Phone calls not supported');
+        } else {
+          Linking.openURL(phoneUrl)
+            .catch(err => {
+              console.error('Error opening phone app:', err);
+              Alert.alert('Error', 'Could not open phone app');
+            });
+        }
+      })
+      .catch(error => {
+        console.error('Error checking URL support:', error);
+        Alert.alert('Error', 'Could not make phone call');
+      });
+  };
+
   return (
     <Actionsheet
       isOpen={isOpen}
@@ -245,7 +286,7 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
               variant="outline"
               size="md"
               className="flex-1 mx-2 bg-gray-50 border-gray-200"
-              onPress={() => {}}
+              onPress={handleCall}
             >
               <ButtonText className="flex-row items-center justify-center text-gray-700">
                 <Box className="flex-row items-center">
