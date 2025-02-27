@@ -297,9 +297,10 @@ const RescueMapScreen = () => {
       const result = await createRescueRequest(payload, token);
       console.log(result);
       const reqId = result.requestdetailid;
+      setRequestDetailId(reqId);
       setShowActionsheet(false);
       processPayment(fare);
-      handleRequestSuccess(reqId);
+      // handleRequestSuccess(reqId);
       const payZaloEmitter = new NativeEventEmitter(PayZaloBridge);
       const subscription = payZaloEmitter.addListener("EventPayZalo", async (data: PayZaloEventData) => {
         if (data.returnCode === "1") {
@@ -320,7 +321,7 @@ const RescueMapScreen = () => {
             if (transactionResponse) {
               handleRequestSuccess(reqId);
               setIsSearching(true);
-              handleFindDriver();
+              sendRideRequestToDrivers(INITIAL_RADIUS,reqId);
             }
             console.log("Transaction created:", transactionResponse);
           } catch (error) {

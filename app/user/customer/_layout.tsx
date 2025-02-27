@@ -76,6 +76,13 @@ export default function CustomerLayout() {
             tabBarStyle: { display: "none" },
           }}
         />
+        <Tabs.Screen
+          name="feedback"
+          options={{
+            href: null,
+            tabBarStyle: { display: "none" },
+          }}
+        />
       </Tabs>
     </GluestackUIProvider>
   );
