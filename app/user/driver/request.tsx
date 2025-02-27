@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useState, useRef } from "react";
 import { FlatList, ActivityIndicator, Alert, View } from "react-native";
 import axios from "axios";
 import { AuthContext } from "@/app/context/AuthContext";
@@ -25,30 +25,42 @@ export default function DRequestScreen() {
   const [loading, setLoading] = useState(true);
   const { token } = useContext(AuthContext);
   const router = useRouter();
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const fetchRequests = async () => {
+  // Fetch requests function
+  const fetchRequests = async (isInitialFetch = false) => {
     try {
+      if (isInitialFetch) setLoading(true); // Only show loading on first fetch
+
       const response = await axios.get(
         "https://motor-save-be.vercel.app/api/v1/requests/driver",
         { headers: { Authorization: "Bearer " + token } }
       );
-      setRequests(response.data);
+
+      // Prevent unnecessary state updates
+      setRequests((prevRequests) => {
+        const isDataChanged = JSON.stringify(prevRequests) !== JSON.stringify(response.data);
+        return isDataChanged ? response.data : prevRequests;
+      });
+
     } catch (error) {
       console.error("Error fetching requests:", error);
     } finally {
-      setLoading(false);
+      if (isInitialFetch) setLoading(false);
     }
   };
 
   // Fetch requests every 20 seconds
   useEffect(() => {
-    fetchRequests(); // Initial fetch
+    fetchRequests(true); // Initial fetch
 
-    const interval = setInterval(() => {
-      fetchRequests();
-    }, 5000); // Fetch every 20 seconds
+    intervalRef.current = setInterval(() => {
+      fetchRequests(false); // Subsequent fetches without resetting loading
+    }, 5000); // Fetch every 5 seconds
 
-    return () => clearInterval(interval); // Cleanup on unmount
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
   }, []);
 
   const acceptRequest = async (requestdetailid: string) => {
@@ -59,7 +71,7 @@ export default function DRequestScreen() {
         { headers: { Authorization: "Bearer " + token } }
       );
       Alert.alert("Success", "Request accepted!");
-      fetchRequests(); // Refresh list after accepting
+      fetchRequests(false); // Refresh list after accepting without resetting UI
     } catch (error) {
       console.error("Error accepting request:", error);
       Alert.alert("Error", "Failed to accept request");
@@ -105,6 +117,7 @@ export default function DRequestScreen() {
   );
 
   if (loading) return <ActivityIndicator size="large" color="#0000ff" />;
+
   return (
     <Box className="flex-1 bg-gray-100 p-4">
       <FlatList

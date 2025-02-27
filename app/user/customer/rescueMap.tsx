@@ -50,7 +50,7 @@ type User = {
 };
 
 const INITIAL_RADIUS = 5000; // 5 km
-const MAX_RADIUS = 15000;    // 15 km
+const MAX_RADIUS = 20000;    // 15 km
 
 // Các hằng số cảnh báo khoảng cách (đơn vị mét)
 const MAX_WARN_PICKUP_DISTANCE = 2000;       // 2 km cho điểm đón
@@ -85,7 +85,10 @@ const RescueMapScreen = () => {
   const [zpTransId, setZpTransId] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [isCancel, setIsCancel] = useState(false);
-
+  const [sentDriverIds, setSentDriverIds] = useState<Set<string>>(new Set());
+  // Flag đánh dấu nếu có driver chấp nhận request
+  const [driverAccepted, setDriverAccepted] = useState(false);
+  const attemptedDriversRef = useRef<Set<string>>(new Set());
   // PubNub
   const [users, setUsers] = useState(new Map<string, User>());
   const pubnub = setupPubNub(userId || "");
@@ -253,7 +256,9 @@ const RescueMapScreen = () => {
 
   // Tạo yêu cầu cứu hộ
   const handleCreateRequest = async () => {
+    attemptedDriversRef.current = new Set();
     if (!token) return;
+
     const payload: RescueRequestPayload = {
       pickuplong: originCoordinates.longitude,
       pickuplat: originCoordinates.latitude,
@@ -335,7 +340,7 @@ const RescueMapScreen = () => {
   };
 
   const startCountdown = (requestId: any) => {
-    setRequestDetailId(requestId);
+    // setRequestDetailId(requestId);
     setShowCountdownSheet(true);
     setCountdown(10);
 
@@ -352,9 +357,7 @@ const RescueMapScreen = () => {
   };
 
   // NEW: Hàm gửi yêu cầu cho các driver trong bán kính xác định sử dụng geolib
-  const sendRideRequestToDrivers = async (radius: number) => {    
-    // let radius = INITIAL_RADIUS
-    // Sử dụng originCoordinates nếu có, nếu không thì dùng currentLoc
+  const sendRideRequestToDrivers = async (radius: number,reqId: string) => {
     const baseLocation =
       originCoordinates.latitude !== 0 && originCoordinates.longitude !== 0
         ? originCoordinates
@@ -375,35 +378,61 @@ const RescueMapScreen = () => {
     });
 
     nearbyDrivers.sort((a, b) => a.distance - b.distance);
-    console.log(nearbyDrivers);
-    if (nearbyDrivers.length > 0) {
-      const reqId = await handleCreateRequest();
-      if (reqId && userId) {
-        nearbyDrivers.forEach((driver) => {
-          console.log("Request " + reqId + " sent to driver: " + driver.uuid);
-          publishRescueRequest(pubnub, userId, driver.uuid, reqId);
-        });
-        console.log(`Sent ride request to drivers within ${radius} meters: ${nearbyDrivers.map((d) => d.uuid)}`);
-      }
+
+    // Lọc ra những driver chưa nhận request
+    const newDrivers = nearbyDrivers.filter(driver => !attemptedDriversRef.current.has(driver.uuid));
+
+    // Nếu chưa có rescue request, tạo request mới
+    // let reqId = requestDetailId;
+    // setRequestDetailId(reqId);
+    console.log(reqId);
+    // if (!reqId) {
+    //   reqId = await handleCreateRequest();
+    // }
+
+    if (newDrivers.length > 0 && reqId) {
+      newDrivers.forEach(driver => {
+        attemptedDriversRef.current.add(driver.uuid);
+        publishRescueRequest(pubnub, userId!, driver.uuid, reqId);
+      });
+      console.log(`Sent ride request to drivers within ${radius} meters: ${newDrivers.map(d => d.uuid)}`);
+      // Sau 10 giây, nếu chưa có driver chấp nhận, mở rộng bán kính và gửi request cho driver mới
+      setTimeout(() => {
+        if (!driverAccepted) {
+          if (radius + 2000 <= MAX_RADIUS) {
+            sendRideRequestToDrivers(radius + 2000,reqId);
+          } else {
+            Alert.alert("No drivers available", "No drivers available nearby. Please try again later.");
+          }
+        }
+        console.log("driver accepted");
+        return;
+      }, 20000);
     } else {
-      console.log(`No drivers found within ${radius} meters.`);
+      console.log(`No new drivers found within ${radius} meters.`);
       const newRadius = radius + 2000;
       if (newRadius <= MAX_RADIUS) {
         setTimeout(() => {
-          sendRideRequestToDrivers(newRadius);
-        }, 10000);
+          sendRideRequestToDrivers(newRadius,reqId);
+        }, 5000);
       } else {
-        alert("No drivers available nearby. Please try again later.");
+        Alert.alert("No drivers available in search radius");
+        
       }
     }
   };
 
+
   const handleRequestSuccess = (reqId: string) => {
     startCountdown(reqId);
   };
-  const handleFindDriver = () => {
+  const handleFindDriver = async () => {
+    const reqId = await handleCreateRequest();
+    // handleCreateRequest();
+    // setRequestDetailId(reqId);
     setIsSearching(true);
-    sendRideRequestToDrivers(INITIAL_RADIUS);
+    setDriverAccepted(false);
+    sendRideRequestToDrivers(INITIAL_RADIUS,reqId);
   };
 
   const handleCancel = async () => {
@@ -474,7 +503,12 @@ const RescueMapScreen = () => {
       user,
       (msg: any) => {
         const message = msg.message;
-        if (msg.publisher === userId || message.role === 'Driver') {
+        // console.log(message)
+        // Nếu nhận được thông báo từ driver (ví dụ: message.type === "driverAccepted"), đánh dấu đã có driver chấp nhận
+        if (message.type === "driverAccepted") {
+          setDriverAccepted(true);
+        }
+        if (msg.publisher === userId || message.role === "Driver") {
           setUsers((prev) => new Map(prev).set(msg.publisher, msg.message));
         }
       },
@@ -496,7 +530,6 @@ const RescueMapScreen = () => {
       pubnub.destroy();
     };
   }, []);
-
   useEffect(() => {
     hereNow(pubnub);
   }, []);
