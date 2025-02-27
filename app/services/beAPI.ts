@@ -19,6 +19,11 @@ export interface Transaction {
   paymentstatus: string;
 }
 
+export interface Feedback {
+  rating: number;
+  comment: string;
+}
+
 export async function createRescueRequest(
   payload: RescueRequestPayload,
   token: string
@@ -47,6 +52,28 @@ export async function createTransaction(
   try {
     const response = await axios.post(
       "https://motor-save-be.vercel.app/api/v1/transactions",
+      payload,
+      {
+        headers: {
+          Authorization: "Bearer " + token,
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error creating transaction", error);
+    throw error;
+  }
+}
+
+export async function createFeedback(
+  requestdetailid: string,
+  payload: Feedback,
+  token: string
+): Promise<any> {
+  try {
+    const response = await axios.post(
+      `https://motor-save-be.vercel.app/api/v1/feedbacks/create/${requestdetailid}`,
       payload,
       {
         headers: {

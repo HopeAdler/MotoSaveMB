@@ -65,14 +65,7 @@ export default function DriverLayout() {
     };
   }, []);
 
-  useEffect(() => {
-    // Update the params in requestMap when currentLoc changes
-    if (segment.includes("requestMap")) {
-      router.setParams({
-        jsonCurLoc: JSON.stringify(currentLoc),
-      });
-    }
-  }, [currentLoc]);
+
 
   useEffect(() => {
     //Render Users
@@ -97,7 +90,7 @@ export default function DriverLayout() {
         }
       }
     );
-    //Render requests
+    //Listen to requests from Pubnub
     subscribeToRescueChannel(pubnub, (msg: any) => {
       if (msg.message.driverId === userId) {
         setPendingReqDetailIds((prev) => {
@@ -112,6 +105,9 @@ export default function DriverLayout() {
       pubnub.destroy(); // Ensure the client fully stops sending heartbeats
     };
   }, []);
+  useEffect(() => {
+    hereNow(pubnub)
+  }, [])
 
   useEffect(() => {
     if (segment.includes("home")) {
@@ -119,11 +115,13 @@ export default function DriverLayout() {
         jsonPendingReqDetailIds: JSON.stringify(Object.fromEntries(pendingReqDetailIds)),
       });
     }
-  }, [pendingReqDetailIds]);
-
-  useEffect(() => {
-    hereNow(pubnub)
-  }, [])
+    else if (segment.includes("requestMap")) {
+      router.setParams({
+        jsonCurLoc: JSON.stringify(currentLoc),
+        jsonUsers: JSON.stringify(Object.fromEntries(users)),
+      });
+    }
+  }, [pendingReqDetailIds, currentLoc, users, segment]);
 
   return (
     <GluestackUIProvider mode="light">
@@ -149,9 +147,6 @@ export default function DriverLayout() {
           options={{
             headerShown: false,
             href: null,
-          }}
-          initialParams={{
-            jsonUsers: JSON.stringify(Object.fromEntries(users)),
           }}
         />
         <Tabs.Screen

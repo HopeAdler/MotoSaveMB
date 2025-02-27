@@ -21,6 +21,7 @@ import {
   ActionsheetDragIndicatorWrapper,
   ActionsheetSectionHeaderText,
 } from "@/components/ui/actionsheet";
+import { useCameraZoom } from "@/app/hooks/useCameraZoom";
 
 type User = {
   uuid: string;
@@ -66,11 +67,15 @@ const RequestMap: React.FC = () => {
   // Inline generic type for search params to satisfy the constraint.
   const { requestdetailid } = useLocalSearchParams<{ requestdetailid: string }>();
   const { token } = useContext(AuthContext);
-  const { jsonUsers, jsonCurLoc } = useLocalSearchParams<any>();
+  const {
+    jsonCurLoc = '{"latitude":0,"longitude":0}',
+    jsonUsers = "{}"
+  } = useLocalSearchParams<any>();
+
   // Parse users from JSON and reconstruct the Map
-  const users = new Map<string, User>(Object.entries(JSON.parse(jsonUsers)));
+  const [users, setUsers] = useState<Map<string, User>>(new Map(Object.entries(JSON.parse(jsonUsers))));
   // Parse currentLoc
-  const [currentLoc, setCurrentLoc] = useState(jsonCurLoc ? JSON.parse(jsonCurLoc) : { latitude: 0, longitude: 0 });
+  const [currentLoc, setCurrentLoc] = useState({ latitude: 0, longitude: 0 });
 
   const [requestDetail, setRequestDetail] = useState<RequestDetail | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -82,9 +87,9 @@ const RequestMap: React.FC = () => {
   // State to control the open/close state of the ActionSheet.
   const [isActionSheetOpen, setIsActionSheetOpen] = useState<boolean>(true);
 
-  const camera = useRef<ICamera | null>(null);
+  const camera = useRef<MapboxGL.Camera>(null);
 
-  const [focusOnMe, setFocusOnMe] = useState<boolean>(false);
+  const [focusOnMe, setFocusOnMe] = useState<boolean>(true);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const changeRequestStatus = async () => {
@@ -202,10 +207,27 @@ const RequestMap: React.FC = () => {
   };
 
   useEffect(() => {
-    if (jsonCurLoc) {
+    try {
       setCurrentLoc(JSON.parse(jsonCurLoc));
+    } catch (error) {
+      console.error("Failed to parse jsonCurLoc:", error, jsonCurLoc);
+      setCurrentLoc({ latitude: 0, longitude: 0 });
     }
   }, [jsonCurLoc]);
+
+  useEffect(() => {
+    try {
+      const parsedUsers = JSON.parse(jsonUsers);
+      if (typeof parsedUsers === "object" && parsedUsers !== null) {
+        setUsers(new Map(Object.entries(parsedUsers)));
+      } else {
+        setUsers(new Map());
+      }
+    } catch (error) {
+      console.error("Failed to parse jsonUsers:", error, jsonUsers);
+      setUsers(new Map());
+    }
+  }, [jsonUsers]);
 
   useEffect(() => {
     fetchRoute();
@@ -231,6 +253,10 @@ const RequestMap: React.FC = () => {
   return (
     <Box className="flex-1">
       <MapViewComponent users={users} currentLoc={focusOnMe ? currentLoc : originCoordinates} focusMode={[focusOnMe, setFocusOnMe]} isActionSheetOpen={isActionSheetOpen}>
+        <MapboxGL.Camera ref={camera}
+          centerCoordinate={
+            focusOnMe ? [currentLoc.longitude, currentLoc.latitude] : [originCoordinates.longitude, originCoordinates.latitude]}
+        />
         {originCoordinates && (
           <MapboxGL.PointAnnotation id="ori-marker" coordinate={[originCoordinates.longitude, originCoordinates.latitude]}>
             <MapboxGL.Callout title="Origin" />
