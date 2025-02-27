@@ -1,21 +1,20 @@
 import { AuthContext } from "@/app/context/AuthContext";
+import { renderItem } from "@/components/custom/RequestItem";
 import { Box } from "@/components/ui/box";
 import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
-import { router, useLocalSearchParams } from "expo-router";
+import axios from "axios";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import {
-  ArchiveRestore,
   GalleryThumbnails,
   LucideIcon,
   MapPin,
-  Route,
-  Siren,
   Truck
 } from "lucide-react-native";
 import React, { useContext, useEffect, useState } from "react";
-import { Pressable, ScrollView } from "react-native";
-import LoadingScreen from "../../loading/loading";
+import { FlatList, Pressable, View } from "react-native";
 import { Avatar } from "react-native-elements";
+import LoadingScreen from "../../loading/loading";
 
 interface ServiceCardProps {
   icon: LucideIcon;
@@ -26,6 +25,17 @@ interface ServiceCardProps {
 interface LocationProps {
   name: string;
   distance: string;
+}
+
+interface RequestItem {
+  requestid: string;
+  requestdetailid: string;
+  requesttype: string;
+  fullname: string;
+  phone: string;
+  pickuplocation: string;
+  requeststatus: string;
+  createddate: string;
 }
 
 const ServiceCard: React.FC<ServiceCardProps> = ({
@@ -56,10 +66,46 @@ const RecentLocation: React.FC<LocationProps> = ({ name, distance }) => (
 );
 
 export default function DHomeScreen() {
-  const { user, dispatch } = useContext(AuthContext);
+  const { user, dispatch, token } = useContext(AuthContext);
   const [isLoading, setIsLoading] = useState(true);
   const { jsonPendingReqDetailIds } = useLocalSearchParams<any>();
   const [pendingReqDetailIds, setPendingReqDetailIds] = useState(new Map<string, string>());
+  const [requestDetails, setRequestDetails] = useState<RequestItem[]>([]);
+  const router = useRouter();
+  // const testedIds = ['8f3e93cb-e458-494b-acc5-5e3dd601e709', '67b026f6-e114-4f32-9f61-fae96778a74e', 'e7a09360-6011-40f2-96d1-fac7d49e0093'];
+  useEffect(() => {
+    if (pendingReqDetailIds.size === 0) return; // No requests, skip API calls
+
+    const fetchAllRequests = async () => {
+      try {
+        const requests = await Promise.all(
+          Array.from(pendingReqDetailIds.values()).map(async (id) => {
+            console.log(id)
+            const response = await axios.get(
+              `https://motor-save-be.vercel.app/api/v1/requests/driver/${id}`,
+              { headers: { Authorization: "Bearer " + token } }
+            );
+            return response.data;
+          })
+        );
+
+        // Filter out items where requeststatus is 'Accepted'
+        const filteredRequests = requests.filter((item) => (item.requeststatus !== "Accepted" && item.requeststatus !== "Cancel"));
+        console.log('Refetching..')
+        setRequestDetails(filteredRequests); // ⬅️ Overwrite state with filtered data
+      } catch (error) {
+        console.error("Error fetching requests:", error);
+      }
+    };
+
+    fetchAllRequests(); // Fetch initially
+
+    const interval = setInterval(() => {
+      fetchAllRequests(); // Fetch every 5 seconds
+    }, 5000);
+
+    return () => clearInterval(interval); // Cleanup interval on unmount
+  }, [pendingReqDetailIds, token]); // Dependencies to refetch when changed
 
   // Parse users from JSON and reconstruct the Map
   useEffect(() => {
@@ -98,37 +144,19 @@ export default function DHomeScreen() {
         </Box>
       </Box>
 
-      <ScrollView className="flex-1">
+      <View className="flex-1">
         <Box className="p-4">
           <Box className="mb-6">
             <Text className="text-lg font-bold mb-4">Hàng chờ yêu cầu</Text>
             {pendingReqDetailIds && pendingReqDetailIds.size > 0 ? (
-              Array.from(pendingReqDetailIds.values()).map((reqId) => (
-                <Button
-                  key={reqId} // Always add a key when mapping over elements
-                  className="bg-blue-500 p-2 rounded"
-                  size="lg"
-                  onPress={() =>
-                    router.push({
-                      pathname: "/user/driver/requestMap",
-                      params: { requestdetailid: reqId },
-                    })
-                  }
-                >
-                  <Text className="text-white">
-                    {`${reqId}`}
-                  </Text>
-                </Button>
-              ))
+              <FlatList
+                data={requestDetails}
+                keyExtractor={(item) => `${item.requestdetailid}-${item.requeststatus}`}
+                renderItem={({ item }) => renderItem({ item, token, router })} // ✅ Correct way
+              />
             ) : (
               <Text>Hiện chưa có yêu cầu nào</Text>
             )}
-
-            <Box className="flex flex-row flex-wrap">
-              <ServiceCard icon={Siren} title="Cứu hộ xe" color="#ef4444" />
-              <ServiceCard icon={Route} title="Vận chuyển" color="#3b82f6" />
-              <ServiceCard icon={ArchiveRestore} title="Trả xe" color="#10b981" />
-            </Box>
           </Box>
 
           <Box className="mb-6">
@@ -156,7 +184,8 @@ export default function DHomeScreen() {
             </Box>
           </Box>
         </Box>
-      </ScrollView>
+      </View>
     </Box >
   );
 }
+

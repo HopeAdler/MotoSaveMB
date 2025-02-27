@@ -65,14 +65,7 @@ export default function DriverLayout() {
     };
   }, []);
 
-  useEffect(() => {
-    // Update the params in requestMap when currentLoc changes
-    if (segment.includes("requestMap")) {
-      router.setParams({
-        jsonCurLoc: JSON.stringify(currentLoc),
-      });
-    }
-  }, [currentLoc]);
+
 
   useEffect(() => {
     //Render Users
@@ -97,19 +90,24 @@ export default function DriverLayout() {
         }
       }
     );
-    //Render requests
-    subscribeToRescueChannel(pubnub,
-      (msg: any) => {
-        console.log(msg)
-        if (msg.message.driverId === userId)
-          setPendingReqDetailIds((prev) => new Map(prev).set(msg.publisher, msg.message.requestDetailId));
+    //Listen to requests from Pubnub
+    subscribeToRescueChannel(pubnub, (msg: any) => {
+      if (msg.message.driverId === userId) {
+        setPendingReqDetailIds((prev) => {
+          const updatedMap = new Map(prev);
+          updatedMap.set(msg.publisher, msg.message.requestDetailId);
+          return new Map(updatedMap); // Ensures state change is detected
+        });
       }
-    )
+    });
     return () => {
       pubnub.unsubscribeAll();
       pubnub.destroy(); // Ensure the client fully stops sending heartbeats
     };
   }, []);
+  useEffect(() => {
+    hereNow(pubnub)
+  }, [])
 
   useEffect(() => {
     if (segment.includes("home")) {
@@ -117,11 +115,13 @@ export default function DriverLayout() {
         jsonPendingReqDetailIds: JSON.stringify(Object.fromEntries(pendingReqDetailIds)),
       });
     }
-  }, [pendingReqDetailIds]);
-
-  useEffect(() => {
-    hereNow(pubnub)
-  }, [])
+    else if (segment.includes("requestMap")) {
+      router.setParams({
+        jsonCurLoc: JSON.stringify(currentLoc),
+        jsonUsers: JSON.stringify(Object.fromEntries(users)),
+      });
+    }
+  }, [pendingReqDetailIds, currentLoc, users, segment]);
 
   return (
     <GluestackUIProvider mode="light">
@@ -147,9 +147,6 @@ export default function DriverLayout() {
           options={{
             headerShown: false,
             href: null,
-          }}
-          initialParams={{
-            jsonUsers: JSON.stringify(Object.fromEntries(users)),
           }}
         />
         <Tabs.Screen

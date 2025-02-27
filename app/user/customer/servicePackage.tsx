@@ -2,7 +2,7 @@ import React from "react";
 import { Box } from "@/components/ui/box";
 import { Card } from "@/components/ui/card";
 import { Text } from "@/components/ui/text";
-import { Image, View} from "react-native";
+import { Image, View } from "react-native";
 import { Pressable } from "@/components/ui/pressable";
 import { router } from "expo-router";
 import { ChevronLeft, Zap, Clock } from "lucide-react-native";
@@ -12,7 +12,7 @@ const ServicePackage = () => {
     <Box className="flex-1 bg-gray-50">
       <Box className="bg-white p-5 shadow-sm">
         <Box className="flex-row items-center">
-          <Pressable 
+          <Pressable
             onPress={() => router.back()}
             className="w-10 h-10 bg-gray-50 rounded-full items-center justify-center"
           >
@@ -30,7 +30,7 @@ const ServicePackage = () => {
         </Text>
 
         <View className="space-y-4">
-          <Pressable onPress={() => router.navigate("/user/customer/rescueMap")}>
+          <Pressable>
             <Card className="bg-white rounded-2xl p-6 shadow-md border border-gray-100 mb-2">
               <Box className="flex-row items-center">
                 <Box className="bg-red-50 p-4 rounded-xl">
@@ -48,21 +48,25 @@ const ServicePackage = () => {
             </Card>
           </Pressable>
 
-          <Card className="bg-white rounded-2xl p-6 shadow-md border border-gray-100">
-            <Box className="flex-row items-center">
-              <Box className="bg-blue-50 p-4 rounded-xl">
-                <Clock size={28} color="#3B82F6" />
+          <Pressable
+            onPress={() => router.navigate("/user/customer/rescueMap")}
+          >
+            <Card className="bg-white rounded-2xl p-6 shadow-md border border-gray-100">
+              <Box className="flex-row items-center">
+                <Box className="bg-blue-50 p-4 rounded-xl">
+                  <Clock size={28} color="#3B82F6" />
+                </Box>
+                <Box className="ml-4 flex-1">
+                  <Text className="text-lg font-bold text-gray-900 mb-1">
+                    Cứu hộ thường
+                  </Text>
+                  <Text className="text-gray-600 text-sm">
+                    Giá ưu đãi • Thời gian linh hoạt
+                  </Text>
+                </Box>
               </Box>
-              <Box className="ml-4 flex-1">
-                <Text className="text-lg font-bold text-gray-900 mb-1">
-                  Cứu hộ thường
-                </Text>
-                <Text className="text-gray-600 text-sm">
-                  Giá ưu đãi • Thời gian linh hoạt
-                </Text>
-              </Box>
-            </Box>
-          </Card>
+            </Card>
+          </Pressable>
         </View>
 
         <Box className="mt-8">

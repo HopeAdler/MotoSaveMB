@@ -1,4 +1,5 @@
 import axios from "axios";
+import { Alert } from "react-native";
 
 export interface RescueRequestPayload {
   pickuplong: number;
@@ -16,6 +17,11 @@ export interface Transaction {
   totalamount: number | null;
   paymentmethod: string;
   paymentstatus: string;
+}
+
+export interface Feedback {
+  rating: number;
+  comment: string;
 }
 
 export async function createRescueRequest(
@@ -46,6 +52,28 @@ export async function createTransaction(
   try {
     const response = await axios.post(
       "https://motor-save-be.vercel.app/api/v1/transactions",
+      payload,
+      {
+        headers: {
+          Authorization: "Bearer " + token,
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error creating transaction", error);
+    throw error;
+  }
+}
+
+export async function createFeedback(
+  requestdetailid: string,
+  payload: Feedback,
+  token: string
+): Promise<any> {
+  try {
+    const response = await axios.post(
+      `https://motor-save-be.vercel.app/api/v1/feedbacks/create/${requestdetailid}`,
       payload,
       {
         headers: {
@@ -99,11 +127,45 @@ export async function calculateFare(distance: number): Promise<number> {
   }
 }
 
+export async function fetchRequests
+  (
+    token: string,
+  ): Promise<any> {
+  try {
+    const response = await axios.get(
+      "https://motor-save-be.vercel.app/api/v1/requests/driver",
+      { headers: { Authorization: "Bearer " + token } }
+    );
+    return (response.data);
+  } catch (error) {
+    console.error("Error fetching requests:", error);
+  };
+}
+
+export async function acceptRequest
+  (
+    requestdetailid: string, token: string
+  ): Promise<any> {
+  try {
+    await axios.put(
+      `https://motor-save-be.vercel.app/api/v1/requests/${requestdetailid}/accept`,
+      {},
+      { headers: { Authorization: "Bearer " + token } }
+    );
+    Alert.alert("Success", "Request accepted!");
+  } catch (error) {
+    console.error("Error accepting request:", error);
+    Alert.alert("Error", "Failed to accept request");
+  }
+};
+
 const beAPI = {
   createRescueRequest,
   createTransaction,
   calculateFare,
   updateRequestStatus,
+  fetchRequests,
+  acceptRequest
 };
 
 export default beAPI;
