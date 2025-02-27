@@ -3,6 +3,7 @@ import { Box } from "@/components/ui/box";
 import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
 import { VStack } from "@/components/ui/vstack";
+import { Router } from "expo-router";
 import moment from "moment";
 import { View } from "react-native";
 
@@ -17,7 +18,7 @@ interface RequestItem {
     createddate: string;
 }
 
-export const renderItem = ({ item, token, router }: { item: RequestItem; token: string; router: any }) => (
+export const renderItem = ({ item, token, router }: { item: RequestItem; token: string; router: Router }) => (
     <Box className="bg-white p-4 mb-2 rounded-lg shadow relative">
         <View className="absolute top-2 right-2 bg-blue-500 px-2 py-1 rounded-full">
             <Text className="text-white text-xs font-bold">{item.requeststatus}</Text>

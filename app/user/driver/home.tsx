@@ -4,7 +4,7 @@ import { Box } from "@/components/ui/box";
 import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
 import axios from "axios";
-import { router, useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   GalleryThumbnails,
   LucideIcon,
@@ -80,6 +80,7 @@ export default function DHomeScreen() {
       try {
         const requests = await Promise.all(
           Array.from(pendingReqDetailIds.values()).map(async (id) => {
+            console.log(id)
             const response = await axios.get(
               `https://motor-save-be.vercel.app/api/v1/requests/driver/${id}`,
               { headers: { Authorization: "Bearer " + token } }
@@ -89,8 +90,8 @@ export default function DHomeScreen() {
         );
 
         // Filter out items where requeststatus is 'Accepted'
-        const filteredRequests = requests.filter((item) => item.requeststatus !== "Accepted");
-
+        const filteredRequests = requests.filter((item) => (item.requeststatus !== "Accepted" && item.requeststatus !== "Cancel"));
+        console.log('Refetching..')
         setRequestDetails(filteredRequests); // ⬅️ Overwrite state with filtered data
       } catch (error) {
         console.error("Error fetching requests:", error);
