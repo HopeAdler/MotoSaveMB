@@ -15,6 +15,8 @@ import React, { useContext, useEffect, useState } from "react";
 import { FlatList, Pressable, View } from "react-native";
 import { Avatar } from "react-native-elements";
 import LoadingScreen from "../../loading/loading";
+import { usePubNub } from "@/app/context/PubNubContext";
+import { usePubNubService } from "@/app/utils/pubnubService";
 
 interface ServiceCardProps {
   icon: LucideIcon;
@@ -31,8 +33,8 @@ interface RequestItem {
   requestid: string;
   requestdetailid: string;
   requesttype: string;
-  fullname: string;
-  phone: string;
+  customername: string;
+  customerphone: string;
   pickuplocation: string;
   requeststatus: string;
   createddate: string;
@@ -67,6 +69,8 @@ const RecentLocation: React.FC<LocationProps> = ({ name, distance }) => (
 
 export default function DHomeScreen() {
   const { user, dispatch, token } = useContext(AuthContext);
+  const { pubnub } = usePubNub(); // Access PubNub instance from context
+  const { publishAcceptRequest } = usePubNubService(); //
   const [isLoading, setIsLoading] = useState(true);
   const { jsonPendingReqDetailIds } = useLocalSearchParams<any>();
   const [pendingReqDetailIds, setPendingReqDetailIds] = useState(new Map<string, string>());
@@ -90,8 +94,8 @@ export default function DHomeScreen() {
         );
 
         // Filter out items where requeststatus is 'Accepted'
-        const filteredRequests = requests.filter((item) => (item.requeststatus !== "Accepted" && item.requeststatus !== "Cancel"));
-        console.log('Refetching..')
+        const filteredRequests = requests.filter((item) => (item.requeststatus === "Pending"));
+        // console.log('Refetching..')
         setRequestDetails(filteredRequests); // ⬅️ Overwrite state with filtered data
       } catch (error) {
         console.error("Error fetching requests:", error);
@@ -148,11 +152,13 @@ export default function DHomeScreen() {
         <Box className="p-4">
           <Box className="mb-6">
             <Text className="text-lg font-bold mb-4">Hàng chờ yêu cầu</Text>
-            {pendingReqDetailIds && pendingReqDetailIds.size > 0 ? (
+            {requestDetails && requestDetails.length > 0 ? (
               <FlatList
                 data={requestDetails}
                 keyExtractor={(item) => `${item.requestdetailid}-${item.requeststatus}`}
-                renderItem={({ item }) => renderItem({ item, token, router })} // ✅ Correct way
+                renderItem={({ item }) =>
+                  renderItem({ item, token, router, pubnub, publishAcceptRequest })
+                }
               />
             ) : (
               <Text>Hiện chưa có yêu cầu nào</Text>

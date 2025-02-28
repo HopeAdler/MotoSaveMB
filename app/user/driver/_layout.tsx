@@ -1,6 +1,6 @@
 import AuthContext from "@/app/context/AuthContext";
 import { getCurrentLocation, requestLocationPermission, watchLocation } from "@/app/utils/locationService";
-import { hereNow, publishLocation, setupPubNub, subscribeToChannel, subscribeToRescueChannel } from "@/app/utils/pubnubService";
+import { usePubNubService } from "@/app/utils/pubnubService"; // ✅ Use the custom hook
 import { decodedToken } from "@/app/utils/utils";
 import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
 import "@/global.css";
@@ -19,14 +19,20 @@ type User = {
 export default function DriverLayout() {
   const router = useRouter();
   const segment = useSegments<any>();
+  const {
+    publishLocation,
+    subscribeToChannel,
+    subscribeToRescueChannel,
+    hereNow,
+  } = usePubNubService(); // ✅ Get service functions
   const { user, token } = useContext(AuthContext);
+
   const [currentLoc, setCurrentLoc] = useState({ latitude: 0, longitude: 0 });
   const lastLocation = useRef({ latitude: 0, longitude: 0 });
   const userId = decodedToken(token)?.id;
   const [users, setUsers] = useState(new Map<string, User>());
   const [pendingReqDetailIds, setPendingReqDetailIds] = useState(new Map<string, string>());
-  //PUBNUB intergration to publish location right after driver logged in
-  const pubnub = setupPubNub(userId || "");
+
   const updateLocation = async (locationSubscription: any) => {
     if (await requestLocationPermission() && userId) {
       const location = await getCurrentLocation();
@@ -35,10 +41,9 @@ export default function DriverLayout() {
         location.coords.longitude !== lastLocation.current.longitude
       ) {
         lastLocation.current = location.coords;
-        setCurrentLoc(location.coords); // Only update state if the location actually changed
+        setCurrentLoc(location.coords);
       }
-      publishLocation(pubnub, userId, user, location.coords.latitude, location.coords.longitude);
-
+      publishLocation(userId, user, location.coords.latitude, location.coords.longitude); // ✅ Use function from service
       // Subscribe to live location updates
       locationSubscription = await watchLocation((position: any) => {
         if (
@@ -48,40 +53,34 @@ export default function DriverLayout() {
           lastLocation.current = position.coords;
           setCurrentLoc(position.coords);
         }
-        publishLocation(pubnub, userId, user, position.coords.latitude, position.coords.longitude);
+        publishLocation(userId, user, position.coords.latitude, position.coords.longitude); // ✅ Use function from service
       });
     }
   };
+
   useEffect(() => {
     let locationSubscription: any;
 
-    // Initial call
     updateLocation(locationSubscription);
-    // Set interval for 10s updates
     const intervalId = setInterval(updateLocation, 10000);
+
     return () => {
       clearInterval(intervalId);
-      if (locationSubscription) locationSubscription.remove(); // Cleanup
+      if (locationSubscription) locationSubscription.remove();
     };
   }, []);
 
-
-
   useEffect(() => {
-    //Render Users
+    // Render Users
     subscribeToChannel(
-      pubnub,
       user,
       (msg: any) => {
-        // Only the driver
         if (msg.publisher === userId) {
           setUsers((prev) => new Map(prev).set(msg.publisher, msg.message));
         }
       },
       (event: any) => {
-        // Handle presence events
         if (event.action === "leave" || event.action === "timeout") {
-          // Remove user when they disconnect
           setUsers((prev) => {
             const updated = new Map(prev);
             updated.delete(event.uuid);
@@ -90,32 +89,34 @@ export default function DriverLayout() {
         }
       }
     );
-    //Listen to requests from Pubnub
-    subscribeToRescueChannel(pubnub, (msg: any) => {
-      if (msg.message.driverId === userId) {
+
+    // Listen to requests from PubNub
+    subscribeToRescueChannel((msg: any) => {
+      if (msg.message.senderRole === "Customer" && msg.message.driverId === userId) {
         setPendingReqDetailIds((prev) => {
           const updatedMap = new Map(prev);
           updatedMap.set(msg.publisher, msg.message.requestDetailId);
-          return new Map(updatedMap); // Ensures state change is detected
+          return new Map(updatedMap);
         });
       }
     });
+
     return () => {
-      pubnub.unsubscribeAll();
-      pubnub.destroy(); // Ensure the client fully stops sending heartbeats
+      // pubnub?.unsubscribeAll();
+      // pubnub?.destroy(); // Ensure cleanup
     };
   }, []);
+
   useEffect(() => {
-    hereNow(pubnub)
-  }, [])
+    hereNow();
+  }, []);
 
   useEffect(() => {
     if (segment.includes("home")) {
       router.setParams({
         jsonPendingReqDetailIds: JSON.stringify(Object.fromEntries(pendingReqDetailIds)),
       });
-    }
-    else if (segment.includes("requestMap")) {
+    } else if (segment.includes("requestMap")) {
       router.setParams({
         jsonCurLoc: JSON.stringify(currentLoc),
         jsonUsers: JSON.stringify(Object.fromEntries(users)),
@@ -142,13 +143,7 @@ export default function DriverLayout() {
             tabBarIcon: (tabInfo) => <List size={24} color={tabInfo.color} />,
           }}
         />
-        <Tabs.Screen
-          name="requestMap"
-          options={{
-            headerShown: false,
-            href: null,
-          }}
-        />
+        <Tabs.Screen name="requestMap" options={{ headerShown: false, href: null }} />
         <Tabs.Screen
           name="transaction_history"
           options={{
