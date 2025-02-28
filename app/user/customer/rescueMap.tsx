@@ -1,13 +1,3 @@
-import { Actionsheet, ActionsheetContent } from "@/components/ui/actionsheet";
-import { Box } from "@/components/ui/box";
-import { Button, ButtonText } from "@/components/ui/button";
-import { Input, InputField } from "@/components/ui/input";
-import { Pressable } from "@/components/ui/pressable";
-import { Text, Alert, FlatList, NativeEventEmitter, NativeModules, View } from "react-native";
-import MapboxGL from "@rnmapbox/maps";
-import { router } from "expo-router";
-import { CircleChevronDown, LocateFixed, ChevronLeft, ChevronUp } from "lucide-react-native";
-import React, { useContext, useEffect, useRef, useState } from "react";
 import { AuthContext } from "@/app/context/AuthContext";
 import { useCameraZoom } from "@/app/hooks/useCameraZoom";
 import {
@@ -24,7 +14,15 @@ import {
   getReverseGeocode,
 } from "@/app/services/goongAPI";
 import { decodePolyline } from "@/app/utils/utils";
+import { Box } from "@/components/ui/box";
+import { Input, InputField } from "@/components/ui/input";
+import { Pressable } from "@/components/ui/pressable";
+import MapboxGL from "@rnmapbox/maps";
+import { router } from "expo-router";
 import { getDistance } from "geolib";
+import { ChevronLeft, ChevronUp, CircleChevronDown, LocateFixed } from "lucide-react-native";
+import React, { useContext, useEffect, useRef, useState } from "react";
+import { Alert, FlatList, NativeEventEmitter, NativeModules, Text, View } from "react-native";
 
 import TrackingActionSheet from "@/components/custom/TrackingActionSheet";
 import TripDetailsActionSheet from "@/components/custom/TripDetailsActionSheet";
@@ -32,12 +30,11 @@ import TripDetailsActionSheet from "@/components/custom/TripDetailsActionSheet";
 // Các import liên quan đến PubNub và Payment
 import { getCurrentLocation, requestLocationPermission, watchLocation } from "@/app/utils/locationService";
 import { PayZaloEventData, processPayment, refundTransaction } from "@/app/utils/payment";
-import { hereNow, publishLocation, publishRescueRequest, setupPubNub, subscribeToChannel, subscribeToRescueChannel } from "@/app/utils/pubnubService";
 import { decodedToken } from "@/app/utils/utils";
 import MapViewComponent from "../../../components/custom/MapViewComponent";
-import { PUBNUB_PUBLISH_KEY, PUBNUB_SUBSCRIBE_KEY } from "../../constant/pubnub";
-import { Payload } from "pubnub";
 
+import { usePubNubService } from "@/app/utils/pubnubService"; // ✅ Use the custom hook
+import { usePubNub } from "../../context/PubNubContext";
 const { MAPBOX_ACCESS_TOKEN } = process.env;
 MapboxGL.setAccessToken(`${MAPBOX_ACCESS_TOKEN}`);
 
@@ -57,6 +54,14 @@ const MAX_WARN_PICKUP_DISTANCE = 2000;       // 2 km cho điểm đón
 const MAX_WARN_DESTINATION_DISTANCE = 50000;   // 50 km cho điểm đến
 
 const RescueMapScreen = () => {
+  const { pubnub } = usePubNub(); // ✅ Get the PubNub instance from context
+  const {
+    publishLocation,
+    publishRescueRequest,
+    subscribeToChannel,
+    subscribeToRescueChannel,
+    hereNow,
+  } = usePubNubService();
   const { user, token } = useContext(AuthContext);
   const { PayZaloBridge } = NativeModules;
   const userId = decodedToken(token)?.id;
@@ -78,20 +83,20 @@ const RescueMapScreen = () => {
   const [destinationSelected, setDestinationSelected] = useState(false);
   const [showActionsheet, setShowActionsheet] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("Tiền mặt");
-  const [showCountdownSheet, setShowCountdownSheet] = useState(false);
+  // const [showCountdownSheet, setShowCountdownSheet] = useState(false);
   const [requestDetailId, setRequestDetailId] = useState<string | null>(null);
   const [showTracking, setShowTracking] = useState(false);
-  const [countdown, setCountdown] = useState(10);
+  // const [countdown, setCountdown] = useState(10);
   const [zpTransId, setZpTransId] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [isCancel, setIsCancel] = useState(false);
   const [sentDriverIds, setSentDriverIds] = useState<Set<string>>(new Set());
+  const [requestStatus, setRequestStatus] = useState<string>('Pending');
   // Flag đánh dấu nếu có driver chấp nhận request
   const [driverAccepted, setDriverAccepted] = useState(false);
   const attemptedDriversRef = useRef<Set<string>>(new Set());
   // PubNub
   const [users, setUsers] = useState(new Map<string, User>());
-  const pubnub = setupPubNub(userId || "");
 
   // Refs
   const camera = useRef<MapboxGL.Camera>(null);
@@ -248,11 +253,11 @@ const RescueMapScreen = () => {
     return true;
   };
 
-  const handleReopenActionSheet = () => {
-    if (directionsInfo && fare) {
-      setShowActionsheet(true);
-    }
-  };
+  // const handleReopenActionSheet = () => {
+  //   if (directionsInfo && fare) {
+  //     setShowActionsheet(true);
+  //   }
+  // };
 
   // Tạo yêu cầu cứu hộ
   const handleCreateRequest = async () => {
@@ -272,8 +277,8 @@ const RescueMapScreen = () => {
       const result = await createRescueRequest(payload, token);
       console.log(result);
       handleRequestSuccess(result.requestdetailid);
-      setShowActionsheet(false);
-      setShowCountdownSheet(true);
+      setShowActionsheet(true);
+      // setShowCountdownSheet(true);
       setRequestDetailId(result.requestdetailid);
       return result.requestdetailid;
     } catch (error) {
@@ -321,7 +326,7 @@ const RescueMapScreen = () => {
             if (transactionResponse) {
               handleRequestSuccess(reqId);
               setIsSearching(true);
-              sendRideRequestToDrivers(INITIAL_RADIUS,reqId);
+              sendRideRequestToDrivers(INITIAL_RADIUS, reqId);
             }
             console.log("Transaction created:", transactionResponse);
           } catch (error) {
@@ -340,25 +345,30 @@ const RescueMapScreen = () => {
     }
   };
 
-  const startCountdown = (requestId: any) => {
-    // setRequestDetailId(requestId);
-    setShowCountdownSheet(true);
-    setCountdown(10);
+  // const startCountdown = (requestId: any) => {
+  //   // setRequestDetailId(requestId);
+  //   // setShowCountdownSheet(true);
+  //   setCountdown(10);
 
-    const timer = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          setShowCountdownSheet(false);
-          setShowTracking(true);
-        }
-        return prev - 1;
-      });
-    }, 1000);
-  };
+  //   const timer = setInterval(() => {
+  //     setCountdown((prev) => {
+  //       if (prev <= 1) {
+  //         clearInterval(timer);
+  //         // setShowCountdownSheet(false);
+  //         setShowTracking(true);
+  //       }
+  //       return prev - 1;
+  //     });
+  //   }, 1000);
+  // };
 
   // NEW: Hàm gửi yêu cầu cho các driver trong bán kính xác định sử dụng geolib
-  const sendRideRequestToDrivers = async (radius: number,reqId: string) => {
+  const sendRideRequestToDrivers = async (radius: number, reqId: string) => {
+    // if (!isSearching) {
+    //   console.log('Flag')
+    //   handleCancel();
+    //   return;
+    // }
     const baseLocation =
       originCoordinates.latitude !== 0 && originCoordinates.longitude !== 0
         ? originCoordinates
@@ -394,38 +404,48 @@ const RescueMapScreen = () => {
     if (newDrivers.length > 0 && reqId) {
       newDrivers.forEach(driver => {
         attemptedDriversRef.current.add(driver.uuid);
-        publishRescueRequest(pubnub, userId!, driver.uuid, reqId);
+        publishRescueRequest(driver.uuid, reqId);
       });
       console.log(`Sent ride request to drivers within ${radius} meters: ${newDrivers.map(d => d.uuid)}`);
       // Sau 10 giây, nếu chưa có driver chấp nhận, mở rộng bán kính và gửi request cho driver mới
       setTimeout(() => {
-        if (!driverAccepted) {
+        if (requestStatus === "Pending") {
           if (radius + 2000 <= MAX_RADIUS) {
-            sendRideRequestToDrivers(radius + 2000,reqId);
+            sendRideRequestToDrivers(radius + 2000, reqId);
           } else {
             Alert.alert("No drivers available", "No drivers available nearby. Please try again later.");
           }
         }
-        console.log("driver accepted");
+        setShowActionsheet(false);
+        setIsSearching(false);
+        setShowTracking(true);
         return;
-      }, 20000);
+      }, 15000);
     } else {
       console.log(`No new drivers found within ${radius} meters.`);
       const newRadius = radius + 2000;
-      if (newRadius <= MAX_RADIUS) {
-        setTimeout(() => {
-          sendRideRequestToDrivers(newRadius,reqId);
-        }, 5000);
-      } else {
-        Alert.alert("No drivers available in search radius");
-        
-      }
+      setIsSearching((prevIsSearching) => {
+        if (!prevIsSearching) {
+          console.log("Search stopped. Halting ride request process.");
+          return prevIsSearching; // Stop if search is false
+        }
+        if (newRadius <= MAX_RADIUS) {
+          setTimeout(() => {
+            sendRideRequestToDrivers(newRadius, reqId);
+          }, 5000);
+        } else {
+          Alert.alert("No drivers available in search radius");
+
+        }
+        return prevIsSearching
+      })
     }
   };
 
 
   const handleRequestSuccess = (reqId: string) => {
-    startCountdown(reqId);
+    // startCountdown(reqId);
+    // setShowTracking(true);
   };
   const handleFindDriver = async () => {
     const reqId = await handleCreateRequest();
@@ -433,7 +453,7 @@ const RescueMapScreen = () => {
     // setRequestDetailId(reqId);
     setIsSearching(true);
     setDriverAccepted(false);
-    sendRideRequestToDrivers(INITIAL_RADIUS,reqId);
+    sendRideRequestToDrivers(INITIAL_RADIUS, reqId);
   };
 
   const handleCancel = async () => {
@@ -441,7 +461,7 @@ const RescueMapScreen = () => {
     try {
       const result = await updateRequestStatus(requestDetailId, token, "Cancel");
       console.log(result.message);
-      alert("Request cancel");
+      Alert.alert("Request canceled");
       if (paymentMethod === "Zalopay") {
         await refundTransaction(zpTransId, "User canceled request", fare);
         const payZaloBridgeEmitter = new NativeEventEmitter(PayZaloBridge);
@@ -449,7 +469,7 @@ const RescueMapScreen = () => {
           subscription.remove();
         });
       }
-      setShowCountdownSheet(false);
+      // setShowCountdownSheet(false);
     } catch (error) {
       console.error("Error canceling request:", error);
     }
@@ -457,6 +477,7 @@ const RescueMapScreen = () => {
 
   const handleCancelSearch = async () => {
     setIsSearching(false);
+    handleCancel();
   };
 
   // --- PubNub Integration ---
@@ -479,11 +500,11 @@ const RescueMapScreen = () => {
         return prev;
       });
 
-      publishLocation(pubnub, userId, user, location.coords.latitude, location.coords.longitude);
+      publishLocation(userId, user, location.coords.latitude, location.coords.longitude);
 
       locationSubscription = await watchLocation((position: any) => {
         setCurrentLoc(position.coords);
-        publishLocation(pubnub, userId, user, position.coords.latitude, position.coords.longitude);
+        publishLocation(userId, user, position.coords.latitude, position.coords.longitude);
       });
     }
   };
@@ -500,15 +521,9 @@ const RescueMapScreen = () => {
 
   useEffect(() => {
     subscribeToChannel(
-      pubnub,
       user,
       (msg: any) => {
         const message = msg.message;
-        // console.log(message)
-        // Nếu nhận được thông báo từ driver (ví dụ: message.type === "driverAccepted"), đánh dấu đã có driver chấp nhận
-        if (message.type === "driverAccepted") {
-          setDriverAccepted(true);
-        }
         if (msg.publisher === userId || message.role === "Driver") {
           setUsers((prev) => new Map(prev).set(msg.publisher, msg.message));
         }
@@ -523,16 +538,21 @@ const RescueMapScreen = () => {
         }
       }
     );
-    subscribeToRescueChannel(pubnub, (msg: any) => {
-      // Handle rescue channel messages if needed
+
+    subscribeToRescueChannel((msg: any) => {
+      if (msg.message.senderRole === 'Driver'
+        && msg.message.requestDetailId === requestDetailId) {
+        setRequestStatus(msg.message.reqStatus)
+        console.log('Driver has accept the requet: ' + msg.message.requestDetailId)
+      }
     });
     return () => {
-      pubnub.unsubscribeAll();
-      pubnub.destroy();
+      // pubnub?.unsubscribeAll();
+      // pubnub?.destroy();
     };
   }, []);
   useEffect(() => {
-    hereNow(pubnub);
+    hereNow();
   }, []);
 
   return (
@@ -636,7 +656,7 @@ const RescueMapScreen = () => {
         />
       )}
 
-      {showCountdownSheet && (
+      {/* {showCountdownSheet && (
         <Actionsheet isOpen={showCountdownSheet} onClose={() => setShowCountdownSheet(false)}>
           <ActionsheetContent className="bg-white rounded-t-xl">
             <Box className="p-4">
@@ -650,7 +670,7 @@ const RescueMapScreen = () => {
             </Box>
           </ActionsheetContent>
         </Actionsheet>
-      )}
+      )} */}
 
       {showTracking && (
         <TrackingActionSheet

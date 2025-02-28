@@ -66,6 +66,7 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
         { headers: { Authorization: "Bearer " + token } }
       );
       setRequestDetail(response.data);
+      console.log('Fetching request detail..')
     } catch (error) {
       console.error("Error fetching request details:", error);
     } finally {

@@ -143,6 +143,7 @@ import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
 import { Stack } from "expo-router";
 import { AuthContextProvider } from "./context/AuthContext";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { PubNubProvider } from "./context/PubNubContext";
 
 export default function RootLayout() {
   // Không cần check token và user ở đây nữa
@@ -150,6 +151,7 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <GluestackUIProvider mode="light">
         <AuthContextProvider>
+          <PubNubProvider>
           <Stack
             screenOptions={{
               headerShown: false,
@@ -163,6 +165,7 @@ export default function RootLayout() {
             <Stack.Screen name="auth" options={{ headerShown: false }} />
             <Stack.Screen name="error" options={{ headerShown: false }} />
           </Stack>
+          </PubNubProvider>
         </AuthContextProvider>
       </GluestackUIProvider>
     </GestureHandlerRootView>

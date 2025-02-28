@@ -31,8 +31,8 @@ interface RequestItem {
   requestid: string;
   requestdetailid: string;
   requesttype: string;
-  fullname: string;
-  phone: string;
+  customername: string;
+  customerphone: string;
   pickuplocation: string;
   requeststatus: string;
   createddate: string;
@@ -90,8 +90,8 @@ export default function DHomeScreen() {
         );
 
         // Filter out items where requeststatus is 'Accepted'
-        const filteredRequests = requests.filter((item) => (item.requeststatus !== "Accepted" && item.requeststatus !== "Cancel"));
-        console.log('Refetching..')
+        const filteredRequests = requests.filter((item) => (item.requeststatus === "Pending"));
+        // console.log('Refetching..')
         setRequestDetails(filteredRequests); // ⬅️ Overwrite state with filtered data
       } catch (error) {
         console.error("Error fetching requests:", error);
