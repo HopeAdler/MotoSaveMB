@@ -15,6 +15,8 @@ import React, { useContext, useEffect, useState } from "react";
 import { FlatList, Pressable, View } from "react-native";
 import { Avatar } from "react-native-elements";
 import LoadingScreen from "../../loading/loading";
+import { usePubNub } from "@/app/context/PubNubContext";
+import { usePubNubService } from "@/app/utils/pubnubService";
 
 interface ServiceCardProps {
   icon: LucideIcon;
@@ -67,6 +69,8 @@ const RecentLocation: React.FC<LocationProps> = ({ name, distance }) => (
 
 export default function DHomeScreen() {
   const { user, dispatch, token } = useContext(AuthContext);
+  const { pubnub } = usePubNub(); // Access PubNub instance from context
+  const { publishAcceptRequest } = usePubNubService(); //
   const [isLoading, setIsLoading] = useState(true);
   const { jsonPendingReqDetailIds } = useLocalSearchParams<any>();
   const [pendingReqDetailIds, setPendingReqDetailIds] = useState(new Map<string, string>());
@@ -152,7 +156,9 @@ export default function DHomeScreen() {
               <FlatList
                 data={requestDetails}
                 keyExtractor={(item) => `${item.requestdetailid}-${item.requeststatus}`}
-                renderItem={({ item }) => renderItem({ item, token, router })} // ✅ Correct way
+                renderItem={({ item }) =>
+                  renderItem({ item, token, router, pubnub, publishAcceptRequest })
+                }
               />
             ) : (
               <Text>Hiện chưa có yêu cầu nào</Text>

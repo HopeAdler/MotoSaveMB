@@ -41,13 +41,13 @@ export const usePubNubService = () => {
     });
   };
 
-  const publishAcceptRequest = (requestDetailId: string, reqStatus: string) => {
-    pubnub.publish({
+  const publishAcceptRequest = (requestDetailId: string): Promise<any> => {
+    return pubnub.publish({
       channel: "rescue-service",
       message: {
         senderRole: "Driver",
         requestDetailId,
-        reqStatus,
+        reqStatus: 'Accepted',
       },
     });
   };

@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import moment from "moment";
 import { useRouter } from "expo-router";
 import { renderItem } from "@/components/custom/RequestItem";
+import { usePubNub } from "@/app/context/PubNubContext";
+import { usePubNubService } from "@/app/utils/pubnubService";
 
 interface RequestItem {
   requestid: string;
@@ -25,6 +27,8 @@ export default function DRequestScreen() {
   const [requests, setRequests] = useState<RequestItem[]>([]);
   const [loading, setLoading] = useState(true);
   const { token } = useContext(AuthContext);
+  const { pubnub } = usePubNub(); // Access PubNub instance from context
+  const { publishAcceptRequest } = usePubNubService(); //
   const router = useRouter();
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -71,7 +75,7 @@ export default function DRequestScreen() {
       <FlatList
         data={requests}
         keyExtractor={(item) => `${item.requestdetailid}-${item.requeststatus}`}
-        renderItem={({ item }) => renderItem({ item, token, router })}
+        renderItem={({ item }) => renderItem({ item, token, router, pubnub, publishAcceptRequest })}
       />
     </Box>
   );
