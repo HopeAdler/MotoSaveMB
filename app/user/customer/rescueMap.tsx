@@ -91,7 +91,8 @@ const RescueMapScreen = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [isCancel, setIsCancel] = useState(false);
   const [sentDriverIds, setSentDriverIds] = useState<Set<string>>(new Set());
-  const [requestStatus, setRequestStatus] = useState<string>('Pending');
+  const [acceptedReqDetId, setAcceptedReqDetId] = useState<string>();
+  const [acceptedReqDetStatus, setAcceptedReqDetStatus] = useState<string>('Pending');
   // Flag đánh dấu nếu có driver chấp nhận request
   const [driverAccepted, setDriverAccepted] = useState(false);
   const attemptedDriversRef = useRef<Set<string>>(new Set());
@@ -407,20 +408,22 @@ const RescueMapScreen = () => {
         publishRescueRequest(driver.uuid, reqId);
       });
       console.log(`Sent ride request to drivers within ${radius} meters: ${newDrivers.map(d => d.uuid)}`);
-      // Sau 10 giây, nếu chưa có driver chấp nhận, mở rộng bán kính và gửi request cho driver mới
+      console.log(acceptedReqDetStatus, acceptedReqDetId)
       setTimeout(() => {
-        if (requestStatus === "Pending") {
+        if (acceptedReqDetStatus === "Pending") {
           if (radius + 2000 <= MAX_RADIUS) {
             sendRideRequestToDrivers(radius + 2000, reqId);
           } else {
             Alert.alert("No drivers available", "No drivers available nearby. Please try again later.");
           }
         }
-        setShowActionsheet(false);
-        setIsSearching(false);
-        setShowTracking(true);
-        return;
-      }, 15000);
+        if (acceptedReqDetId === requestDetailId) {
+          setShowActionsheet(false);
+          setIsSearching(false);
+          setShowTracking(true);
+          return;
+        }
+      }, 10000);
     } else {
       console.log(`No new drivers found within ${radius} meters.`);
       const newRadius = radius + 2000;
@@ -540,9 +543,12 @@ const RescueMapScreen = () => {
     );
 
     subscribeToRescueChannel((msg: any) => {
-      if (msg.message.senderRole === 'Driver'
-        && msg.message.requestDetailId === requestDetailId) {
-        setRequestStatus(msg.message.reqStatus)
+      if (msg?.message?.senderRole === "Driver"
+        && msg?.message?.reqStatus === "Accepted"
+      ) {
+        console.log(msg)
+        setAcceptedReqDetStatus(msg.message.reqStatus)
+        setAcceptedReqDetId(msg.message.requestDetailId)
         console.log('Driver has accept the requet: ' + msg.message.requestDetailId)
       }
     });

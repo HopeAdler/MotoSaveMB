@@ -152,7 +152,7 @@ export default function DHomeScreen() {
         <Box className="p-4">
           <Box className="mb-6">
             <Text className="text-lg font-bold mb-4">Hàng chờ yêu cầu</Text>
-            {pendingReqDetailIds && pendingReqDetailIds.size > 0 ? (
+            {requestDetails && requestDetails.length > 0 ? (
               <FlatList
                 data={requestDetails}
                 keyExtractor={(item) => `${item.requestdetailid}-${item.requeststatus}`}
