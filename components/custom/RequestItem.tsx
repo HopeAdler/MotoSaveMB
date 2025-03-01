@@ -70,7 +70,7 @@ export const renderItem = ({
           className="bg-green-500 p-2 rounded mt-2"
           onPress={() =>
             router.push({
-              pathname: "/user/driver/requestMap",
+              pathname: "/user/driver/requests/requestMap",
               params: { requestdetailid: item.requestdetailid.toString() },
             })
           }

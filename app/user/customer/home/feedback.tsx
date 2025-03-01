@@ -26,7 +26,7 @@ const FeedbackScreen = () => {
       const result = await createFeedback(requestdetailid, payload, token);
       console.log(result);
       alert("Create feedback success!")
-      router.navigate("/user/customer/home")
+      router.navigate("/user/customer/home/homepage")
     } catch (error) {
       console.error("Error creating request:", error);
     }
@@ -70,7 +70,7 @@ const FeedbackScreen = () => {
       </Button>
       <Button
         className="w-full bg-red-500 rounded-xl p-2 mt-4"
-        onPress={() => router.navigate("/user/customer/home")}
+        onPress={() => router.navigate("/user/customer/home/homepage")}
       >
         <ButtonText className="text-white text-lg">Cancel</ButtonText>
       </Button>
