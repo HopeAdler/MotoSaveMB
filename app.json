@@ -49,7 +49,8 @@
         {
           "locationAlwaysAndWhenInUsePermission": "Allow MotoSave-mb to use your location."
         }
-      ]
+      ],
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true
