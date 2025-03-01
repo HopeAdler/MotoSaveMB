@@ -20,6 +20,13 @@ export interface SearchResult {
     secondary_text: string;
   };
 };
+export type User = {
+  uuid: string;
+  username: string;
+  role: string;
+  latitude: number;
+  longitude: number;
+};
 
 const formFields = {
   registerForm,
