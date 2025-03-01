@@ -16,7 +16,7 @@ import { FlatList, Pressable, View } from "react-native";
 import { Avatar } from "react-native-elements";
 import LoadingScreen from "../../loading/loading";
 import { usePubNub } from "@/app/context/PubNubContext";
-import { usePubNubService } from "@/app/utils/pubnubService";
+import { usePubNubService } from "@/app/services/pubnubService";
 
 interface ServiceCardProps {
   icon: LucideIcon;

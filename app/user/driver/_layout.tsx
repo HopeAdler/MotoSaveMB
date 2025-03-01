@@ -1,6 +1,6 @@
 import AuthContext from "@/app/context/AuthContext";
-import { getCurrentLocation, requestLocationPermission, watchLocation } from "@/app/utils/locationService";
-import { usePubNubService } from "@/app/utils/pubnubService"; // ✅ Use the custom hook
+import { getCurrentLocation, requestLocationPermission, watchLocation } from "@/app/services/locationService";
+import { usePubNubService } from "@/app/services/pubnubService"; // ✅ Use the custom hook
 import { decodedToken } from "@/app/utils/utils";
 import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
 import "@/global.css";

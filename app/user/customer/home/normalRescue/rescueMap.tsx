@@ -15,11 +15,11 @@ import { Alert, FlatList, NativeEventEmitter, NativeModules, Text, View } from "
 import TrackingActionSheet from "@/components/custom/TrackingActionSheet";
 import TripDetailsActionSheet from "@/components/custom/TripDetailsActionSheet";
 // Các import liên quan đến PubNub và Payment
-import { getCurrentLocation, requestLocationPermission, watchLocation } from "@/app/utils/locationService";
+import { getCurrentLocation, requestLocationPermission, watchLocation } from "@/app/services/locationService";
 import { PayZaloEventData, processPayment, refundTransaction } from "@/app/utils/payment";
 import { decodedToken } from "@/app/utils/utils";
 import MapViewComponent from "../../../../../components/custom/MapViewComponent";
-import { usePubNubService } from "@/app/utils/pubnubService"; // ✅ Use the custom hook
+import { usePubNubService } from "@/app/services/pubnubService"; // ✅ Use the custom hook
 import { usePubNub } from "../../../../context/PubNubContext";
 const { MAPBOX_ACCESS_TOKEN } = process.env;
 MapboxGL.setAccessToken(`${MAPBOX_ACCESS_TOKEN}`);
