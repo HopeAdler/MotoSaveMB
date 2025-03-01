@@ -15,7 +15,7 @@ import {
   MapPin,
 } from "lucide-react-native";
 import { router } from "expo-router";
-import LoadingScreen from "../../loading/loading";
+import LoadingScreen from "../../../loading/loading";
 import { LucideIcon } from "lucide-react-native";
 
 interface ServiceCardProps {
@@ -121,7 +121,7 @@ export default function CHomeScreen() {
           <Button
             variant="solid"
             className="w-full bg-red-500 mb-4"
-            onPress={() => router.navigate("/user/customer/servicePackage")}
+            onPress={() => router.navigate("/user/customer/home/servicePackage")}
           >
             <Text className="text-lg font-bold text-white">
               SOS - Get Help Now

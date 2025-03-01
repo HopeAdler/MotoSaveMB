@@ -72,7 +72,7 @@ export default function LoginScreen() {
         // Điều hướng dựa trên vai trò
         switch (user.role) {
           case "Customer":
-            router.navigate("/user/customer/home");
+            router.navigate("/user/customer/home/homepage");
             break;
           case "Driver":
             router.replace("/user/driver/home");

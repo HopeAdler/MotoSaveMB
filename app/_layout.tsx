@@ -164,6 +164,7 @@ export default function RootLayout() {
             />
             <Stack.Screen name="auth" options={{ headerShown: false }} />
             <Stack.Screen name="error" options={{ headerShown: false }} />
+            <Stack.Screen name="user" options={{ headerShown: false }} />
           </Stack>
           </PubNubProvider>
         </AuthContextProvider>

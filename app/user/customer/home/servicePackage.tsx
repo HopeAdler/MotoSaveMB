@@ -13,7 +13,7 @@ const ServicePackage = () => {
       <Box className="bg-white p-5 shadow-sm">
         <Box className="flex-row items-center">
           <Pressable
-            onPress={() => router.back()}
+            onPress={() => router.navigate("/user/customer/home/homepage")}
             className="w-10 h-10 bg-gray-50 rounded-full items-center justify-center"
           >
             <ChevronLeft size={24} color="#374151" />
@@ -49,7 +49,7 @@ const ServicePackage = () => {
           </Pressable>
 
           <Pressable
-            onPress={() => router.navigate("/user/customer/rescueMap")}
+            onPress={() => router.navigate("/user/customer/home/normalRescue/rescueMap")}
           >
             <Card className="bg-white rounded-2xl p-6 shadow-md border border-gray-100">
               <Box className="flex-row items-center">

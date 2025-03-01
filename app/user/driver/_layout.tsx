@@ -136,14 +136,14 @@ export default function DriverLayout() {
           }}
         />
         <Tabs.Screen
-          name="request"
+          name="requests"
           options={{
             headerShown: false,
             tabBarLabel: "Yêu cầu",
             tabBarIcon: (tabInfo) => <List size={24} color={tabInfo.color} />,
           }}
         />
-        <Tabs.Screen name="requestMap" options={{ headerShown: false, href: null }} />
+        {/* <Tabs.Screen name="requestMap" options={{ headerShown: false, href: null }} /> */}
         <Tabs.Screen
           name="transaction_history"
           options={{
