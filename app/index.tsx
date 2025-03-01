@@ -81,7 +81,7 @@ export default function SplashScreen() {
         // Nếu có token và user, chuyển tới home theo role
         switch (user.role) {
           case "Customer":
-            router.navigate("/user/customer/home");
+            router.navigate("/user/customer/home/homepage");
             break;
           case "Driver":
             router.navigate("/user/driver/home");

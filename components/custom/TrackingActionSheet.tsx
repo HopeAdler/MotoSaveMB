@@ -452,7 +452,7 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
       const timer = setTimeout(() => {
         onClose();
         router.push({
-          pathname: "/user/customer/feedback",
+          pathname: "/user/customer/home/feedback",
           params: { requestdetailid },
         });
       }, 5000);

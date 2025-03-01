@@ -55,13 +55,13 @@ export default function CustomerLayout() {
             ),
           }}
         />
-        <Tabs.Screen
+        {/* <Tabs.Screen
           name="servicePackage"
           options={{
             href: null,
             tabBarStyle: { display: "none" },
           }}
-        />
+        /> */}
         <Tabs.Screen
           name="payment_success"
           options={{
@@ -69,20 +69,20 @@ export default function CustomerLayout() {
             tabBarStyle: { display: "none" },
           }}
         />
-        <Tabs.Screen
+        {/* <Tabs.Screen
           name="rescueMap"
           options={{
             href: null,
             tabBarStyle: { display: "none" },
           }}
-        />
-        <Tabs.Screen
+        /> */}
+        {/* <Tabs.Screen
           name="feedback"
           options={{
             href: null,
             tabBarStyle: { display: "none" },
           }}
-        />
+        /> */}
       </Tabs>
     </GluestackUIProvider>
   );

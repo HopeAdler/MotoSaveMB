@@ -18,12 +18,12 @@ import TripDetailsActionSheet from "@/components/custom/TripDetailsActionSheet";
 import { getCurrentLocation, requestLocationPermission, watchLocation } from "@/app/utils/locationService";
 import { PayZaloEventData, processPayment, refundTransaction } from "@/app/utils/payment";
 import { decodedToken } from "@/app/utils/utils";
-import MapViewComponent from "../../../components/custom/MapViewComponent";
+import MapViewComponent from "../../../../../components/custom/MapViewComponent";
 import { usePubNubService } from "@/app/utils/pubnubService"; // ✅ Use the custom hook
-import { usePubNub } from "../../context/PubNubContext";
+import { usePubNub } from "../../../../context/PubNubContext";
 const { MAPBOX_ACCESS_TOKEN } = process.env;
 MapboxGL.setAccessToken(`${MAPBOX_ACCESS_TOKEN}`);
-import { User } from "../../context/formFields";
+import { User } from "../../../../context/formFields";
 const INITIAL_RADIUS = 5000; // 5 km
 const MAX_RADIUS = 20000;    // 15 km
 // Các hằng số cảnh báo khoảng cách (đơn vị mét)
@@ -268,7 +268,7 @@ const RescueMapScreen = () => {
       const payZaloEmitter = new NativeEventEmitter(PayZaloBridge);
       const subscription = payZaloEmitter.addListener("EventPayZalo", async (data: PayZaloEventData) => {
         if (data.returnCode === "1") {
-          router.navigate("/user/customer/rescueMap");
+          router.navigate("/user/customer/home/normalRescue/rescueMap");
           console.log("Payment successful:", data);
           setZpTransId(data.transactionId || null);
           try {
@@ -292,7 +292,7 @@ const RescueMapScreen = () => {
             console.error("Error creating transaction:", error);
           }
         } else {
-          router.navigate("/user/customer/rescueMap");
+          router.navigate("/user/customer/home/normalRescue/rescueMap");
           alert("Payment failed! Return code: " + data.returnCode);
         }
         subscription.remove();
@@ -608,7 +608,7 @@ const RescueMapScreen = () => {
     <Box className="flex-1">
       <Box className="absolute top-4 left-4 z-20">
         <Pressable
-          onPress={() => router.navigate("/user/customer/servicePackage")}
+          onPress={() => router.navigate("/user/customer/home/servicePackage")}
           className="w-10 h-10 bg-white rounded-full items-center justify-center shadow-sm"
         >
           <ChevronLeft size={24} color="#374151" />
