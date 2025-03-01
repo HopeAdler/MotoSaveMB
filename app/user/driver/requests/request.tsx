@@ -10,7 +10,7 @@ import moment from "moment";
 import { useRouter } from "expo-router";
 import { renderItem } from "@/components/custom/RequestItem";
 import { usePubNub } from "@/app/context/PubNubContext";
-import { usePubNubService } from "@/app/utils/pubnubService";
+import { usePubNubService } from "@/app/services/pubnubService";
 
 interface RequestItem {
   requestid: string;
