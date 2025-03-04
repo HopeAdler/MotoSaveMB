@@ -13,8 +13,8 @@ interface PubNubProviderProps {
 
 const PubNubContext = createContext<PubNubContextType | undefined>(undefined);
 
-const { PUBNUB_PUBLISH_KEY } = process.env;
-const { PUBNUB_SUBSCRIBE_KEY } = process.env;
+const { EXPO_PUBLIC_PUBNUB_PUBLISH_KEY } = process.env;
+const { EXPO_PUBLIC_PUBNUB_SUBSCRIBE_KEY } = process.env;
 
 export const PubNubProvider: React.FC<PubNubProviderProps> = ({ children }) => {
   const [pubnub, setPubnub] = useState<PubNubReact | null>(null);
@@ -23,8 +23,8 @@ export const PubNubProvider: React.FC<PubNubProviderProps> = ({ children }) => {
   useEffect(() => {
     if (userId) {
       const pubnubInstance = new PubNubReact({
-        publishKey: PUBNUB_PUBLISH_KEY,
-        subscribeKey: PUBNUB_SUBSCRIBE_KEY || "",
+        publishKey: EXPO_PUBLIC_PUBNUB_PUBLISH_KEY,
+        subscribeKey: EXPO_PUBLIC_PUBNUB_SUBSCRIBE_KEY || "",
         uuid: userId,
       });
       setPubnub(pubnubInstance);
