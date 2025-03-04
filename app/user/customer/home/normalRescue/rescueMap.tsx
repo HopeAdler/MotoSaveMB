@@ -21,8 +21,8 @@ import { decodedToken } from "@/app/utils/utils";
 import MapViewComponent from "../../../../../components/custom/MapViewComponent";
 import { usePubNubService } from "@/app/services/pubnubService"; // ✅ Use the custom hook
 import { usePubNub } from "../../../../context/PubNubContext";
-const { MAPBOX_ACCESS_TOKEN } = process.env;
-MapboxGL.setAccessToken(`${MAPBOX_ACCESS_TOKEN}`);
+const { EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN } = process.env;
+MapboxGL.setAccessToken(`${EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN}`);
 import { User } from "../../../../context/formFields";
 const INITIAL_RADIUS = 5000; // 5 km
 const MAX_RADIUS = 20000;    // 15 km

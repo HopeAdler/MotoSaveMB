@@ -1,6 +1,7 @@
 import { Dispatch, SetStateAction, useMemo } from "react";
 import { jwtDecode, JwtPayload } from "jwt-decode";
 import polyline from "@mapbox/polyline";
+import { Alert, Linking, Platform } from "react-native";
 // Hàm dịch các tên trường sang tiếng Việt
 export const translateFieldName = (field: string): string => {
   // const fieldTranslations: Record<string, string> = {
@@ -104,6 +105,41 @@ export function decodePolyline(encoded: string): [number, number][] {
   return polyline.decode(encoded).map(([lat, lng]: [number, number]) => [lng, lat]);
 }
 
+export const handlePhoneCall = async (phoneNumber: string | undefined) => {
+  if (!phoneNumber) {
+    Alert.alert("Error", "Driver phone number not available");
+    return;
+  }
+
+  const formattedNumber = phoneNumber.replace(/[^\d+]/g, "");
+  if (!formattedNumber) {
+    Alert.alert("Error", "Invalid phone number format");
+    return;
+  }
+
+  const phoneUrl = Platform.select({
+    ios: `tel:${formattedNumber}`,
+    android: `tel:${formattedNumber}`,
+  });
+
+  if (!phoneUrl) {
+    Alert.alert("Error", "Phone calls not supported on this device");
+    return;
+  }
+
+  try {
+    const supported = await Linking.canOpenURL(phoneUrl);
+    if (!supported) {
+      Alert.alert("Error", "Phone calls not supported");
+    } else {
+      await Linking.openURL(phoneUrl);
+    }
+  } catch (error) {
+    console.error("Error handling phone call:", error);
+    Alert.alert("Error", "Could not make phone call");
+  }
+};
+
 const utils = {
   translateFieldName,
   validateField,
@@ -111,6 +147,7 @@ const utils = {
   shortifiedFieldName,
   decodedToken,
   decodePolyline,
+  handlePhoneCall,
 };
 
 export default utils;

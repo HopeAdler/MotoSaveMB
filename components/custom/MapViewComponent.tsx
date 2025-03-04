@@ -17,8 +17,8 @@ type User = {
 
 type Users = Map<string, User>;
 
-const { MAPBOX_ACCESS_TOKEN } = process.env;
-const { GOONG_MAP_KEY } = process.env;
+const { EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN } = process.env;
+const { EXPO_PUBLIC_GOONG_MAP_KEY } = process.env;
 // const [showActionsheet, setShowActionsheet] = useState(false);
 type MapViewComponentProps = {
   users: Users;
@@ -35,7 +35,7 @@ const MapViewComponent: React.FC<MapViewComponentProps> = ({
   children, // Add children here
   isActionSheetOpen
 }) => {
-  const loadMap = `https://tiles.goong.io/assets/goong_map_web.json?api_key=${GOONG_MAP_KEY}`;
+  const loadMap = `https://tiles.goong.io/assets/goong_map_web.json?api_key=${EXPO_PUBLIC_GOONG_MAP_KEY}`;
   const mapRef = useRef<MapboxGL.MapView>(null);
   const cameraRef = useRef<MapboxGL.Camera>(null);
   const focusLoc = () => {
@@ -50,7 +50,7 @@ const MapViewComponent: React.FC<MapViewComponentProps> = ({
     console.log("Current Users: " + users.size);
   };
 
-  MapboxGL.setAccessToken(`${MAPBOX_ACCESS_TOKEN}`);
+  MapboxGL.setAccessToken(`${EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN}`);
   const locationButtonOffset = useSharedValue(10);
   useEffect(() => {
     locationButtonOffset.value = withTiming(isActionSheetOpen ? 150 : 10, { duration: 300 });
