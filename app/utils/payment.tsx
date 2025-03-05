@@ -95,12 +95,12 @@ async function createOrder(money: number | null): Promise<string | null> {
   }
 }
 
-async function processPayment(money: number | null) {
+async function processPayment(money: number | null, callbackUrl: string) {
   console.log("Processing payment...");
   const token = await createOrder(money);
   if (token) {
     console.log("Initiating ZaloPay payment...");
-    NativeModules.PayZaloBridge.payOrder(token);
+    NativeModules.PayZaloBridge.payOrder(token, callbackUrl);
   } else {
     alert("Failed to create order. Please try again.");
   }
