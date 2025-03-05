@@ -65,6 +65,12 @@ const RescueMapScreen = () => {
   // Flag đánh dấu nếu có driver chấp nhận request
   const [driverAccepted, setDriverAccepted] = useState(false);
   const attemptedDriversRef = useRef<Set<string>>(new Set());
+  // const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isSearchingRef = useRef(isSearching);
+  useEffect(() => {
+    isSearchingRef.current = isSearching;
+  }, [isSearching]);
+  
   // PubNub
   const [users, setUsers] = useState(new Map<string, User>());
   // Refs
@@ -293,7 +299,7 @@ const RescueMapScreen = () => {
             console.error("Error creating transaction:", error);
           }
           // Manually trigger deep link navigation
-        // Linking.openURL("myapp://user/customer/home/normalRescue/rescueMap");
+          // Linking.openURL("myapp://user/customer/home/normalRescue/rescueMap");
         } else {
           // router.navigate("/user/customer/home/normalRescue/rescueMap");
           alert("Payment failed! Return code: " + data.returnCode);
@@ -307,96 +313,6 @@ const RescueMapScreen = () => {
     }
   };
 
-  // const startCountdown = (requestId: any) => {
-  //   // setRequestDetailId(requestId);
-  //   // setShowCountdownSheet(true);
-  //   setCountdown(10);
-
-  //   const timer = setInterval(() => {
-  //     setCountdown((prev) => {
-  //       if (prev <= 1) {
-  //         clearInterval(timer);
-  //         // setShowCountdownSheet(false);
-  //         setShowTracking(true);
-  //       }
-  //       return prev - 1;
-  //     });
-  //   }, 1000);
-  // };
-
-  // NEW: Hàm gửi yêu cầu cho các driver trong bán kính xác định sử dụng geolib
-  // const sendRideRequestToDrivers = async (radius: number, reqId: string) => {
-  //   // if (!isSearching) {
-  //   //   console.log('Flag')
-  //   //   handleCancel();
-  //   //   return;
-  //   // }
-  //   const baseLocation =
-  //     originCoordinates.latitude !== 0 && originCoordinates.longitude !== 0
-  //       ? originCoordinates
-  //       : currentLoc;
-
-  //   const nearbyDrivers: (User & { distance: number })[] = [];
-  //   users.forEach((userData) => {
-  //     if (userData.role && userData.role.toLowerCase() === "driver") {
-  //       const distance = getDistance(
-  //         { latitude: baseLocation.latitude, longitude: baseLocation.longitude },
-  //         { latitude: userData.latitude, longitude: userData.longitude }
-  //       );
-  //       console.log(`Driver ${userData.username} (${userData.uuid}) cách ${distance} mét`);
-  //       if (distance <= radius) {
-  //         nearbyDrivers.push({ ...userData, distance });
-  //       }
-  //     }
-  //   });
-
-  //   nearbyDrivers.sort((a, b) => a.distance - b.distance);
-
-  //   // Lọc ra những driver chưa nhận request
-  //   const newDrivers = nearbyDrivers.filter(driver => !attemptedDriversRef.current.has(driver.uuid));
-  //   console.log(reqId);
-  //   if (newDrivers.length > 0 && reqId) {
-  //     newDrivers.forEach(driver => {
-  //       attemptedDriversRef.current.add(driver.uuid);
-  //       publishRescueRequest(driver.uuid, reqId);
-  //     });
-  //     console.log(`Sent ride request to drivers within ${radius} meters: ${newDrivers.map(d => d.uuid)}`);
-  //     console.log(acceptedReqDetStatus, acceptedReqDetId)
-  //     setTimeout(() => {
-  //       if (acceptedReqDetStatus === "Pending") {
-  //         if (radius + 2000 <= MAX_RADIUS) {
-  //           sendRideRequestToDrivers(radius + 2000, reqId);
-  //         } else {
-  //           Alert.alert("No drivers available", "No drivers available nearby. Please try again later.");
-  //         }
-  //       }
-  //       if (acceptedReqDetId === requestDetailId) {
-  //         setShowActionsheet(false);
-  //         setIsSearching(false);
-  //         setShowTracking(true);
-  //         return;
-  //       }
-  //     }, 10000);
-  //   } else {
-  //     console.log(`No new drivers found within ${radius} meters.`);
-  //     const newRadius = radius + 2000;
-  //     setIsSearching((prevIsSearching) => {
-  //       if (!prevIsSearching) {
-  //         console.log("Search stopped. Halting ride request process.");
-  //         return prevIsSearching; // Stop if search is false
-  //       }
-  //       if (newRadius <= MAX_RADIUS) {
-  //         setTimeout(() => {
-  //           sendRideRequestToDrivers(newRadius, reqId);
-  //         }, 5000);
-  //       } else {
-  //         Alert.alert("No drivers available in search radius");
-
-  //       }
-  //       return prevIsSearching
-  //     })
-  //   }
-  // };
   // 1. Tạo ref để lưu trạng thái request được driver chấp nhận
   const acceptedRequestRef = useRef<{ id: string | null; status: string }>({
     id: null,
@@ -416,17 +332,23 @@ const RescueMapScreen = () => {
   }, [acceptedReqDetId, acceptedReqDetStatus]);
 
   const sendRideRequestToDrivers = async (radius: number, reqId: string) => {
-    // Kiểm tra ngay từ đầu: nếu request này đã được driver chấp nhận thì dừng luôn
+    // Kiểm tra ngay từ đầu: nếu người dùng đã hủy thì dừng luôn
+    if (!isSearchingRef.current) {
+      console.log("Search has been canceled. Exiting.");
+      return;
+    }
+  
+    // Kiểm tra nếu request đã được driver chấp nhận thì dừng luôn
     if (acceptedRequestRef.current.id === reqId && acceptedRequestRef.current.status !== "Pending") {
       console.log("Driver đã chấp nhận request, dừng tìm kiếm.");
       return;
     }
-
+  
     const baseLocation =
       originCoordinates.latitude !== 0 && originCoordinates.longitude !== 0
         ? originCoordinates
         : currentLoc;
-
+  
     const nearbyDrivers: (User & { distance: number })[] = [];
     users.forEach((userData) => {
       if (userData.role && userData.role.toLowerCase() === "driver") {
@@ -441,20 +363,25 @@ const RescueMapScreen = () => {
       }
     });
     nearbyDrivers.sort((a, b) => a.distance - b.distance);
-
+  
     // Lọc ra những driver chưa nhận request
     const newDrivers = nearbyDrivers.filter((driver) => !attemptedDriversRef.current.has(driver.uuid));
     console.log(`RequestId: ${reqId}`);
-
+  
     if (newDrivers.length > 0 && reqId) {
       newDrivers.forEach((driver) => {
         attemptedDriversRef.current.add(driver.uuid);
         publishRescueRequest(driver.uuid, reqId);
       });
       console.log(`Đã gửi request cho các driver trong bán kính ${radius} mét: ${newDrivers.map((d) => d.uuid)}`);
-
+  
+      // Đặt timeout và lưu ID vào ref
       setTimeout(() => {
-        // Luôn kiểm tra lại trạng thái hiện tại từ ref trước khi mở rộng bán kính
+        // Kiểm tra lại ngay trong callback nếu việc tìm kiếm đã bị hủy
+        if (!isSearchingRef.current) {
+          console.log("Search has been canceled (in callback). Exiting.");
+          return;
+        }
         if (acceptedRequestRef.current.id === reqId && acceptedRequestRef.current.status !== "Pending") {
           console.log("Driver đã chấp nhận request, dừng tìm kiếm (trong callback).");
           return;
@@ -465,7 +392,6 @@ const RescueMapScreen = () => {
           } else {
             Alert.alert("No drivers available", "No drivers available nearby. Please try again later.");
             handleCancelSearch();
-
           }
         }
       }, 10000);
@@ -477,17 +403,28 @@ const RescueMapScreen = () => {
         console.log("Driver đã chấp nhận, dừng tìm kiếm.");
         return;
       }
+      // Trước khi đệ quy, kiểm tra ngay trạng thái tìm kiếm
+      if (!isSearchingRef.current) {
+        console.log("Search has been canceled. Exiting.");
+        return;
+      }
       if (newRadius <= MAX_RADIUS) {
         setTimeout(() => {
+          // Kiểm tra lại trước khi gọi đệ quy trong callback
+          if (!isSearchingRef.current) {
+            console.log("Search has been canceled (in recursion callback). Exiting.");
+            return;
+          }
           sendRideRequestToDrivers(newRadius, reqId);
         }, 5000);
       } else {
         Alert.alert("No drivers available", "No drivers available in search radius");
         handleCancelSearch();
-
       }
     }
   };
+  
+  
 
 
 
@@ -498,12 +435,13 @@ const RescueMapScreen = () => {
   };
   const handleFindDriver = async () => {
     const reqId = await handleCreateRequest();
-    // handleCreateRequest();
-    // setRequestDetailId(reqId);
+    // Đặt trạng thái tìm kiếm ngay lập tức
+    isSearchingRef.current = true;
     setIsSearching(true);
     setDriverAccepted(false);
     sendRideRequestToDrivers(INITIAL_RADIUS, reqId);
   };
+  
 
   const handleCancel = async () => {
     if (!requestDetailId) return;
@@ -525,10 +463,11 @@ const RescueMapScreen = () => {
   };
 
   const handleCancelSearch = async () => {
+    // Ngay lập tức đặt trạng thái tìm kiếm về false
     setIsSearching(false);
+    // Đồng thời gọi hàm cancel để cập nhật trạng thái hệ thống
     handleCancel();
   };
-
   // --- PubNub Integration ---
 
   const updateLocation = async (locationSubscription: any) => {
