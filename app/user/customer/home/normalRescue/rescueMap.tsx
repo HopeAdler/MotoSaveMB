@@ -11,7 +11,7 @@ import { router } from "expo-router";
 import { getDistance } from "geolib";
 import { ChevronLeft, ChevronUp, CircleChevronDown, LocateFixed } from "lucide-react-native";
 import React, { useContext, useEffect, useRef, useState } from "react";
-import { Alert, FlatList, NativeEventEmitter, NativeModules, Text, View } from "react-native";
+import { Alert, FlatList, Linking, NativeEventEmitter, NativeModules, Text, View } from "react-native";
 import TrackingActionSheet from "@/components/custom/TrackingActionSheet";
 import TripDetailsActionSheet from "@/components/custom/TripDetailsActionSheet";
 // Các import liên quan đến PubNub và Payment
@@ -246,6 +246,7 @@ const RescueMapScreen = () => {
   };
 
   const handlePayment = async () => {
+    const callbackUrl = "myapp://user/customer/home/normalRescue/rescueMap";
     if (!token) return;
     setPaymentLoading(true);
     const payload: RescueRequestPayload = {
@@ -262,13 +263,12 @@ const RescueMapScreen = () => {
       console.log(result);
       const reqId = result.requestdetailid;
       setRequestDetailId(reqId);
-      setShowActionsheet(false);
-      processPayment(fare);
-      // handleRequestSuccess(reqId);
+      setShowActionsheet(true);
+      processPayment(fare, callbackUrl);
       const payZaloEmitter = new NativeEventEmitter(PayZaloBridge);
       const subscription = payZaloEmitter.addListener("EventPayZalo", async (data: PayZaloEventData) => {
         if (data.returnCode === "1") {
-          router.navigate("/user/customer/home/normalRescue/rescueMap");
+          // router.navigate("/user/customer/home/normalRescue/rescueMap");
           console.log("Payment successful:", data);
           setZpTransId(data.transactionId || null);
           try {
@@ -283,16 +283,19 @@ const RescueMapScreen = () => {
               token
             );
             if (transactionResponse) {
-              handleRequestSuccess(reqId);
+              // handleRequestSuccess(reqId);
               setIsSearching(true);
+              setDriverAccepted(false);
               sendRideRequestToDrivers(INITIAL_RADIUS, reqId);
             }
             console.log("Transaction created:", transactionResponse);
           } catch (error) {
             console.error("Error creating transaction:", error);
           }
+          // Manually trigger deep link navigation
+        // Linking.openURL("myapp://user/customer/home/normalRescue/rescueMap");
         } else {
-          router.navigate("/user/customer/home/normalRescue/rescueMap");
+          // router.navigate("/user/customer/home/normalRescue/rescueMap");
           alert("Payment failed! Return code: " + data.returnCode);
         }
         subscription.remove();
