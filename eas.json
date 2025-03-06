@@ -12,7 +12,28 @@
       "distribution": "internal"
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "android": {
+        "env": {
+          "EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN": "EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN",
+          "EXPO_PUBLIC_GOONG_MAP_KEY": "EXPO_PUBLIC_GOONG_MAP_KEY",
+          "EXPO_PUBLIC_GOONG_API_KEY": "EXPO_PUBLIC_GOONG_API_KEY",
+          "EXPO_PUBLIC_PUBNUB_PUBLISH_KEY": "EXPO_PUBLIC_PUBNUB_PUBLISH_KEY",
+          "EXPO_PUBLIC_PUBNUB_SUBSCRIBE_KEY": "EXPO_PUBLIC_PUBNUB_SUBSCRIBE_KEY"
+        }
+      }
+    },
+    "preview2": {
+      "android": {
+        "buildType": "apk",
+        "env": {
+          "EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN": "EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN",
+          "EXPO_PUBLIC_GOONG_MAP_KEY": "EXPO_PUBLIC_GOONG_MAP_KEY",
+          "EXPO_PUBLIC_GOONG_API_KEY": "EXPO_PUBLIC_GOONG_API_KEY",
+          "EXPO_PUBLIC_PUBNUB_PUBLISH_KEY": "EXPO_PUBLIC_PUBNUB_PUBLISH_KEY",
+          "EXPO_PUBLIC_PUBNUB_SUBSCRIBE_KEY": "EXPO_PUBLIC_PUBNUB_SUBSCRIBE_KEY"
+        }
+      }
     }
   },
   "submit": {
