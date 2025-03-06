@@ -17,6 +17,7 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
+      "newArchEnabled": true,
       "package": "com.hopeadler.MotoSavemb"
     },
     "web": {
