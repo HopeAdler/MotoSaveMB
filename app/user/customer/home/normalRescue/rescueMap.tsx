@@ -70,7 +70,7 @@ const RescueMapScreen = () => {
   useEffect(() => {
     isSearchingRef.current = isSearching;
   }, [isSearching]);
-  
+
   // PubNub
   const [users, setUsers] = useState(new Map<string, User>());
   // Refs
@@ -337,18 +337,35 @@ const RescueMapScreen = () => {
       console.log("Search has been canceled. Exiting.");
       return;
     }
-  
     // Kiểm tra nếu request đã được driver chấp nhận thì dừng luôn
     if (acceptedRequestRef.current.id === reqId && acceptedRequestRef.current.status !== "Pending") {
       console.log("Driver đã chấp nhận request, dừng tìm kiếm.");
       return;
     }
-  
+     // Nếu vượt quá bán kính tối đa, dừng tìm kiếm và kích hoạt hủy
+     if (radius > MAX_RADIUS) {
+      console.log(`Đã vượt quá bán kính tối đa ${MAX_RADIUS}. Dừng tìm kiếm với reqId:`, reqId);
+      Alert.alert("No drivers available", "No drivers available in search radius");
+      
+      // Đặt UI state
+      isSearchingRef.current = false;
+      setIsSearching(false);
+      setShowActionsheet(true);
+      
+      try {
+        // Gọi trực tiếp API để cancel request
+        const result = await updateRequestStatus(reqId, token, "Cancel");
+        console.log("Đã hủy request thành công:", result);
+      } catch (error) {
+        console.error("Lỗi khi tự động hủy request:", error);
+      }
+      
+      return;
+    }
     const baseLocation =
       originCoordinates.latitude !== 0 && originCoordinates.longitude !== 0
         ? originCoordinates
         : currentLoc;
-  
     const nearbyDrivers: (User & { distance: number })[] = [];
     users.forEach((userData) => {
       if (userData.role && userData.role.toLowerCase() === "driver") {
@@ -363,23 +380,21 @@ const RescueMapScreen = () => {
       }
     });
     nearbyDrivers.sort((a, b) => a.distance - b.distance);
-  
     // Lọc ra những driver chưa nhận request
     const newDrivers = nearbyDrivers.filter((driver) => !attemptedDriversRef.current.has(driver.uuid));
     console.log(`RequestId: ${reqId}`);
-  
     if (newDrivers.length > 0 && reqId) {
       newDrivers.forEach((driver) => {
         attemptedDriversRef.current.add(driver.uuid);
         publishRescueRequest(driver.uuid, reqId);
       });
       console.log(`Đã gửi request cho các driver trong bán kính ${radius} mét: ${newDrivers.map((d) => d.uuid)}`);
-  
       // Đặt timeout và lưu ID vào ref
       setTimeout(() => {
         // Kiểm tra lại ngay trong callback nếu việc tìm kiếm đã bị hủy
         if (!isSearchingRef.current) {
           console.log("Search has been canceled (in callback). Exiting.");
+          // handleCancelSearch();
           return;
         }
         if (acceptedRequestRef.current.id === reqId && acceptedRequestRef.current.status !== "Pending") {
@@ -389,12 +404,14 @@ const RescueMapScreen = () => {
         if (acceptedRequestRef.current.status === "Pending") {
           if (radius <= MAX_RADIUS) {
             sendRideRequestToDrivers(radius + 2000, reqId);
-          } else {
-            Alert.alert("No drivers available", "No drivers available nearby. Please try again later.");
-            handleCancelSearch();
-          }
+          } 
+          // else {
+          //   Alert.alert("No drivers available", "No drivers available nearby. Please try again later.");
+          //   handleCancelSearch();
+          //   return
+          // }
         }
-      }, 10000);
+      }, 20000);
     } else {
       console.log(`Không tìm thấy driver mới trong bán kính ${radius} mét.`);
       const newRadius = radius + 2000;
@@ -406,67 +423,160 @@ const RescueMapScreen = () => {
       // Trước khi đệ quy, kiểm tra ngay trạng thái tìm kiếm
       if (!isSearchingRef.current) {
         console.log("Search has been canceled. Exiting.");
+        // handleCancelSearch();
         return;
       }
-      if (newRadius <= MAX_RADIUS) {
+      // if (newRadius <= MAX_RADIUS) {
         setTimeout(() => {
           // Kiểm tra lại trước khi gọi đệ quy trong callback
           if (!isSearchingRef.current) {
             console.log("Search has been canceled (in recursion callback). Exiting.");
+            handleCancelSearch();
             return;
           }
           sendRideRequestToDrivers(newRadius, reqId);
         }, 5000);
-      } else {
-        Alert.alert("No drivers available", "No drivers available in search radius");
-        handleCancelSearch();
       }
-    }
+    //    else {
+    //     Alert.alert("No drivers available", "No drivers available in search radius");
+    //     // if (handleCancelSearch) {
+    //       handleCancelSearch();
+    //     // }
+    //     return
+    //   }
+    // }
   };
-  
-  
-
-
-
-
   const handleRequestSuccess = (reqId: string) => {
     // startCountdown(reqId);
     // setShowTracking(true);
   };
+  // const handleFindDriver = async () => {
+  //   const reqId = await handleCreateRequest();
+  //   // Đặt trạng thái tìm kiếm ngay lập tức
+  //   isSearchingRef.current = true;
+  //   setIsSearching(true);
+  //   setDriverAccepted(false);
+  //   sendRideRequestToDrivers(INITIAL_RADIUS, reqId);
+  // };
   const handleFindDriver = async () => {
     const reqId = await handleCreateRequest();
-    // Đặt trạng thái tìm kiếm ngay lập tức
+    if (!reqId) {
+      console.log("Không thể tạo request");
+      return;
+    }
+    
+    console.log("Lưu reqId vào state:", reqId);
+    // Đảm bảo requestDetailId được cập nhật
+    setRequestDetailId(reqId);
+    
+    // Đặt trạng thái tìm kiếm
     isSearchingRef.current = true;
     setIsSearching(true);
     setDriverAccepted(false);
+    
+    // Truyền reqId trực tiếp vào hàm tìm kiếm
     sendRideRequestToDrivers(INITIAL_RADIUS, reqId);
   };
-  
 
+  // const handleCancel = async () => {
+  //   if (!requestDetailId) return;
+  //   try {
+  //     const result = await updateRequestStatus(requestDetailId, token, "Cancel");
+  //     console.log(result.message);
+  //     // Alert.alert("Request canceled");
+  //     if (paymentMethod === "Zalopay") {
+  //       await refundTransaction(zpTransId, "User canceled request", fare);
+  //       const payZaloBridgeEmitter = new NativeEventEmitter(PayZaloBridge);
+  //       const subscription = payZaloBridgeEmitter.addListener("EventPayZalo", async (data: PayZaloEventData) => {
+  //         subscription.remove();
+  //       });
+  //     }
+  //     // setShowCountdownSheet(false);
+  //   } catch (error) {
+  //     console.error("Error canceling request:", error);
+  //   }
+  // };
+
+  // const handleCancelSearch = async () => {
+  //   console.log("handleCancelSearch được gọi");
+  //   // Ngay lập tức đặt trạng thái tìm kiếm về false
+  //   isSearchingRef.current = false;
+  //   setIsSearching(false);
+  //   // Cập nhật UI
+  //   setShowActionsheet(true);
+  //   setShowTracking(false);
+  //   // Đồng thời gọi hàm cancel để cập nhật trạng thái hệ thống
+  //   // await handleCancel();
+  //   try {
+  //     // Đồng thời gọi hàm cancel để cập nhật trạng thái hệ thống
+  //     await handleCancel();
+  //     console.log("Request đã được hủy thành công");
+  // } catch (error) {
+  //     console.error("Lỗi khi hủy request:", error);
+  // }
+  // };
   const handleCancel = async () => {
-    if (!requestDetailId) return;
+    console.log("handleCancel được gọi với requestDetailId:", requestDetailId);
+    
+    if (!requestDetailId) {
+      console.log("requestDetailId không tồn tại, không thể hủy");
+      return;
+    }
+    
     try {
+      console.log("Đang hủy request với ID:", requestDetailId);
       const result = await updateRequestStatus(requestDetailId, token, "Cancel");
-      console.log(result.message);
-      // Alert.alert("Request canceled");
-      if (paymentMethod === "Zalopay") {
+      console.log("Kết quả hủy request:", result);
+      
+      if (paymentMethod === "Zalopay" && zpTransId) {
+        console.log("Đang hoàn tiền cho giao dịch:", zpTransId);
         await refundTransaction(zpTransId, "User canceled request", fare);
         const payZaloBridgeEmitter = new NativeEventEmitter(PayZaloBridge);
         const subscription = payZaloBridgeEmitter.addListener("EventPayZalo", async (data: PayZaloEventData) => {
+          console.log("Nhận sự kiện PayZalo:", data);
           subscription.remove();
         });
       }
-      // setShowCountdownSheet(false);
+      
+      console.log("Request đã được hủy thành công");
+      // Cập nhật UI nếu cần
     } catch (error) {
-      console.error("Error canceling request:", error);
+      console.error("Lỗi chi tiết khi hủy request:", error);
+      // Xử lý lỗi (có thể thử hủy lại hoặc hiển thị thông báo)
     }
   };
-
-  const handleCancelSearch = async () => {
+  
+  const handleCancelSearch = async (reqId?: string) => {
+    console.log("handleCancelSearch được gọi");
+    
     // Ngay lập tức đặt trạng thái tìm kiếm về false
+    isSearchingRef.current = false;
     setIsSearching(false);
-    // Đồng thời gọi hàm cancel để cập nhật trạng thái hệ thống
-    handleCancel();
+    
+    // Cập nhật UI
+    setShowActionsheet(true);
+    setShowTracking(false);
+    
+    // Sử dụng reqId được truyền vào nếu có, nếu không thì dùng state
+    const idToCancel = reqId || requestDetailId;
+    
+    if (idToCancel) {
+      console.log("Đang gọi handleCancel với requestDetailId:", idToCancel);
+      try {
+        // Gọi trực tiếp hàm cancel với ID
+        await updateRequestStatus(idToCancel, token, "Cancel");
+        console.log("Đã hủy request thành công với ID:", idToCancel);
+        
+        // Xử lý hoàn tiền nếu cần
+        if (paymentMethod === "Zalopay" && zpTransId) {
+          await refundTransaction(zpTransId, "User canceled request", fare);
+        }
+      } catch (error) {
+        console.error("Lỗi khi hủy request:", error);
+      }
+    } else {
+      console.log("Không có requestDetailId để hủy");
+    }
   };
   // --- PubNub Integration ---
 
@@ -631,7 +741,7 @@ const RescueMapScreen = () => {
         </MapViewComponent>
       </Box>
 
-      {showActionsheet && (
+      {showActionsheet && directionsInfo && (
         <TripDetailsActionSheet
           isOpen={showActionsheet}
           onClose={() => setShowActionsheet(false)}
@@ -663,7 +773,7 @@ const RescueMapScreen = () => {
         </Actionsheet>
       )} */}
 
-      {showTracking && (
+      {showTracking && requestDetailId && acceptedReqDetId && acceptedReqDetStatus !== "Pending" && (
         <TrackingActionSheet
           isOpen={showTracking}
           onClose={() => setShowTracking(false)}
@@ -677,7 +787,7 @@ const RescueMapScreen = () => {
         <Text>Số người online: {users.size}</Text>
       </View>
 
-      {!showActionsheet && directionsInfo && !requestDetailId && (
+      {!showActionsheet && directionsInfo && (
         <Pressable
           onPress={() => setShowActionsheet(true)}
           className="absolute bottom-20 right-2 w-10 h-10 bg-white rounded-full items-center justify-center shadow-sm"
@@ -686,7 +796,7 @@ const RescueMapScreen = () => {
         </Pressable>
       )}
 
-      {!showTracking && requestDetailId && (
+      {!showTracking && requestDetailId && acceptedReqDetId && acceptedReqDetStatus !== "Pending" && (
         <Pressable
           onPress={() => setShowTracking(true)}
           className="absolute bottom-20 right-2 w-10 h-10 bg-white rounded-full items-center justify-center shadow-sm"
