@@ -159,13 +159,39 @@ export async function acceptRequest
   }
 };
 
+export async function cancelRequest(
+  requestdetailid: string,
+  token: string,
+  note: string
+): Promise<any> {
+  try {
+    const response = await axios.put(
+      `https://motor-save-be.vercel.app/api/v1/requests/${requestdetailid}/cancel`,
+      { note },
+      {
+        headers: {
+          Authorization: "Bearer " + token,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error cancelling ride:", error);
+    throw error;
+  }
+}
+
+
+
 const beAPI = {
   createRescueRequest,
   createTransaction,
   calculateFare,
   updateRequestStatus,
   fetchRequests,
-  acceptRequest
+  acceptRequest,
+  cancelRequest
 };
 
 export default beAPI;

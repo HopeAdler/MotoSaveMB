@@ -240,7 +240,6 @@ const RescueMapScreen = () => {
     try {
       const result = await createRescueRequest(payload, token);
       console.log(result);
-      handleRequestSuccess(result.requestdetailid);
       setShowActionsheet(true);
       // setShowCountdownSheet(true);
       setRequestDetailId(result.requestdetailid);
@@ -446,18 +445,6 @@ const RescueMapScreen = () => {
     //   }
     // }
   };
-  const handleRequestSuccess = (reqId: string) => {
-    // startCountdown(reqId);
-    // setShowTracking(true);
-  };
-  // const handleFindDriver = async () => {
-  //   const reqId = await handleCreateRequest();
-  //   // Đặt trạng thái tìm kiếm ngay lập tức
-  //   isSearchingRef.current = true;
-  //   setIsSearching(true);
-  //   setDriverAccepted(false);
-  //   sendRideRequestToDrivers(INITIAL_RADIUS, reqId);
-  // };
   const handleFindDriver = async () => {
     const reqId = await handleCreateRequest();
     if (!reqId) {
@@ -478,43 +465,6 @@ const RescueMapScreen = () => {
     sendRideRequestToDrivers(INITIAL_RADIUS, reqId);
   };
 
-  // const handleCancel = async () => {
-  //   if (!requestDetailId) return;
-  //   try {
-  //     const result = await updateRequestStatus(requestDetailId, token, "Cancel");
-  //     console.log(result.message);
-  //     // Alert.alert("Request canceled");
-  //     if (paymentMethod === "Zalopay") {
-  //       await refundTransaction(zpTransId, "User canceled request", fare);
-  //       const payZaloBridgeEmitter = new NativeEventEmitter(PayZaloBridge);
-  //       const subscription = payZaloBridgeEmitter.addListener("EventPayZalo", async (data: PayZaloEventData) => {
-  //         subscription.remove();
-  //       });
-  //     }
-  //     // setShowCountdownSheet(false);
-  //   } catch (error) {
-  //     console.error("Error canceling request:", error);
-  //   }
-  // };
-
-  // const handleCancelSearch = async () => {
-  //   console.log("handleCancelSearch được gọi");
-  //   // Ngay lập tức đặt trạng thái tìm kiếm về false
-  //   isSearchingRef.current = false;
-  //   setIsSearching(false);
-  //   // Cập nhật UI
-  //   setShowActionsheet(true);
-  //   setShowTracking(false);
-  //   // Đồng thời gọi hàm cancel để cập nhật trạng thái hệ thống
-  //   // await handleCancel();
-  //   try {
-  //     // Đồng thời gọi hàm cancel để cập nhật trạng thái hệ thống
-  //     await handleCancel();
-  //     console.log("Request đã được hủy thành công");
-  // } catch (error) {
-  //     console.error("Lỗi khi hủy request:", error);
-  // }
-  // };
   const handleCancel = async () => {
     console.log("handleCancel được gọi với requestDetailId:", requestDetailId);
     
@@ -566,7 +516,7 @@ const RescueMapScreen = () => {
         // Gọi trực tiếp hàm cancel với ID
         await updateRequestStatus(idToCancel, token, "Cancel");
         console.log("Đã hủy request thành công với ID:", idToCancel);
-        
+        handleCancel();
         // Xử lý hoàn tiền nếu cần
         if (paymentMethod === "Zalopay" && zpTransId) {
           await refundTransaction(zpTransId, "User canceled request", fare);
@@ -756,23 +706,6 @@ const RescueMapScreen = () => {
           confirmDisabled={!isLocationValid()}
         />
       )}
-
-      {/* {showCountdownSheet && (
-        <Actionsheet isOpen={showCountdownSheet} onClose={() => setShowCountdownSheet(false)}>
-          <ActionsheetContent className="bg-white rounded-t-xl">
-            <Box className="p-4">
-              <Text className="text-xl font-bold text-center">Processing Request...</Text>
-              <Text className="text-md text-center mt-2">Cancel within {countdown} seconds</Text>
-              <Box className="mt-4">
-                <Button variant="outline" size="lg" onPress={handleCancel}>
-                  <ButtonText>Cancel Request</ButtonText>
-                </Button>
-              </Box>
-            </Box>
-          </ActionsheetContent>
-        </Actionsheet>
-      )} */}
-
       {showTracking && requestDetailId && acceptedReqDetId && acceptedReqDetStatus !== "Pending" && (
         <TrackingActionSheet
           isOpen={showTracking}
@@ -783,9 +716,9 @@ const RescueMapScreen = () => {
         />
       )}
 
-      <View className="absolute top-[15%] flex flex-col items-end w-full px-[5%] z-20">
+      {/* <View className="absolute top-[15%] flex flex-col items-end w-full px-[5%] z-20">
         <Text>Số người online: {users.size}</Text>
-      </View>
+      </View> */}
 
       {!showActionsheet && directionsInfo && (
         <Pressable

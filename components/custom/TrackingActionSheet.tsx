@@ -11,12 +11,11 @@ import {
   ActionsheetBackdrop,
 } from "@/components/ui/actionsheet";
 import { Phone, MessageSquare, AlertCircle, Clock, Navigation2, CheckCircle2 } from "lucide-react-native";
-import axios from "axios";
 import AuthContext from "@/app/context/AuthContext";
 import { router } from "expo-router";
 import { Alert } from "react-native";
 
-// Import các component của gluestack-ui cho form và radio
+// Import các component cho form
 import {
   FormControl,
   FormControlLabel,
@@ -28,8 +27,6 @@ import {
 import { Input, InputField } from "@/components/ui/input";
 import { VStack } from "@/components/ui/vstack";
 import { Radio, RadioGroup, RadioLabel } from "@/components/ui/radio";
-
-// Import AlertDialog components cho xác nhận hủy chuyến
 import {
   AlertDialog,
   AlertDialogBackdrop,
@@ -38,8 +35,13 @@ import {
   AlertDialogBody,
   AlertDialogFooter,
 } from "@/components/ui/alert-dialog";
-
 import { handlePhoneCall } from "@/app/utils/utils";
+
+// Import interface RequestDetail từ formFields (với các interface khác được đặt trong file formFields)
+import { RequestDetail } from "@/app/context/formFields";
+// Import hàm cancelRequest từ beAPI
+import { cancelRequest } from "@/app/services/beAPI";
+import axios from "axios";
 
 const cancelReasons = [
   "Driver delayed",
@@ -54,21 +56,6 @@ interface TrackingActionSheetProps {
   requestdetailid: string | null;
   eta: string;
   distance: string;
-}
-
-interface RequestDetail {
-  fullname: string;
-  phone: string;
-  pickuplocation: string;
-  destination: string;
-  totalprice: number;
-  requeststatus: string;
-  drivername: string;
-  driverphone: string;
-  licenseplate: string;
-  brandname: string;
-  vehicletype: string;
-  vehiclestatus: string;
 }
 
 const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
@@ -102,7 +89,6 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
       setLoading(false);
     }
   };
-
   useEffect(() => {
     fetchRequestDetail();
     const interval = setInterval(fetchRequestDetail, 5000);
@@ -166,16 +152,18 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
             <Box key={step.status} className="items-center flex-1">
               <Box className="h-8 flex items-center justify-center relative z-10">
                 <Box
-                  className={`w-8 h-8 rounded-full ${index <= currentStepIndex ? getStatusColor() : "bg-gray-200"
-                    } items-center justify-center`}
+                  className={`w-8 h-8 rounded-full ${
+                    index <= currentStepIndex ? getStatusColor() : "bg-gray-200"
+                  } items-center justify-center`}
                 >
                   <CheckCircle2 size={16} color="white" />
                 </Box>
               </Box>
               <Box className="h-12 justify-start pt-2">
                 <Text
-                  className={`text-xs text-center px-1 ${index <= currentStepIndex ? "text-gray-900" : "text-gray-500"
-                    }`}
+                  className={`text-xs text-center px-1 ${
+                    index <= currentStepIndex ? "text-gray-900" : "text-gray-500"
+                  }`}
                   numberOfLines={2}
                 >
                   {step.title}
@@ -192,8 +180,12 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
     handlePhoneCall(requestDetail?.driverphone);
   };
 
-  // Khi submit cancellation, kiểm tra lý do và gọi API hủy chuyến (chưa tích hợp API)
-  const handleSubmitCancellation = () => {
+  // Hàm xử lý hủy chuyến sử dụng API cancelRequest từ beAPI
+  const handleSubmitCancellation = async () => {
+    if (!requestdetailid) {
+      Alert.alert("Request ID không tồn tại");
+      return;
+    }
     let reasonToSend = selectedReason;
     if (selectedReason === "Other") {
       if (!customReason.trim()) {
@@ -203,10 +195,17 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
       reasonToSend = customReason.trim();
     }
     console.log("Cancelling ride with reason:", reasonToSend);
-    // Gọi API gửi lý do hủy chuyến lên back end (xử lý sau)
-    setShowCancelAlert(false);
-    setShowCancelActionsheet(false);
-    Alert.alert("Ride has been cancelled");
+    try {
+      const response = await cancelRequest(requestdetailid, token, reasonToSend);
+      console.log("Cancel response:", response);
+      Alert.alert("Ride has been cancelled", response.message);
+    } catch (error: any) {
+      console.error("Error cancelling ride:", error);
+      Alert.alert("Failed to cancel ride", error?.response?.data?.message || error.message);
+    } finally {
+      setShowCancelAlert(false);
+      setShowCancelActionsheet(false);
+    }
   };
 
   return (
@@ -229,12 +228,12 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
               {requestDetail?.requeststatus === "Pending"
                 ? "Tracking driver in progress..."
                 : requestDetail?.requeststatus === "Accepted"
-                  ? "Driver accepted your request"
-                  : requestDetail?.requeststatus === "Pickup"
-                    ? "Driver is on the way"
-                    : requestDetail?.requeststatus === "Processing"
-                      ? "On rescue mission"
-                      : "Completed"}
+                ? "Driver accepted your request"
+                : requestDetail?.requeststatus === "Pickup"
+                ? "Driver is on the way"
+                : requestDetail?.requeststatus === "Processing"
+                ? "On rescue mission"
+                : "Completed"}
             </Text>
           </Box>
           <Box className="p-6">
@@ -274,19 +273,21 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
                 </Box>
               </Box>
             </Box>
-            {requestDetail?.requeststatus !== "Pending" && renderProgressSteps()}
+            {(requestDetail?.requeststatus === "Accepted" ||
+              requestDetail?.requeststatus === "Pickup") &&
+              renderProgressSteps()}
             <Box className="flex-row justify-between w-full mt-6">
               <Button variant="outline" size="md" onPress={handleCall}>
                 <ButtonText>
                   <Phone size={18} color="#4B5563" style={{ marginTop: 2 }} /> Call
                 </ButtonText>
               </Button>
-              <Button variant="outline" size="md" onPress={() => { }}>
+              <Button variant="outline" size="md" onPress={() => {}}>
                 <ButtonText>
                   <MessageSquare size={18} color="#4B5563" style={{ marginTop: 2 }} /> Chat
                 </ButtonText>
               </Button>
-              <Button variant="solid" size="md" className="bg-red-500" onPress={() => { }}>
+              <Button variant="solid" size="md" className="bg-red-500" onPress={() => {}}>
                 <ButtonText>
                   <AlertCircle size={18} color="#fff" style={{ marginTop: 2 }} /> SOS
                 </ButtonText>
@@ -294,17 +295,17 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
             </Box>
             {(requestDetail?.requeststatus === "Accepted" ||
               requestDetail?.requeststatus === "Pickup") && (
-                <Box className="mt-4">
-                  <Button onPress={() => setShowCancelActionsheet(true)} className="bg-red-500" size="md">
-                    <ButtonText>Cancel Ride</ButtonText>
-                  </Button>
-                </Box>
-              )}
+              <Box className="mt-4">
+                <Button onPress={() => setShowCancelActionsheet(true)} className="bg-red-500" size="md">
+                  <ButtonText>Cancel Ride</ButtonText>
+                </Button>
+              </Box>
+            )}
           </Box>
         </ActionsheetContent>
       </Actionsheet>
 
-      {/* Cancellation Actionsheet (cho lý do hủy) */}
+      {/* Cancellation Actionsheet */}
       <Actionsheet
         isOpen={showCancelActionsheet}
         onClose={() => setShowCancelActionsheet(false)}
@@ -326,16 +327,12 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
                 </FormControlLabelText>
               </FormControlLabel>
               <RadioGroup
-
-                // name="cancelReasons"
                 value={selectedReason}
                 onChange={(nextValue: React.SetStateAction<string>) => setSelectedReason(nextValue)}
               >
                 {cancelReasons.map((reason) => (
-                  <Radio key={reason} value={reason} >
-                    <RadioLabel>
-                      {reason}
-                    </RadioLabel>
+                  <Radio key={reason} value={reason}>
+                    <RadioLabel>{reason}</RadioLabel>
                   </Radio>
                 ))}
               </RadioGroup>
@@ -355,9 +352,7 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
                 {!customReason.trim() && (
                   <FormControlError>
                     <FormControlErrorIcon />
-                    <FormControlErrorText>
-                      Reason is required.
-                    </FormControlErrorText>
+                    <FormControlErrorText>Reason is required.</FormControlErrorText>
                   </FormControlError>
                 )}
               </FormControl>
@@ -369,7 +364,7 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
         </ActionsheetContent>
       </Actionsheet>
 
-      {/* AlertDialog để xác nhận hủy chuyến */}
+      {/* AlertDialog xác nhận hủy chuyến */}
       <AlertDialog isOpen={showCancelAlert} onClose={() => setShowCancelAlert(false)} size="md">
         <AlertDialogBackdrop />
         <AlertDialogContent>

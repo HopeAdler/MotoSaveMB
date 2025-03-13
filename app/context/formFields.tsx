@@ -28,6 +28,23 @@ export type User = {
   longitude: number;
 };
 
+
+export interface RequestDetail {
+  fullname: string;
+  phone: string;
+  pickuplocation: string;
+  destination: string;
+  totalprice: number;
+  requeststatus: string;
+  drivername: string;
+  driverphone: string;
+  licenseplate: string;
+  brandname: string;
+  vehicletype: string;
+  vehiclestatus: string;
+}
+
+
 const formFields = {
   registerForm,
   loginForm,
