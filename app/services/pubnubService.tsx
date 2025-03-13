@@ -105,6 +105,24 @@ export const usePubNubService = () => {
     );
   };
 
+  const fetchMessageHistory = async (channel: string) => {
+    return new Promise((resolve, reject) => {
+      pubnub.fetchMessages(
+        {
+          channels: [channel],
+          count: 50,
+        },
+        (status, response) => {
+          if (status.error) {
+            reject(status);
+          } else {
+            resolve(response?.channels[channel] || []);
+          }
+        }
+      );
+    });
+  };
+
   return {
     publishLocation,
     publishRescueRequest,
@@ -112,5 +130,6 @@ export const usePubNubService = () => {
     subscribeToChannel,
     subscribeToRescueChannel,
     hereNow,
+    fetchMessageHistory,
   };
 };
