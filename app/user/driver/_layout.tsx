@@ -5,7 +5,7 @@ import { decodedToken } from "@/app/utils/utils";
 import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
 import "@/global.css";
 import { Tabs, useRouter, useSegments } from "expo-router";
-import { ChartArea, DollarSign, House, List } from "lucide-react-native";
+import { ChartArea, DollarSign, House, List, MessageCircle } from "lucide-react-native";
 import { useContext, useEffect, useRef, useState } from "react";
 
 type User = {
@@ -158,6 +158,14 @@ export default function DriverLayout() {
             headerShown: false,
             tabBarLabel: "Thống kê",
             tabBarIcon: (tabInfo) => <ChartArea size={24} color={tabInfo.color} />,
+          }}
+        />
+        <Tabs.Screen
+          name="chat"
+          options={{
+            headerShown: false,
+            tabBarLabel: "Chat",
+            tabBarIcon: (tabInfo) => <MessageCircle size={24} color={tabInfo.color} />,
           }}
         />
       </Tabs>

@@ -7,6 +7,7 @@ import {
   CreditCard,
   Bell,
   CircleUserRound,
+  MessageCircle,
 } from "lucide-react-native";
 import { useContext, useEffect } from "react";
 import { AuthContext } from "@/app/context/AuthContext";
@@ -69,6 +70,22 @@ export default function CustomerLayout() {
             ),
           }}
         />
+        <Tabs.Screen
+          name="chat"
+          options={{
+            tabBarLabel: "Chat",
+            tabBarIcon: (tabInfo) => (
+              <MessageCircle size={24} color={tabInfo.color} />
+            ),
+          }}
+        />
+        {/* <Tabs.Screen
+          name="servicePackage"
+          options={{
+            href: null,
+            tabBarStyle: { display: "none" },
+          }}
+        /> */}
         <Tabs.Screen
           name="payment_success"
           options={{
