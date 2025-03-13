@@ -94,5 +94,8 @@
     "react-test-renderer": "18.3.1",
     "typescript": "^5.8.2"
   },
+  "overrides": {
+	"@react-aria/utils": "3.27.0"
+},
   "private": true
 }
