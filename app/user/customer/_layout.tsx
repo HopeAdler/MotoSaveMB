@@ -7,10 +7,24 @@ import {
   CreditCard,
   Bell,
   CircleUserRound,
-  LucideLocateFixed,
 } from "lucide-react-native";
+import { useContext, useEffect } from "react";
+import { AuthContext } from "@/app/context/AuthContext";
+import axios from "axios";
 
 export default function CustomerLayout() {
+  const { token } = useContext(AuthContext); 
+
+  useEffect(() => {
+    if (token) {
+      axios.get("https://motor-save-be.vercel.app/api/v1/auth/profile", {
+        headers: { Authorization: `Bearer ${token}` },
+      }).catch(err => {
+        console.log('Prefetch error:', err);
+      });
+    }
+  }, [token]);
+
   return (
     <GluestackUIProvider mode="light">
       <Tabs screenOptions={{ headerShown: false }}>
@@ -55,13 +69,6 @@ export default function CustomerLayout() {
             ),
           }}
         />
-        {/* <Tabs.Screen
-          name="servicePackage"
-          options={{
-            href: null,
-            tabBarStyle: { display: "none" },
-          }}
-        /> */}
         <Tabs.Screen
           name="payment_success"
           options={{
@@ -69,20 +76,6 @@ export default function CustomerLayout() {
             tabBarStyle: { display: "none" },
           }}
         />
-        {/* <Tabs.Screen
-          name="rescueMap"
-          options={{
-            href: null,
-            tabBarStyle: { display: "none" },
-          }}
-        /> */}
-        {/* <Tabs.Screen
-          name="feedback"
-          options={{
-            href: null,
-            tabBarStyle: { display: "none" },
-          }}
-        /> */}
       </Tabs>
     </GluestackUIProvider>
   );
