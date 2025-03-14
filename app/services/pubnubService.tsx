@@ -11,8 +11,7 @@ type User = {
 };
 
 export const usePubNubService = () => {
-  const { pubnub } = usePubNub();
-
+  const { pubnub, chat } = usePubNub();
   if (!pubnub) {
     throw new Error("PubNub instance is not available");
   }
@@ -105,23 +104,34 @@ export const usePubNubService = () => {
     );
   };
 
-  const fetchMessageHistory = async (channel: string) => {
-    return new Promise((resolve, reject) => {
-      pubnub.fetchMessages(
-        {
-          channels: [channel],
-          count: 50,
-        },
-        (status, response) => {
-          if (status.error) {
-            reject(status);
-          } else {
-            resolve(response?.channels[channel] || []);
-          }
+  const fetchMessageHistory = async (
+    channelId: string,
+    messageCallback: (msg: any) => void
+  ) => {
+    try {
+      if (chat) {
+        const channel = await chat.getChannel(channelId);
+        if (!channel) {
+          console.error("Channel not found:", channelId);
+          return;
         }
-      );
-    });
+
+        const history = await channel.getHistory({
+          count: 10, // Number of messages to fetch
+        });
+
+        if (history?.messages?.length) {
+          history.messages.forEach((msg) => {
+            messageCallback(msg);
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+    }
   };
+
+
 
   return {
     publishLocation,
