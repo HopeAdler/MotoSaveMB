@@ -1,6 +1,6 @@
 import { usePubNubService } from "@/app/services/pubnubService";
 import { Channel, Chat, Message, TimetokenUtils, User } from "@pubnub/chat";
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 
 const { EXPO_PUBLIC_PUBNUB_PUBLISH_KEY, EXPO_PUBLIC_PUBNUB_SUBSCRIBE_KEY } = process.env;
@@ -31,6 +31,7 @@ export default function DriverChatScreen() {
     const [messages, setMessages] = useState<Message[]>([]);
     const [text, setText] = useState("");
 
+    const lastFetchedChannelId = useRef<string | null>(null);
     // Initialize the chat instance based on the active user
     const initializeChat = useCallback(async () => {
         if (!EXPO_PUBLIC_PUBNUB_PUBLISH_KEY || !EXPO_PUBLIC_PUBNUB_SUBSCRIBE_KEY) {
@@ -73,36 +74,50 @@ export default function DriverChatScreen() {
     }, [initializeChat]);
 
     // Subscribe to incoming messages.
+
     useEffect(() => {
         if (!channel || !channel.name) return; // Ensure channel and name exist
-
+      
         console.log("Subscribed to Channel: " + channel.name);
-
-        const fetchHistoryAndSubscribe = async () => {
+      
+        // Ref to track if history was already fetched for this channel
+      
+        // If the current channel is new, fetch the history
+        if (channel.id !== lastFetchedChannelId.current) {
+          lastFetchedChannelId.current = channel.id;
+          const fetchHistoryAndSubscribe = async () => {
             try {
-                const history = await fetchMessageHistory(channel.name || "");
-                console.log(history)
-                setMessages(history as Message[]); // Type assertion to avoid TypeScript warnings
+              await fetchMessageHistory(channel.id, (msg) => {
+                // Ensure msg has the expected structure before updating state
+                const formattedMsg = msg?.message || msg; // Extract if wrapped in { message: ... }
+      
+                if (formattedMsg) {
+                  setMessages((prevMessages) => [...prevMessages, formattedMsg]);
+                } else {
+                  console.warn("Received an invalid message format:", msg);
+                }
+              });
             } catch (error) {
-                console.error("Failed to fetch message history:", error);
+              console.error("Failed to fetch message history:", error);
             }
-        };
-
-        fetchHistoryAndSubscribe();
-
+          };
+      
+          fetchHistoryAndSubscribe();
+        }
+      
         // Subscribe to real-time messages
         const unsubscribe = channel.connect((message: Message) => {
-            console.log(message);
-            setMessages((messages) => [...messages, message]);
+          setMessages((prevMessages) => [...prevMessages, message]);
         });
-
-        return () => unsubscribe(); // Clean up on unmount
-    }, [channel]);
+      
+        return () => {
+          unsubscribe(); // Clean up on unmount
+        };
+      }, [channel]);
 
     const sendMessage = async () => {
         if (text && channel) {
-            const result = await channel.sendText(text);
-            console.log(result)
+            await channel.sendText(text);
             setText("");
         }
     };
