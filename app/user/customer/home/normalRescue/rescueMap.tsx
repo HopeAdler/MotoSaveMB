@@ -445,6 +445,14 @@ const RescueMapScreen = () => {
     //   }
     // }
   };
+  // const handleFindDriver = async () => {
+  //   const reqId = await handleCreateRequest();
+  //   // Đặt trạng thái tìm kiếm ngay lập tức
+  //   isSearchingRef.current = true;
+  //   setIsSearching(true);
+  //   setDriverAccepted(false);
+  //   sendRideRequestToDrivers(INITIAL_RADIUS, reqId);
+  // };
   const handleFindDriver = async () => {
     const reqId = await handleCreateRequest();
     if (!reqId) {
@@ -462,9 +470,48 @@ const RescueMapScreen = () => {
     setDriverAccepted(false);
     
     // Truyền reqId trực tiếp vào hàm tìm kiếm
+    
+    // Truyền reqId trực tiếp vào hàm tìm kiếm
     sendRideRequestToDrivers(INITIAL_RADIUS, reqId);
   };
 
+  // const handleCancel = async () => {
+  //   if (!requestDetailId) return;
+  //   try {
+  //     const result = await updateRequestStatus(requestDetailId, token, "Cancel");
+  //     console.log(result.message);
+  //     // Alert.alert("Request canceled");
+  //     if (paymentMethod === "Zalopay") {
+  //       await refundTransaction(zpTransId, "User canceled request", fare);
+  //       const payZaloBridgeEmitter = new NativeEventEmitter(PayZaloBridge);
+  //       const subscription = payZaloBridgeEmitter.addListener("EventPayZalo", async (data: PayZaloEventData) => {
+  //         subscription.remove();
+  //       });
+  //     }
+  //     // setShowCountdownSheet(false);
+  //   } catch (error) {
+  //     console.error("Error canceling request:", error);
+  //   }
+  // };
+
+  // const handleCancelSearch = async () => {
+  //   console.log("handleCancelSearch được gọi");
+  //   // Ngay lập tức đặt trạng thái tìm kiếm về false
+  //   isSearchingRef.current = false;
+  //   setIsSearching(false);
+  //   // Cập nhật UI
+  //   setShowActionsheet(true);
+  //   setShowTracking(false);
+  //   // Đồng thời gọi hàm cancel để cập nhật trạng thái hệ thống
+  //   // await handleCancel();
+  //   try {
+  //     // Đồng thời gọi hàm cancel để cập nhật trạng thái hệ thống
+  //     await handleCancel();
+  //     console.log("Request đã được hủy thành công");
+  // } catch (error) {
+  //     console.error("Lỗi khi hủy request:", error);
+  // }
+  // };
   const handleCancel = async () => {
     console.log("handleCancel được gọi với requestDetailId:", requestDetailId);
     

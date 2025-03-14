@@ -199,6 +199,10 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
       const response = await cancelRequest(requestdetailid, token, reasonToSend);
       console.log("Cancel response:", response);
       Alert.alert("Ride has been cancelled", response.message);
+      onClose();
+      router.navigate("/user/customer/home/homepage");
+      setShowCancelActionsheet(false);
+      setShowCancelAlert(false);
     } catch (error: any) {
       console.error("Error cancelling ride:", error);
       Alert.alert("Failed to cancel ride", error?.response?.data?.message || error.message);

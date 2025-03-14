@@ -33,6 +33,7 @@
     "@gluestack-ui/toast": "^1.0.9",
     "@legendapp/motion": "^2.4.0",
     "@mapbox/polyline": "mapbox/polyline",
+    "@pubnub/chat": "^0.11.7",
     "@react-native-async-storage/async-storage": "1.23.1",
     "@react-navigation/bottom-tabs": "7.2.0",
     "@react-navigation/native": "7.0.14",
@@ -51,6 +52,7 @@
     "expo-doctor": "^1.12.7",
     "expo-font": "~13.0.4",
     "expo-haptics": "~14.0.1",
+    "expo-image-picker": "~16.0.6",
     "expo-linking": "~7.0.5",
     "expo-location": "~18.0.7",
     "expo-router": "~4.0.17",
@@ -59,6 +61,7 @@
     "expo-symbols": "~0.2.2",
     "expo-system-ui": "~4.0.8",
     "expo-web-browser": "~14.0.2",
+    "firebase": "^11.4.0",
     "geolib": "^3.3.4",
     "gluestack-ui": "^0.7.20",
     "jwt-decode": "^4.0.0",
@@ -95,7 +98,7 @@
     "typescript": "^5.8.2"
   },
   "overrides": {
-	"@react-aria/utils": "3.27.0"
-},
+    "@react-aria/utils": "3.27.0"
+  },
   "private": true
 }
