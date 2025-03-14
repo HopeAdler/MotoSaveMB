@@ -1,11 +1,11 @@
 import { Chat } from "@pubnub/chat";
-import PubNubReact from "pubnub";
+import PubNub from "pubnub";
 import React, { createContext, ReactNode, useContext, useEffect, useState } from "react";
 import { decodedToken } from "../utils/utils";
 import AuthContext from "./AuthContext";
 
 interface PubNubContextType {
-  pubnub: PubNubReact | null;
+  pubnub: PubNub | null;
   chat: Chat | null;
 }
 
@@ -19,7 +19,7 @@ const { EXPO_PUBLIC_PUBNUB_PUBLISH_KEY } = process.env;
 const { EXPO_PUBLIC_PUBNUB_SUBSCRIBE_KEY } = process.env;
 
 export const PubNubProvider: React.FC<PubNubProviderProps> = ({ children }) => {
-  const [pubnub, setPubnub] = useState<PubNubReact | null>(null);
+  const [pubnub, setPubnub] = useState<PubNub | null>(null);
   const [chat, setChat] = useState<Chat | null>(null);
   const { token } = useContext(AuthContext);
   const userId = decodedToken(token)?.id;
@@ -28,7 +28,7 @@ export const PubNubProvider: React.FC<PubNubProviderProps> = ({ children }) => {
     if (userId) {
       const initPubNubAndChat = async () => {
         // Initialize PubNub
-        const pubnubInstance = new PubNubReact({
+        const pubnubInstance = new PubNub({
           publishKey: EXPO_PUBLIC_PUBNUB_PUBLISH_KEY,
           subscribeKey: EXPO_PUBLIC_PUBNUB_SUBSCRIBE_KEY || "",
           uuid: userId,
