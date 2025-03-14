@@ -651,8 +651,6 @@
 
     "@protobufjs/utf8": ["@protobufjs/utf8@1.1.0", "", {}, "sha512-Vvn3zZrhQZkkBE8LSuW3em98c0FwgO4nxzv6OdSxPKJIEKY2bGbHn+mhGIPerzI4twdxaP8/0+06HBpwf345Lw=="],
 
-    "@pubnub/chat": ["@pubnub/chat@0.11.7", "", { "dependencies": { "format-util": "^1.0.5", "pubnub": "8.6.0" } }, "sha512-/9fEvAd3mXvutSJV+R790Y8rCUIJFeap0NNPjJojlD+/uQ6X3bdPTNBnpe44dX5BeXx+CfliyJQwqGeSBFsnrg=="],
-
     "@radix-ui/react-compose-refs": ["@radix-ui/react-compose-refs@1.0.0", "", { "dependencies": { "@babel/runtime": "^7.13.10" }, "peerDependencies": { "react": "^16.8 || ^17.0 || ^18.0" } }, "sha512-0KaSv6sx787/hK3eF53iOkiSLwAGlFMx5lotrqD2pTjB18KbybKoEIgkNZTKC60YECDQTKGTRcDBILwZVqVKvA=="],
 
     "@radix-ui/react-slot": ["@radix-ui/react-slot@1.0.1", "", { "dependencies": { "@babel/runtime": "^7.13.10", "@radix-ui/react-compose-refs": "1.0.0" }, "peerDependencies": { "react": "^16.8 || ^17.0 || ^18.0" } }, "sha512-avutXAFL1ehGvAXtPquu0YK5oz6ctS474iM3vNGQIkswrVhdrS52e3uoMQBzZhNRAIE0jBnUyXWNmSjGHhCFcw=="],
@@ -2594,8 +2592,6 @@
     "@jest/transform/write-file-atomic": ["write-file-atomic@4.0.2", "", { "dependencies": { "imurmurhash": "^0.1.4", "signal-exit": "^3.0.7" } }, "sha512-7KxauUdBmSdWnmpaGFg+ppNjKF8uNLry8LyzjauQDOVONfFLNKrKvQOxZ/VuTIcS/gge/YNahf5RIIQWTSarlg=="],
 
     "@npmcli/fs/semver": ["semver@7.7.1", "", { "bin": { "semver": "bin/semver.js" } }, "sha512-hlq8tAfn0m/61p4BVRcPzIGr6LKiMwo4VM6dGi6pt4qcRkmNzTcWq6eCEjEh+qXjkMDvPlOFFSGwQjoEa6gyMA=="],
-
-    "@pubnub/chat/pubnub": ["pubnub@8.6.0", "", { "dependencies": { "agentkeepalive": "^3.5.2", "buffer": "^6.0.3", "cbor-js": "^0.1.0", "cbor-sync": "^1.0.4", "form-data": "^4.0.0", "lil-uuid": "^0.1.1", "node-fetch": "^2.7.0", "proxy-agent": "^6.3.0", "react-native-url-polyfill": "^2.0.0", "text-encoding": "^0.7.0" } }, "sha512-LBCglooxiLkNT3ArUOvSJnLKK6/QdeshWY60IWlSQ+SkXlzEjt74wAnX5XriEXKsmza2yw9mFGG6+B5SlczRzA=="],
 
     "@react-native/babel-preset/babel-plugin-syntax-hermes-parser": ["babel-plugin-syntax-hermes-parser@0.25.1", "", { "dependencies": { "hermes-parser": "0.25.1" } }, "sha512-IVNpGzboFLfXZUAwkLFcI/bnqVbwky0jP3eBno4HKtqvQJAHBLdgxiG6lQ4to0+Q/YCN3PO0od5NZwIKyY4REQ=="],
 
