@@ -3,8 +3,6 @@ import { Channel, Chat, Message, TimetokenUtils, User } from "@pubnub/chat";
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 
-const { EXPO_PUBLIC_PUBNUB_PUBLISH_KEY, EXPO_PUBLIC_PUBNUB_SUBSCRIBE_KEY } = process.env;
-
 const userData = [
     {
         id: "support-agent",
@@ -34,7 +32,7 @@ export default function CustomerChatScreen() {
     const lastFetchedChannelId = useRef<string | null>(null);
     // Initialize the chat instance based on the active user
     const initializeChat = useCallback(async () => {
-        if (!EXPO_PUBLIC_PUBNUB_PUBLISH_KEY || !EXPO_PUBLIC_PUBNUB_SUBSCRIBE_KEY) {
+        if (!process.env.EXPO_PUBLIC_PUBNUB_PUBLISH_KEY || !process.env.EXPO_PUBLIC_PUBNUB_SUBSCRIBE_KEY) {
             console.error("Missing PubNub keys");
             return;
         }
@@ -44,8 +42,8 @@ export default function CustomerChatScreen() {
 
         // Initialize Chat with the active user
         const chatInstance = await Chat.init({
-            publishKey: EXPO_PUBLIC_PUBNUB_PUBLISH_KEY,
-            subscribeKey: EXPO_PUBLIC_PUBNUB_SUBSCRIBE_KEY,
+            publishKey: process.env.EXPO_PUBLIC_PUBNUB_PUBLISH_KEY,
+            subscribeKey: process.env.EXPO_PUBLIC_PUBNUB_SUBSCRIBE_KEY,
             userId: activeUser.id,
         });
 

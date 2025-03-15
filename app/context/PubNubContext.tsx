@@ -15,9 +15,6 @@ interface PubNubProviderProps {
 
 const PubNubContext = createContext<PubNubContextType | undefined>(undefined);
 
-const { EXPO_PUBLIC_PUBNUB_PUBLISH_KEY } = process.env;
-const { EXPO_PUBLIC_PUBNUB_SUBSCRIBE_KEY } = process.env;
-
 export const PubNubProvider: React.FC<PubNubProviderProps> = ({ children }) => {
   const [pubnub, setPubnub] = useState<PubNub | null>(null);
   const [chat, setChat] = useState<Chat | null>(null);
@@ -29,8 +26,8 @@ export const PubNubProvider: React.FC<PubNubProviderProps> = ({ children }) => {
       const initPubNubAndChat = async () => {
         // Initialize PubNub
         const pubnubInstance = new PubNub({
-          publishKey: EXPO_PUBLIC_PUBNUB_PUBLISH_KEY,
-          subscribeKey: EXPO_PUBLIC_PUBNUB_SUBSCRIBE_KEY || "",
+          publishKey: process.env.EXPO_PUBLIC_PUBNUB_PUBLISH_KEY,
+          subscribeKey: process.env.EXPO_PUBLIC_PUBNUB_SUBSCRIBE_KEY || "",
           uuid: userId,
         });
         setPubnub(pubnubInstance);
@@ -38,8 +35,8 @@ export const PubNubProvider: React.FC<PubNubProviderProps> = ({ children }) => {
         try {
           // Await the Chat initialization
           const chatInstance = await Chat.init({
-            publishKey: EXPO_PUBLIC_PUBNUB_PUBLISH_KEY,
-            subscribeKey: EXPO_PUBLIC_PUBNUB_SUBSCRIBE_KEY || "",
+            publishKey: process.env.EXPO_PUBLIC_PUBNUB_PUBLISH_KEY,
+            subscribeKey: process.env.EXPO_PUBLIC_PUBNUB_SUBSCRIBE_KEY || "",
             uuid: userId,
           });
           setChat(chatInstance);
