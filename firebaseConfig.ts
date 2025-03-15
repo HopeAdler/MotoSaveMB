@@ -1,13 +1,11 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 
-const {EXPO_PUBLIC_API_KEY, EXPO_PUBLIC_PROJECT_ID, EXPO_PUBLIC_STORAGE_BUCKET, EXPO_PUBLIC_APP_ID} = process.env
-
 const firebaseConfig = {
-    apiKey: EXPO_PUBLIC_API_KEY,
-    projectId: EXPO_PUBLIC_PROJECT_ID,
-    storageBucket: EXPO_PUBLIC_STORAGE_BUCKET,
-    appId: EXPO_PUBLIC_APP_ID,
+    apiKey: process.env.EXPO_PUBLIC_API_KEY ?? process.env.GOOGLE_SERVICE_JSON,
+    projectId: process.env.EXPO_PUBLIC_PROJECT_ID ?? process.env.GOOGLE_SERVICE_JSON,
+    storageBucket: process.env.EXPO_PUBLIC_STORAGE_BUCKET ?? process.env.GOOGLE_SERVICE_JSON,
+    appId: process.env.EXPO_PUBLIC_APP_ID ?? process.env.GOOGLE_SERVICE_JSON,
 };
 
 const app = initializeApp(firebaseConfig);
