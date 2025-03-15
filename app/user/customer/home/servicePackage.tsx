@@ -67,6 +67,26 @@ const ServicePackage = () => {
               </Box>
             </Card>
           </Pressable>
+
+          <Pressable
+            onPress={() => router.navigate("/user/customer/home/floodRescue/floodRescueMap")}
+          >
+            <Card className="bg-white rounded-2xl p-6 shadow-md border border-gray-100">
+              <Box className="flex-row items-center">
+                <Box className="bg-blue-50 p-4 rounded-xl">
+                  <Clock size={28} color="#3B82F6" />
+                </Box>
+                <Box className="ml-4 flex-1">
+                  <Text className="text-lg font-bold text-gray-900 mb-1">
+                    Cứu hộ qua chỗ lũ
+                  </Text>
+                  <Text className="text-gray-600 text-sm">
+                    Giá ưu đãi • Thời gian linh hoạt
+                  </Text>
+                </Box>
+              </Box>
+            </Card>
+          </Pressable>
         </View>
 
         <Box className="mt-8">
