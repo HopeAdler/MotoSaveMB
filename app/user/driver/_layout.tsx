@@ -160,14 +160,6 @@ export default function DriverLayout() {
             tabBarIcon: (tabInfo) => <ChartArea size={24} color={tabInfo.color} />,
           }}
         />
-        <Tabs.Screen
-          name="chat"
-          options={{
-            headerShown: false,
-            tabBarLabel: "Chat",
-            tabBarIcon: (tabInfo) => <MessageCircle size={24} color={tabInfo.color} />,
-          }}
-        />
       </Tabs>
     </GluestackUIProvider>
   );
