@@ -35,7 +35,7 @@ import {
   AlertDialogBody,
   AlertDialogFooter,
 } from "@/components/ui/alert-dialog";
-import { handlePhoneCall } from "@/app/utils/utils";
+import { decodedToken, handlePhoneCall } from "@/app/utils/utils";
 
 // Import interface RequestDetail từ formFields (với các interface khác được đặt trong file formFields)
 import { RequestDetail } from "@/app/context/formFields";
@@ -56,6 +56,7 @@ interface TrackingActionSheetProps {
   requestdetailid: string | null;
   eta: string;
   distance: string;
+  driverId: string | null;
 }
 
 const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
@@ -64,8 +65,10 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
   requestdetailid,
   eta,
   distance,
+  driverId
 }) => {
   const { token } = useContext(AuthContext);
+  const userId = decodedToken(token)?.id;
   const [requestDetail, setRequestDetail] = useState<RequestDetail | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -152,18 +155,16 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
             <Box key={step.status} className="items-center flex-1">
               <Box className="h-8 flex items-center justify-center relative z-10">
                 <Box
-                  className={`w-8 h-8 rounded-full ${
-                    index <= currentStepIndex ? getStatusColor() : "bg-gray-200"
-                  } items-center justify-center`}
+                  className={`w-8 h-8 rounded-full ${index <= currentStepIndex ? getStatusColor() : "bg-gray-200"
+                    } items-center justify-center`}
                 >
                   <CheckCircle2 size={16} color="white" />
                 </Box>
               </Box>
               <Box className="h-12 justify-start pt-2">
                 <Text
-                  className={`text-xs text-center px-1 ${
-                    index <= currentStepIndex ? "text-gray-900" : "text-gray-500"
-                  }`}
+                  className={`text-xs text-center px-1 ${index <= currentStepIndex ? "text-gray-900" : "text-gray-500"
+                    }`}
                   numberOfLines={2}
                 >
                   {step.title}
@@ -180,6 +181,16 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
     handlePhoneCall(requestDetail?.driverphone);
   };
 
+  const toChatScreen = () => {
+    router.push({
+      pathname: "/user/customer/home/normalRescue/chatScreen",
+      params: {
+        currentUserId: userId,
+        staffId: driverId,
+        requestDetailId: requestdetailid
+      }
+    });
+  }
   // Hàm xử lý hủy chuyến sử dụng API cancelRequest từ beAPI
   const handleSubmitCancellation = async () => {
     if (!requestdetailid) {
@@ -232,12 +243,12 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
               {requestDetail?.requeststatus === "Pending"
                 ? "Tracking driver in progress..."
                 : requestDetail?.requeststatus === "Accepted"
-                ? "Driver accepted your request"
-                : requestDetail?.requeststatus === "Pickup"
-                ? "Driver is on the way"
-                : requestDetail?.requeststatus === "Processing"
-                ? "On rescue mission"
-                : "Completed"}
+                  ? "Driver accepted your request"
+                  : requestDetail?.requeststatus === "Pickup"
+                    ? "Driver is on the way"
+                    : requestDetail?.requeststatus === "Processing"
+                      ? "On rescue mission"
+                      : "Completed"}
             </Text>
           </Box>
           <Box className="p-6">
@@ -286,12 +297,12 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
                   <Phone size={18} color="#4B5563" style={{ marginTop: 2 }} /> Call
                 </ButtonText>
               </Button>
-              <Button variant="outline" size="md" onPress={() => {}}>
+              <Button variant="outline" size="md" onPress={toChatScreen}>
                 <ButtonText>
                   <MessageSquare size={18} color="#4B5563" style={{ marginTop: 2 }} /> Chat
                 </ButtonText>
               </Button>
-              <Button variant="solid" size="md" className="bg-red-500" onPress={() => {}}>
+              <Button variant="solid" size="md" className="bg-red-500" onPress={() => { }}>
                 <ButtonText>
                   <AlertCircle size={18} color="#fff" style={{ marginTop: 2 }} /> SOS
                 </ButtonText>
@@ -299,12 +310,12 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
             </Box>
             {(requestDetail?.requeststatus === "Accepted" ||
               requestDetail?.requeststatus === "Pickup") && (
-              <Box className="mt-4">
-                <Button onPress={() => setShowCancelActionsheet(true)} className="bg-red-500" size="md">
-                  <ButtonText>Cancel Ride</ButtonText>
-                </Button>
-              </Box>
-            )}
+                <Box className="mt-4">
+                  <Button onPress={() => setShowCancelActionsheet(true)} className="bg-red-500" size="md">
+                    <ButtonText>Cancel Ride</ButtonText>
+                  </Button>
+                </Box>
+              )}
           </Box>
         </ActionsheetContent>
       </Actionsheet>
