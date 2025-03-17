@@ -285,7 +285,6 @@ export default function EditProfile() {
 
   return (
     <Box className="flex-1 bg-gray-50">
-      {/* Top Header */}
       <Box className="bg-blue-600 px-4 pt-6 pb-20 rounded-b-[40px] shadow-lg">
         <Box className="flex-row items-center justify-between mb-6">
           <Pressable onPress={() => router.back()} className="p-2 -ml-2">
@@ -299,7 +298,6 @@ export default function EditProfile() {
           )}
         </Box>
 
-        {/* Profile Image */}
         <Box className="items-center">
           <Box className="relative w-28 h-28">
             <Box className="w-28 h-28 bg-white rounded-full items-center justify-center mb-4 shadow-xl border-4 border-white overflow-hidden">
@@ -320,7 +318,6 @@ export default function EditProfile() {
               )}
             </Box>
 
-            {/* Camera icon */}
             <Pressable
               onPress={pickImage}
               className="absolute bottom-0 right-0 w-9 h-9 bg-blue-500 rounded-full items-center justify-center shadow-lg border-2 border-white"
@@ -331,7 +328,6 @@ export default function EditProfile() {
         </Box>
       </Box>
 
-      {/* Form Section */}
       <Box className="px-4 -mt-12">
         <Box className="bg-white rounded-3xl shadow-lg p-6">
           <Box className="space-y-5">
@@ -351,17 +347,16 @@ export default function EditProfile() {
               </Input>
             </Box>
 
-            {/* Gender Field */}
             <Box>
               <Text className="text-base font-medium text-gray-600 mb-2">
                 Gender
               </Text>
               <Pressable
                 onPress={() => setShowGenderSheet(true)}
-                className="bg-gray-50 rounded-xl border-0 shadow-sm h-14 px-4 flex-row items-center justify-between" {/* Taller height */}
+                className="bg-gray-50 rounded-xl border-0 shadow-sm h-14 px-4 flex-row items-center justify-between"
               >
                 <Text
-                  className={`text-lg ${form.gender ? "text-gray-900" : "text-gray-400"}`} {/* Larger text */}
+                  className={`text-lg ${form.gender ? "text-gray-900" : "text-gray-400"}`}
                 >
                   {form.gender || "Select your gender"}
                 </Text>
@@ -369,7 +364,6 @@ export default function EditProfile() {
               </Pressable>
             </Box>
 
-            {/* Date of Birth Field */}
             <Box>
               <Text className="text-base font-medium text-gray-600 mb-2">
                 Date of Birth
@@ -384,7 +378,6 @@ export default function EditProfile() {
               </Input>
             </Box>
 
-            {/* Address Field */}
             <Box>
               <Text className="text-base font-medium text-gray-600 mb-2">
                 Address
@@ -399,7 +392,6 @@ export default function EditProfile() {
               </Input>
             </Box>
 
-            {/* License Plate Field */}
             <Box>
               <Text className="text-base font-medium text-gray-600 mb-2">
                 License Plate
@@ -434,7 +426,6 @@ export default function EditProfile() {
         </Button>
       </Box>
 
-      {/* Loading Overlay */}
       {isLoading && (
         <Box className="absolute inset-0 bg-black/50 items-center justify-center">
           <ActivityIndicator size="large" color="#3B82F6" />
