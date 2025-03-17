@@ -30,7 +30,7 @@ const ServicePackage = () => {
         </Text>
 
         <View className="space-y-4">
-          <Pressable>
+          <Pressable onPress={() => router.navigate("/user/customer/home/emergencyRescue/emergencyRescueMap")}>
             <Card className="bg-white rounded-2xl p-6 shadow-md border border-gray-100 mb-2">
               <Box className="flex-row items-center">
                 <Box className="bg-red-50 p-4 rounded-xl">
@@ -78,7 +78,7 @@ const ServicePackage = () => {
                 </Box>
                 <Box className="ml-4 flex-1">
                   <Text className="text-lg font-bold text-gray-900 mb-1">
-                    Cứu hộ qua chỗ lũ
+                    Cứu hộ qua chỗ lụt
                   </Text>
                   <Text className="text-gray-600 text-sm">
                     Giá ưu đãi • Thời gian linh hoạt

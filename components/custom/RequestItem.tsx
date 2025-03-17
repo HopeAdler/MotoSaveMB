@@ -9,6 +9,7 @@ import { Alert, View } from "react-native";
 
 interface RequestItem {
   requestid: string;
+  servicepackagename: string;
   requestdetailid: string;
   requesttype: string;
   customername: string;
@@ -32,6 +33,7 @@ export const renderItem = ({
   publishAcceptRequest: (requestDetailId: string) => Promise<void>;
 }) => (
   <Box className="bg-white p-4 mb-2 rounded-lg shadow relative">
+    <Text className="text-violet-500 text-lg font-bold">{item.servicepackagename}</Text>
     <View className="absolute top-2 right-2 bg-blue-500 px-2 py-1 rounded-full">
       <Text className="text-white text-xs font-bold">{item.requeststatus}</Text>
     </View>

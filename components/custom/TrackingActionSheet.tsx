@@ -57,6 +57,7 @@ interface TrackingActionSheetProps {
   eta: string;
   distance: string;
   driverId: string | null;
+  setAcceptedReqDetStatus: React.Dispatch<React.SetStateAction<string>>;
 }
 
 const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
@@ -65,7 +66,8 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
   requestdetailid,
   eta,
   distance,
-  driverId
+  driverId,
+  setAcceptedReqDetStatus
 }) => {
   const { token } = useContext(AuthContext);
   const userId = decodedToken(token)?.id;
@@ -85,6 +87,7 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
         { headers: { Authorization: "Bearer " + token } }
       );
       setRequestDetail(response.data);
+      setAcceptedReqDetStatus(response.data?.requeststatus)
       console.log("Fetching request detail...");
     } catch (error) {
       console.error("Error fetching request details:", error);
