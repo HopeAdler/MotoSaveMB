@@ -126,10 +126,10 @@ export default function CSettingscreen() {
         <LoadingSkeleton />
       ) : (
         <>
-          <Box className="bg-blue-600 px-4 pt-6 pb-20 rounded-b-[40px] shadow-lg">
+          <Box className="bg-blue-600 px-4 pt-4 pb-16 rounded-b-[40px] shadow-lg">
             <Box className="items-center">
-              <Box className="relative w-28 h-28">
-                <Box className="w-28 h-28 bg-white rounded-full items-center justify-center mb-4 shadow-xl border-4 border-white overflow-hidden">
+              <Box className="relative w-24 h-24">
+                <Box className="w-24 h-24 bg-white rounded-full items-center justify-center mb-3 shadow-xl border-4 border-white overflow-hidden">
                   {profile?.avatar ? (
                     <Image
                       source={{ uri: profile.avatar }}
@@ -137,45 +137,45 @@ export default function CSettingscreen() {
                       resizeMode="cover"
                     />
                   ) : (
-                    <User size={48} color="#3B82F6" />
+                    <User size={40} color="#3B82F6" />
                   )}
                 </Box>
               </Box>
-              <Text className="text-white text-2xl font-bold mb-2">
+              <Text className="text-white text-xl font-bold mb-1">
                 {profile?.fullname || "Loading..."}
               </Text>
-              <Text className="text-blue-100 text-lg mb-4">
+              <Text className="text-blue-100 text-base mb-3">
                 {profile?.email || "No email provided"}
               </Text>
-              <Box className="flex-row bg-white/20 rounded-full px-6 py-3">
-                <Text className="text-white text-base">Member since {new Date(profile?.createddate || "").getFullYear()}</Text>
+              <Box className="flex-row bg-white/20 rounded-full px-4 py-2">
+                <Text className="text-white text-sm">Member since {new Date(profile?.createddate || "").getFullYear()}</Text>
               </Box>
             </Box>
           </Box>
 
           <Box className="px-4 -mt-12">
-            <Box className="bg-white rounded-3xl shadow-lg p-6 mb-6">
-              <Text className="text-xl font-bold text-gray-800 mb-6">Contact Information</Text>
-              <Box className="space-y-5">
-                <Box className="flex-row items-center p-4 bg-gray-50 rounded-xl">
-                  <Box className="w-12 h-12 bg-blue-100 rounded-full items-center justify-center">
-                    <Phone size={24} color="#3B82F6" />
+            <Box className="bg-white rounded-3xl shadow-lg p-5 mb-4">
+              <Text className="text-lg font-bold text-gray-800 mb-4">Contact Information</Text>
+              <Box className="space-y-3">
+                <Box className="flex-row items-center p-3 bg-gray-50 rounded-xl">
+                  <Box className="w-10 h-10 bg-blue-100 rounded-full items-center justify-center">
+                    <Phone size={20} color="#3B82F6" />
                   </Box>
-                  <Box className="ml-4">
-                    <Text className="text-base text-gray-500">Phone Number</Text>
-                    <Text className="text-lg font-medium text-gray-700">
+                  <Box className="ml-3">
+                    <Text className="text-sm text-gray-500">Phone Number</Text>
+                    <Text className="text-base font-medium text-gray-700">
                       {profile?.phone || "Not provided"}
                     </Text>
                   </Box>
                 </Box>
                 
-                <Box className="flex-row items-center p-4 bg-gray-50 rounded-xl">
-                  <Box className="w-12 h-12 bg-green-100 rounded-full items-center justify-center">
-                    <Mail size={24} color="#10B981" />
+                <Box className="flex-row items-center p-3 bg-gray-50 rounded-xl">
+                  <Box className="w-10 h-10 bg-green-100 rounded-full items-center justify-center">
+                    <Mail size={20} color="#10B981" />
                   </Box>
-                  <Box className="ml-4">
-                    <Text className="text-base text-gray-500">Email Address</Text>
-                    <Text className="text-lg font-medium text-gray-700">
+                  <Box className="ml-3">
+                    <Text className="text-sm text-gray-500">Email Address</Text>
+                    <Text className="text-base font-medium text-gray-700">
                       {profile?.email || "Not provided"}
                     </Text>
                   </Box>
@@ -183,30 +183,30 @@ export default function CSettingscreen() {
               </Box>
             </Box>
 
-            <Box className="space-y-4">
+            <Box className="space-y-3">
               {menuItems.map((item, index) => (
                 <Pressable
                   key={index}
                   onPress={item.onPress}
-                  className="bg-white rounded-xl p-6 flex-row items-center shadow-sm border border-gray-100"
+                  className="bg-white rounded-xl p-4 flex-row items-center shadow-sm border border-gray-100"
                 >
                   <Box 
-                    className={`w-16 h-16 rounded-full items-center justify-center`} 
+                    className={`w-12 h-12 rounded-full items-center justify-center`} 
                     style={{ backgroundColor: `${item.color}15` }}
                   >
-                    <item.icon size={30} color={item.color} />
+                    <item.icon size={24} color={item.color} />
                   </Box>
-                  <Box className="flex-1 ml-5">
-                    <Text className="text-lg font-semibold text-gray-800">{item.title}</Text>
-                    <Text className="text-base text-gray-500 mt-1">{item.subtitle}</Text>
+                  <Box className="flex-1 ml-3">
+                    <Text className="text-base font-semibold text-gray-800">{item.title}</Text>
+                    <Text className="text-sm text-gray-500">{item.subtitle}</Text>
                   </Box>
-                  <ChevronRight size={24} color="#9CA3AF" />
+                  <ChevronRight size={20} color="#9CA3AF" />
                 </Pressable>
               ))}
             </Box>
           </Box>
           
-          <Box className="h-20" />
+          <Box className="h-16" />
         </>
       )}
     </ScrollView>
