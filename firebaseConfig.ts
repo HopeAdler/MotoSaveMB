@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
+import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
     apiKey: process.env.EXPO_PUBLIC_API_KEY ?? process.env.GOOGLE_SERVICE_JSON,
@@ -9,4 +9,5 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app);
+const storage = getStorage(app);
+export { storage, app };
