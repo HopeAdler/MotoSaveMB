@@ -37,18 +37,18 @@ const FloodRescueMapScreen = () => {
   // Các state chính
   const [currentLoc, setCurrentLoc] = useState({ latitude: 0, longitude: 0 });
   const [originCoordinates, setOriginCoordinates] = useState({ latitude: 0, longitude: 0 });
-  const [destinationCoordinates, setDestinationCoordinates] = useState({ latitude: 0, longitude: 0 });
+  // const [destinationCoordinates, setDestinationCoordinates] = useState({ latitude: 0, longitude: 0 });
   const [originQuery, setOriginQuery] = useState("");
-  const [destinationQuery, setDestinationQuery] = useState("");
+  // const [destinationQuery, setDestinationQuery] = useState("");
   const [originResults, setOriginResults] = useState<any[]>([]);
-  const [destinationResults, setDestinationResults] = useState<any[]>([]);
+  // const [destinationResults, setDestinationResults] = useState<any[]>([]);
   const [routeCoordinates, setRouteCoordinates] = useState<[number, number][]>([]);
   const [directionsInfo, setDirectionsInfo] = useState<any>(null);
   const [fare, setFare] = useState<number | null>(15000);
-  const [fareLoading, setFareLoading] = useState<boolean>(false);
+  // const [fareLoading, setFareLoading] = useState<boolean>(false);
   const [paymentLoading, setPaymentLoading] = useState<boolean>(false);
   const [originSelected, setOriginSelected] = useState(false);
-  const [destinationSelected, setDestinationSelected] = useState(false);
+  // const [destinationSelected, setDestinationSelected] = useState(false);
   const [showActionsheet, setShowActionsheet] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("Tiền mặt");
   // const [showCountdownSheet, setShowCountdownSheet] = useState(false);
@@ -119,9 +119,9 @@ const FloodRescueMapScreen = () => {
             return;
           }
         }
-        setDestinationCoordinates({ latitude: lat, longitude: lng });
-        setDestinationResults([]);
-        setDestinationSelected(true);
+        // setDestinationCoordinates({ latitude: lat, longitude: lng });
+        // setDestinationResults([]);
+        // setDestinationSelected(true);
       }
       camera.current?.flyTo([lng, lat, 1000]);
     }
@@ -131,10 +131,10 @@ const FloodRescueMapScreen = () => {
     setOriginQuery(text);
     setOriginSelected(false);
   };
-  const handleDestinationChange = (text: string) => {
-    setDestinationQuery(text);
-    setDestinationSelected(false);
-  };
+  // const handleDestinationChange = (text: string) => {
+  //   setDestinationQuery(text);
+  //   setDestinationSelected(false);
+  // };
   useEffect(() => {
     const timeout = setTimeout(() => {
       if (originQuery.trim()) {
@@ -214,12 +214,12 @@ const FloodRescueMapScreen = () => {
 
   // Hàm kiểm tra hợp lệ vị trí (cho nút confirm)
   const isLocationValid = () => {
-    if (originCoordinates.latitude === 0 || destinationCoordinates.latitude === 0) return false;
+    if (originCoordinates.latitude === 0) return false;
     if (currentLoc.latitude !== 0 && currentLoc.longitude !== 0) {
       const distanceFromCurrent = getDistance(currentLoc, originCoordinates);
       if (distanceFromCurrent > MAX_WARN_PICKUP_DISTANCE) return false;
     }
-    const distanceOriginToDest = getDistance(originCoordinates, destinationCoordinates);
+    const distanceOriginToDest = getDistance(originCoordinates, originCoordinates);
     if (distanceOriginToDest > MAX_WARN_DESTINATION_DISTANCE) return false;
     return true;
   };
@@ -658,6 +658,57 @@ const FloodRescueMapScreen = () => {
     hereNow();
   }, []);
 
+  //Fetching route based on driver progress:
+  const fetchRoute = () => {
+    if (acceptedDriverId && users.size > 0) {
+      if (
+        originSelected &&
+        originCoordinates.latitude
+      ) {
+        const driverLoc = `${users.get(acceptedDriverId)?.latitude},${users.get(acceptedDriverId)?.longitude}`;
+        const originStr = `${originCoordinates.latitude},${originCoordinates.longitude}`;
+        let startStr = "";
+        let endStr = "";
+
+        if (acceptedReqDetStatus === 'Done') return setRouteCoordinates([]);
+        switch (acceptedReqDetStatus) {
+          case "Accepted":
+            startStr = originStr;
+            endStr = originStr;
+            break;
+          case "Pickup":
+            startStr = driverLoc;
+            endStr = originStr;
+            break;
+          case "Processing":
+            startStr = driverLoc;
+            endStr = originStr;
+            break;
+        }
+
+        getDirections(startStr, endStr)
+          .then((data: any) => {
+            if (data.routes && data.routes.length > 0) {
+              const encodedPolyline = data.routes[0].overview_polyline.points;
+              const decoded = decodePolyline(encodedPolyline);
+              setRouteCoordinates(decoded);
+              if (data.routes[0].legs && data.routes[0].legs.length > 0) {
+                setDirectionsInfo(data.routes[0].legs[0]);
+                console.log("Switching route...");
+              }
+            } else {
+              console.log("No routes found:", data);
+            }
+          })
+          .catch((error: any) =>
+            console.error("Error fetching directions:", error)
+          );
+      }
+    }
+  };
+  useEffect(() => {
+    fetchRoute();
+  }, [currentLoc, acceptedReqDetStatus]);
   return (
     <Box className="flex-1">
       <Box className="absolute top-4 left-4 z-20">
@@ -732,14 +783,14 @@ const FloodRescueMapScreen = () => {
               </Box>
             </MapboxGL.PointAnnotation>
           )} */}
-          {/* {routeCoordinates.length > 0 && (
+          {routeCoordinates.length > 0 && (
             <MapboxGL.ShapeSource
               id="routeSource"
               shape={{ type: "Feature", geometry: { type: "LineString", coordinates: routeCoordinates }, properties: {} }}
             >
               <MapboxGL.LineLayer id="routeLine" style={{ lineColor: "#ff0000", lineWidth: 4 }} />
             </MapboxGL.ShapeSource>
-          )} */}
+          )}
         </MapViewComponent>
       </Box>
 

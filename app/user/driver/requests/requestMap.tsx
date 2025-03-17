@@ -21,7 +21,6 @@ import {
   ActionsheetDragIndicatorWrapper,
   ActionsheetSectionHeaderText,
 } from "@/components/ui/actionsheet";
-import { useCameraZoom } from "@/app/hooks/useCameraZoom";
 import { MessageSquare } from "lucide-react-native";
 
 type User = {
@@ -177,7 +176,7 @@ const RequestMap: React.FC = () => {
     switch (requestDetail?.requeststatus) {
       case "Accepted":
         startStr = originStr;
-        endStr = destinationStr;
+        endStr = requestDetail.destination ? destinationStr : originStr;
         break; // ✅ Use break instead of return
       case "Pickup":
         startStr = currentLocStr;
@@ -185,7 +184,7 @@ const RequestMap: React.FC = () => {
         break; // ✅ Use break instead of return
       case "Processing":
         startStr = currentLocStr;
-        endStr = destinationStr;
+        endStr = requestDetail.destination ? destinationStr : originStr;
         break; // ✅ Use break instead of return
     }
 
@@ -273,7 +272,7 @@ const RequestMap: React.FC = () => {
             <MapboxGL.Callout title="Origin" />
           </MapboxGL.PointAnnotation>
         )}
-        {destinationCoordinates && (
+        {requestDetail?.destination && destinationCoordinates && (
           <MapboxGL.PointAnnotation id="destination-marker" coordinate={[destinationCoordinates.longitude, destinationCoordinates.latitude]}>
             <MapboxGL.Callout title="Destination" />
           </MapboxGL.PointAnnotation>
@@ -323,15 +322,19 @@ const RequestMap: React.FC = () => {
               <Text className="text-gray-700">
                 📍 Xuất phát ở: {requestDetail?.pickuplocation}
               </Text>
-              <Text className="text-gray-700">
-                📍 Kết thúc tại: {requestDetail?.destination}
-              </Text>
-              <Text className="text-gray-700">
-                Distance: {directionsInfo?.distance?.text}
-              </Text>
-              <Text className="text-gray-700">
-                Duration: {directionsInfo?.duration?.text}
-              </Text>
+              {requestDetail?.destination &&
+                <>
+                  <Text className="text-gray-700">
+                    📍 Kết thúc tại: {requestDetail?.destination}
+                  </Text>
+                  <Text className="text-gray-700">
+                    Distance: {directionsInfo?.distance?.text}
+                  </Text>
+                  <Text className="text-gray-700">
+                    Duration: {directionsInfo?.duration?.text}
+                  </Text>
+                </>
+              }
               <Text className="text-green-600 font-semibold">
                 💰 Tổng tiền: {requestDetail?.totalprice.toLocaleString()} VND
               </Text>
