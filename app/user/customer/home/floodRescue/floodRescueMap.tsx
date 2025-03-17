@@ -30,8 +30,7 @@ const MAX_RADIUS = 20000;    // 15 km
 const MAX_WARN_PICKUP_DISTANCE = 2000;       // 2 km cho điểm đón
 const MAX_WARN_DESTINATION_DISTANCE = 50000;   // 50 km cho điểm đến
 const FloodRescueMapScreen = () => {
-  const { pubnub } = usePubNub(); // ✅ Get the PubNub instance from context
-  const { publishLocation, publishRescueRequest, subscribeToChannel, subscribeToRescueChannel, hereNow, } = usePubNubService();
+  const { publishLocation, publishRescueRequest, subscribeToChannel, subscribeToRescueChannel, hereNow, createDirectChannel } = usePubNubService();
   const { user, token } = useContext(AuthContext);
   const { PayZaloBridge } = NativeModules;
   const userId = decodedToken(token)?.id;
@@ -65,6 +64,7 @@ const FloodRescueMapScreen = () => {
   // Flag đánh dấu nếu có driver chấp nhận request
   const [driverAccepted, setDriverAccepted] = useState(false);
   const attemptedDriversRef = useRef<Set<string>>(new Set());
+  const [acceptedDriverId, setAcceptedDriverId] = useState<string | null>(null);
   // const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isSearchingRef = useRef(isSearching);
   useEffect(() => {
@@ -151,66 +151,66 @@ const FloodRescueMapScreen = () => {
     return () => clearTimeout(timeout);
   }, [originQuery, originCoordinates]);
 
-//   useEffect(() => {
-//     const timeout = setTimeout(() => {
-//       if (destinationQuery.trim()) {
-//         getAutocomplete(
-//           destinationQuery,
-//           originCoordinates.latitude && originCoordinates.longitude
-//             ? `${originCoordinates.latitude},${originCoordinates.longitude}`
-//             : ""
-//         ).then(setDestinationResults);
-//       } else {
-//         setDestinationResults([]);
-//       }
-//     }, 500);
-//     return () => clearTimeout(timeout);
-//   }, [destinationQuery, originCoordinates]);
+  //   useEffect(() => {
+  //     const timeout = setTimeout(() => {
+  //       if (destinationQuery.trim()) {
+  //         getAutocomplete(
+  //           destinationQuery,
+  //           originCoordinates.latitude && originCoordinates.longitude
+  //             ? `${originCoordinates.latitude},${originCoordinates.longitude}`
+  //             : ""
+  //         ).then(setDestinationResults);
+  //       } else {
+  //         setDestinationResults([]);
+  //       }
+  //     }, 500);
+  //     return () => clearTimeout(timeout);
+  //   }, [destinationQuery, originCoordinates]);
 
   // Lấy đường đi và tính toán cước
-//   useEffect(() => {
-//     if (
-//       originSelected &&
-//       destinationSelected &&
-//       originCoordinates.latitude &&
-//       destinationCoordinates.latitude
-//     ) {
-//       const originStr = `${originCoordinates.latitude},${originCoordinates.longitude}`;
-//       const destinationStr = `${destinationCoordinates.latitude},${destinationCoordinates.longitude}`;
-//       console.log("Calculating direction..");
-//       getDirections(originStr, destinationStr)
-//         .then((data) => {
-//           if (data.routes && data.routes.length > 0) {
-//             const encodedPolyline = data.routes[0].overview_polyline.points;
-//             const decoded = decodePolyline(encodedPolyline);
-//             setRouteCoordinates(decoded);
-//             if (data.routes[0].legs && data.routes[0].legs.length > 0) {
-//               setDirectionsInfo(data.routes[0].legs[0]);
-//             }
-//           } else {
-//             console.log("No routes found:", data);
-//           }
-//         })
-//         .catch((error) => console.error("Error fetching directions:", error));
-//     }
-//   }, [originCoordinates, destinationCoordinates, originSelected, destinationSelected]);
+  //   useEffect(() => {
+  //     if (
+  //       originSelected &&
+  //       destinationSelected &&
+  //       originCoordinates.latitude &&
+  //       destinationCoordinates.latitude
+  //     ) {
+  //       const originStr = `${originCoordinates.latitude},${originCoordinates.longitude}`;
+  //       const destinationStr = `${destinationCoordinates.latitude},${destinationCoordinates.longitude}`;
+  //       console.log("Calculating direction..");
+  //       getDirections(originStr, destinationStr)
+  //         .then((data) => {
+  //           if (data.routes && data.routes.length > 0) {
+  //             const encodedPolyline = data.routes[0].overview_polyline.points;
+  //             const decoded = decodePolyline(encodedPolyline);
+  //             setRouteCoordinates(decoded);
+  //             if (data.routes[0].legs && data.routes[0].legs.length > 0) {
+  //               setDirectionsInfo(data.routes[0].legs[0]);
+  //             }
+  //           } else {
+  //             console.log("No routes found:", data);
+  //           }
+  //         })
+  //         .catch((error) => console.error("Error fetching directions:", error));
+  //     }
+  //   }, [originCoordinates, destinationCoordinates, originSelected, destinationSelected]);
 
-//   useEffect(() => {
-//     if (directionsInfo && !showActionsheet) {
-//       const distanceValue = directionsInfo.distance?.value || 0;
-//       setFareLoading(true);
-//       calculateFare(distanceValue)
-//         .then((money) => {
-//           setFare(money);
-//           setShowActionsheet(true);
-//           setFareLoading(false);
-//         })
-//         .catch((error) => {
-//           console.error("Error calculating fare:", error);
-//           setFareLoading(false);
-//         });
-//     }
-//   }, [directionsInfo]);
+  //   useEffect(() => {
+  //     if (directionsInfo && !showActionsheet) {
+  //       const distanceValue = directionsInfo.distance?.value || 0;
+  //       setFareLoading(true);
+  //       calculateFare(distanceValue)
+  //         .then((money) => {
+  //           setFare(money);
+  //           setShowActionsheet(true);
+  //           setFareLoading(false);
+  //         })
+  //         .catch((error) => {
+  //           console.error("Error calculating fare:", error);
+  //           setFareLoading(false);
+  //         });
+  //     }
+  //   }, [directionsInfo]);
 
   // Hàm kiểm tra hợp lệ vị trí (cho nút confirm)
   const isLocationValid = () => {
@@ -341,16 +341,16 @@ const FloodRescueMapScreen = () => {
       console.log("Driver đã chấp nhận request, dừng tìm kiếm.");
       return;
     }
-     // Nếu vượt quá bán kính tối đa, dừng tìm kiếm và kích hoạt hủy
-     if (radius > MAX_RADIUS) {
+    // Nếu vượt quá bán kính tối đa, dừng tìm kiếm và kích hoạt hủy
+    if (radius > MAX_RADIUS) {
       console.log(`Đã vượt quá bán kính tối đa ${MAX_RADIUS}. Dừng tìm kiếm với reqId:`, reqId);
       Alert.alert("No drivers available", "No drivers available in search radius");
-      
+
       // Đặt UI state
       isSearchingRef.current = false;
       setIsSearching(false);
       setShowActionsheet(true);
-      
+
       try {
         // Gọi trực tiếp API để cancel request
         const result = await updateRequestStatus(reqId, token, "Cancel");
@@ -358,7 +358,7 @@ const FloodRescueMapScreen = () => {
       } catch (error) {
         console.error("Lỗi khi tự động hủy request:", error);
       }
-      
+
       return;
     }
     const baseLocation =
@@ -403,7 +403,7 @@ const FloodRescueMapScreen = () => {
         if (acceptedRequestRef.current.status === "Pending") {
           if (radius <= MAX_RADIUS) {
             sendRideRequestToDrivers(radius + 2000, reqId);
-          } 
+          }
           // else {
           //   Alert.alert("No drivers available", "No drivers available nearby. Please try again later.");
           //   handleCancelSearch();
@@ -426,16 +426,16 @@ const FloodRescueMapScreen = () => {
         return;
       }
       // if (newRadius <= MAX_RADIUS) {
-        setTimeout(() => {
-          // Kiểm tra lại trước khi gọi đệ quy trong callback
-          if (!isSearchingRef.current) {
-            console.log("Search has been canceled (in recursion callback). Exiting.");
-            handleCancelSearch();
-            return;
-          }
-          sendRideRequestToDrivers(newRadius, reqId);
-        }, 5000);
-      }
+      setTimeout(() => {
+        // Kiểm tra lại trước khi gọi đệ quy trong callback
+        if (!isSearchingRef.current) {
+          console.log("Search has been canceled (in recursion callback). Exiting.");
+          handleCancelSearch();
+          return;
+        }
+        sendRideRequestToDrivers(newRadius, reqId);
+      }, 5000);
+    }
     //    else {
     //     Alert.alert("No drivers available", "No drivers available in search radius");
     //     // if (handleCancelSearch) {
@@ -459,18 +459,18 @@ const FloodRescueMapScreen = () => {
       console.log("Không thể tạo request");
       return;
     }
-    
+
     console.log("Lưu reqId vào state:", reqId);
     // Đảm bảo requestDetailId được cập nhật
     setRequestDetailId(reqId);
-    
+
     // Đặt trạng thái tìm kiếm
     isSearchingRef.current = true;
     setIsSearching(true);
     setDriverAccepted(false);
-    
+
     // Truyền reqId trực tiếp vào hàm tìm kiếm
-    
+
     // Truyền reqId trực tiếp vào hàm tìm kiếm
     sendRideRequestToDrivers(INITIAL_RADIUS, reqId);
   };
@@ -514,17 +514,17 @@ const FloodRescueMapScreen = () => {
   // };
   const handleCancel = async () => {
     console.log("handleCancel được gọi với requestDetailId:", requestDetailId);
-    
+
     if (!requestDetailId) {
       console.log("requestDetailId không tồn tại, không thể hủy");
       return;
     }
-    
+
     try {
       console.log("Đang hủy request với ID:", requestDetailId);
       const result = await updateRequestStatus(requestDetailId, token, "Cancel");
       console.log("Kết quả hủy request:", result);
-      
+
       if (paymentMethod === "Zalopay" && zpTransId) {
         console.log("Đang hoàn tiền cho giao dịch:", zpTransId);
         await refundTransaction(zpTransId, "User canceled request", fare);
@@ -534,7 +534,7 @@ const FloodRescueMapScreen = () => {
           subscription.remove();
         });
       }
-      
+
       console.log("Request đã được hủy thành công");
       // Cập nhật UI nếu cần
     } catch (error) {
@@ -542,21 +542,21 @@ const FloodRescueMapScreen = () => {
       // Xử lý lỗi (có thể thử hủy lại hoặc hiển thị thông báo)
     }
   };
-  
+
   const handleCancelSearch = async (reqId?: string) => {
     console.log("handleCancelSearch được gọi");
-    
+
     // Ngay lập tức đặt trạng thái tìm kiếm về false
     isSearchingRef.current = false;
     setIsSearching(false);
-    
+
     // Cập nhật UI
     setShowActionsheet(true);
     setShowTracking(false);
-    
+
     // Sử dụng reqId được truyền vào nếu có, nếu không thì dùng state
     const idToCancel = reqId || requestDetailId;
-    
+
     if (idToCancel) {
       console.log("Đang gọi handleCancel với requestDetailId:", idToCancel);
       try {
@@ -642,6 +642,8 @@ const FloodRescueMapScreen = () => {
         setAcceptedReqDetStatus(msg.message.reqStatus)
         setAcceptedReqDetId(msg.message.requestDetailId)
         console.log('Driver has accept the requet: ' + msg.message.requestDetailId)
+        setAcceptedDriverId(msg?.publisher)
+        createDirectChannel(msg?.publisher, msg.message.requestDetailId)
       }
     });
     return () => {
@@ -760,6 +762,7 @@ const FloodRescueMapScreen = () => {
           requestdetailid={requestDetailId}
           eta={directionsInfo?.distance?.text}
           distance={directionsInfo?.duration?.text}
+          driverId={acceptedDriverId}
         />
       )}
 

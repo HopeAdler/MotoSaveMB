@@ -183,7 +183,7 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
 
   const toChatScreen = () => {
     router.push({
-      pathname: "/user/customer/home/normalRescue/chatScreen",
+      pathname: "/user/customer/home/chatScreen",
       params: {
         currentUserId: userId,
         staffId: driverId,
