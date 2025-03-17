@@ -67,7 +67,7 @@ const RescueMapScreen = () => {
   const {
     createDirectChannel
   } = usePubNubService();
-  const [acceptedDriverId, setAcceptedDriverId] = useState<string |null>(null);
+  const [acceptedDriverId, setAcceptedDriverId] = useState<string | null>(null);
   // const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isSearchingRef = useRef(isSearching);
   useEffect(() => {
@@ -172,34 +172,91 @@ const RescueMapScreen = () => {
 
   // Lấy đường đi và tính toán cước
   useEffect(() => {
-    if (
-      originSelected &&
-      destinationSelected &&
-      originCoordinates.latitude &&
-      destinationCoordinates.latitude
-    ) {
-      const originStr = `${originCoordinates.latitude},${originCoordinates.longitude}`;
-      const destinationStr = `${destinationCoordinates.latitude},${destinationCoordinates.longitude}`;
-      console.log("Calculating direction..");
-      getDirections(originStr, destinationStr)
-        .then((data) => {
-          if (data.routes && data.routes.length > 0) {
-            const encodedPolyline = data.routes[0].overview_polyline.points;
-            const decoded = decodePolyline(encodedPolyline);
-            setRouteCoordinates(decoded);
-            if (data.routes[0].legs && data.routes[0].legs.length > 0) {
-              setDirectionsInfo(data.routes[0].legs[0]);
+    if (acceptedDriverId === null) {
+      if (
+        originSelected &&
+        destinationSelected &&
+        originCoordinates.latitude &&
+        destinationCoordinates.latitude
+      ) {
+        const originStr = `${originCoordinates.latitude},${originCoordinates.longitude}`;
+        const destinationStr = `${destinationCoordinates.latitude},${destinationCoordinates.longitude}`;
+        console.log("Calculating direction..");
+        getDirections(originStr, destinationStr)
+          .then((data) => {
+            if (data.routes && data.routes.length > 0) {
+              const encodedPolyline = data.routes[0].overview_polyline.points;
+              const decoded = decodePolyline(encodedPolyline);
+              setRouteCoordinates(decoded);
+              if (data.routes[0].legs && data.routes[0].legs.length > 0) {
+                setDirectionsInfo(data.routes[0].legs[0]);
+              }
+            } else {
+              console.log("No routes found:", data);
             }
-          } else {
-            console.log("No routes found:", data);
-          }
-        })
-        .catch((error) => console.error("Error fetching directions:", error));
+          })
+          .catch((error) => console.error("Error fetching directions:", error));
+      }
     }
   }, [originCoordinates, destinationCoordinates, originSelected, destinationSelected]);
 
+  //Fetching route based on driver progress:
+  const fetchRoute = () => {
+    if (acceptedDriverId && users.size > 0) {
+      if (
+        originSelected &&
+        destinationSelected &&
+        originCoordinates.latitude &&
+        destinationCoordinates.latitude
+      ) {
+        const driverLoc = `${users.get(acceptedDriverId)?.latitude},${users.get(acceptedDriverId)?.longitude}`;
+        const originStr = `${originCoordinates.latitude},${originCoordinates.longitude}`;
+        const destinationStr = `${destinationCoordinates.latitude},${destinationCoordinates.longitude}`;
+        let startStr = "";
+        let endStr = "";
+
+        if (acceptedReqDetStatus === 'Done') return setRouteCoordinates([]);
+        switch (acceptedReqDetStatus) {
+          case "Accepted":
+            startStr = originStr;
+            endStr = destinationStr;
+            break; // ✅ Use break instead of return
+          case "Pickup":
+            startStr = driverLoc;
+            endStr = originStr;
+            break; // ✅ Use break instead of return
+          case "Processing":
+            startStr = driverLoc;
+            endStr = destinationStr;
+            break; // ✅ Use break instead of return
+        }
+
+        getDirections(startStr, endStr)
+          .then((data: any) => {
+            if (data.routes && data.routes.length > 0) {
+              const encodedPolyline = data.routes[0].overview_polyline.points;
+              const decoded = decodePolyline(encodedPolyline);
+              setRouteCoordinates(decoded);
+              if (data.routes[0].legs && data.routes[0].legs.length > 0) {
+                setDirectionsInfo(data.routes[0].legs[0]);
+                console.log("Switching route...");
+              }
+            } else {
+              console.log("No routes found:", data);
+            }
+          })
+          .catch((error: any) =>
+            console.error("Error fetching directions:", error)
+          );
+      }
+    }
+  };
   useEffect(() => {
-    if (directionsInfo && !showActionsheet) {
+    fetchRoute();
+  }, [currentLoc, acceptedReqDetStatus]);
+
+  useEffect(() => {
+    if (directionsInfo && !acceptedDriverId && !showActionsheet) {
       const distanceValue = directionsInfo.distance?.value || 0;
       setFareLoading(true);
       calculateFare(distanceValue)
@@ -624,7 +681,13 @@ const RescueMapScreen = () => {
       (msg: any) => {
         const message = msg.message;
         if (msg.publisher === userId || message.role === "Driver") {
-          setUsers((prev) => new Map(prev).set(msg.publisher, msg.message));
+          setUsers((prev) => {
+            const updatedMap = new Map(prev);
+            updatedMap.set(msg.publisher, msg.message);
+            return acceptedDriverId
+              ? new Map([...updatedMap].filter(([key]) => key === acceptedDriverId))
+              : updatedMap;
+          });
         }
       },
       (event: any) => {
@@ -632,12 +695,13 @@ const RescueMapScreen = () => {
           setUsers((prev) => {
             const updated = new Map(prev);
             updated.delete(event.uuid);
-            return updated;
+            return acceptedDriverId
+              ? new Map([...updated].filter(([key]) => key === acceptedDriverId))
+              : updated;
           });
         }
       }
     );
-
     subscribeToRescueChannel((msg: any) => {
       if (msg?.message?.senderRole === "Driver"
         && msg?.message?.reqStatus === "Accepted"
@@ -765,9 +829,10 @@ const RescueMapScreen = () => {
           isOpen={showTracking}
           onClose={() => setShowTracking(false)}
           requestdetailid={requestDetailId}
-          eta={directionsInfo?.distance?.text}
-          distance={directionsInfo?.duration?.text}
+          eta={directionsInfo?.duration?.text}
+          distance={directionsInfo?.distance?.text}
           driverId={acceptedDriverId}
+          setAcceptedReqDetStatus={setAcceptedReqDetStatus}
         />
       )}
 

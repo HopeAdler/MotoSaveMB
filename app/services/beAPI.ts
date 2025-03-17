@@ -11,6 +11,13 @@ export interface RescueRequestPayload {
   totalprice: number;
 }
 
+export interface FloodRescueRequestPayload {
+  pickuplong: number;
+  pickuplat: number;
+  pickuplocation: string;
+  totalprice: number;
+}
+
 export interface Transaction {
   requestdetailid: string;
   zptransid: string;
@@ -31,6 +38,27 @@ export async function createRescueRequest(
   try {
     const response = await axios.post(
       "https://motor-save-be.vercel.app/api/v1/requests/normalRescue",
+      payload,
+      {
+        headers: {
+          Authorization: "Bearer " + token,
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error creating rescue request", error);
+    throw error;
+  }
+}
+
+export async function createFloodRescueRequest(
+  payload: FloodRescueRequestPayload,
+  token: string
+): Promise<any> {
+  try {
+    const response = await axios.post(
+      "https://motor-save-be.vercel.app/api/v1/requests/floodRescue",
       payload,
       {
         headers: {

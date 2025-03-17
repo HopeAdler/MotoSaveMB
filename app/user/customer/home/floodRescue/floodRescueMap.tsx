@@ -1,6 +1,6 @@
 import { AuthContext } from "@/app/context/AuthContext";
 import { useCameraZoom } from "@/app/hooks/useCameraZoom";
-import { calculateFare, createRescueRequest, createTransaction, RescueRequestPayload, updateRequestStatus, } from "@/app/services/beAPI";
+import { calculateFare, createFloodRescueRequest, createRescueRequest, createTransaction, FloodRescueRequestPayload, RescueRequestPayload, updateRequestStatus, } from "@/app/services/beAPI";
 import { geocodeAddress, getAutocomplete, getDirections, getReverseGeocode, } from "@/app/services/goongAPI";
 import { decodePolyline } from "@/app/utils/utils";
 import { Box } from "@/components/ui/box";
@@ -228,17 +228,14 @@ const FloodRescueMapScreen = () => {
     attemptedDriversRef.current = new Set();
     if (!token) return;
 
-    const payload: RescueRequestPayload = {
+    const payload: FloodRescueRequestPayload = {
       pickuplong: originCoordinates.longitude,
       pickuplat: originCoordinates.latitude,
-      deslng: destinationCoordinates.longitude,
-      deslat: destinationCoordinates.latitude,
       pickuplocation: originQuery,
-      destination: destinationQuery,
       totalprice: fare || 0,
     };
     try {
-      const result = await createRescueRequest(payload, token);
+      const result = await createFloodRescueRequest(payload, token);
       console.log(result);
       setShowActionsheet(true);
       // setShowCountdownSheet(true);
@@ -254,17 +251,14 @@ const FloodRescueMapScreen = () => {
     const callbackUrl = "myapp://user/customer/home/floodRescue/floodRescueMap";
     if (!token) return;
     setPaymentLoading(true);
-    const payload: RescueRequestPayload = {
+    const payload: FloodRescueRequestPayload = {
       pickuplong: originCoordinates.longitude,
       pickuplat: originCoordinates.latitude,
-      deslng: destinationCoordinates.longitude,
-      deslat: destinationCoordinates.latitude,
       pickuplocation: originQuery,
-      destination: destinationQuery,
       totalprice: fare || 0,
     };
     try {
-      const result = await createRescueRequest(payload, token);
+      const result = await createFloodRescueRequest(payload, token);
       console.log(result);
       const reqId = result.requestdetailid;
       setRequestDetailId(reqId);
@@ -621,7 +615,13 @@ const FloodRescueMapScreen = () => {
       (msg: any) => {
         const message = msg.message;
         if (msg.publisher === userId || message.role === "Driver") {
-          setUsers((prev) => new Map(prev).set(msg.publisher, msg.message));
+          setUsers((prev) => {
+            const updatedMap = new Map(prev);
+            updatedMap.set(msg.publisher, msg.message);
+            return acceptedDriverId
+              ? new Map([...updatedMap].filter(([key]) => key === acceptedDriverId))
+              : updatedMap;
+          });
         }
       },
       (event: any) => {
@@ -629,7 +629,9 @@ const FloodRescueMapScreen = () => {
           setUsers((prev) => {
             const updated = new Map(prev);
             updated.delete(event.uuid);
-            return updated;
+            return acceptedDriverId
+              ? new Map([...updated].filter(([key]) => key === acceptedDriverId))
+              : updated;
           });
         }
       }
@@ -761,9 +763,10 @@ const FloodRescueMapScreen = () => {
           isOpen={showTracking}
           onClose={() => setShowTracking(false)}
           requestdetailid={requestDetailId}
-          eta={directionsInfo?.distance?.text}
-          distance={directionsInfo?.duration?.text}
+          eta={directionsInfo?.duration?.text}
+          distance={directionsInfo?.distance?.text}
           driverId={acceptedDriverId}
+          setAcceptedReqDetStatus={setAcceptedReqDetStatus}
         />
       )}
 
