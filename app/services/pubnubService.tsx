@@ -1,3 +1,4 @@
+import { Channel } from "@pubnub/chat";
 import { usePubNub } from "../context/PubNubContext"; // Ensure correct path
 
 type User = {
@@ -104,6 +105,47 @@ export const usePubNubService = () => {
     );
   };
 
+  //Create new direct channel with requestDetailId
+  const createDirectChannel = async (
+    invitedUserId: string,
+    requestDetailId: string,
+  ) => {
+    try {
+      if (chat) {
+        const invitedUser = await chat.getUser(invitedUserId);
+        if (invitedUser) {
+          await chat.createDirectConversation({
+            user: invitedUser,
+            channelId: requestDetailId,
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error initializing direct channel:", error);
+    }
+  };
+
+  const getChannel = async (channelId: string): Promise<Channel | null> => {
+    try {
+      if (!chat) {
+        console.error("Chat instance not available");
+        return null;
+      }
+
+      const channel = await chat.getChannel(channelId);
+      if (!channel) {
+        console.error("Channel not found:", channelId);
+        return null;
+      }
+
+      return channel;
+    } catch (error) {
+      console.error("Error fetching channel:", error);
+      return null;
+    }
+  };
+
+
   const fetchMessageHistory = async (
     channelId: string,
     messageCallback: (msg: any) => void
@@ -140,6 +182,8 @@ export const usePubNubService = () => {
     subscribeToChannel,
     subscribeToRescueChannel,
     hereNow,
+    createDirectChannel,
+    getChannel,
     fetchMessageHistory,
   };
 };

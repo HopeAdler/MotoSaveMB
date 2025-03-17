@@ -20,7 +20,6 @@ import { PayZaloEventData, processPayment, refundTransaction } from "@/app/utils
 import { decodedToken } from "@/app/utils/utils";
 import MapViewComponent from "../../../../../components/custom/MapViewComponent";
 import { usePubNubService } from "@/app/services/pubnubService"; // ✅ Use the custom hook
-import { usePubNub } from "../../../../context/PubNubContext";
 const { EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN } = process.env;
 MapboxGL.setAccessToken(`${EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN}`);
 import { User } from "../../../../context/formFields";
@@ -30,7 +29,6 @@ const MAX_RADIUS = 20000;    // 15 km
 const MAX_WARN_PICKUP_DISTANCE = 2000;       // 2 km cho điểm đón
 const MAX_WARN_DESTINATION_DISTANCE = 50000;   // 50 km cho điểm đến
 const RescueMapScreen = () => {
-  const { pubnub } = usePubNub(); // ✅ Get the PubNub instance from context
   const { publishLocation, publishRescueRequest, subscribeToChannel, subscribeToRescueChannel, hereNow, } = usePubNubService();
   const { user, token } = useContext(AuthContext);
   const { PayZaloBridge } = NativeModules;
@@ -65,6 +63,11 @@ const RescueMapScreen = () => {
   // Flag đánh dấu nếu có driver chấp nhận request
   const [driverAccepted, setDriverAccepted] = useState(false);
   const attemptedDriversRef = useRef<Set<string>>(new Set());
+  //For initializing chat
+  const {
+    createDirectChannel
+  } = usePubNubService();
+  const [acceptedDriverId, setAcceptedDriverId] = useState<string |null>(null);
   // const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isSearchingRef = useRef(isSearching);
   useEffect(() => {
@@ -289,6 +292,7 @@ const RescueMapScreen = () => {
             );
             if (transactionResponse) {
               // handleRequestSuccess(reqId);
+              isSearchingRef.current = true;
               setIsSearching(true);
               setDriverAccepted(false);
               sendRideRequestToDrivers(INITIAL_RADIUS, reqId);
@@ -341,16 +345,16 @@ const RescueMapScreen = () => {
       console.log("Driver đã chấp nhận request, dừng tìm kiếm.");
       return;
     }
-     // Nếu vượt quá bán kính tối đa, dừng tìm kiếm và kích hoạt hủy
-     if (radius > MAX_RADIUS) {
+    // Nếu vượt quá bán kính tối đa, dừng tìm kiếm và kích hoạt hủy
+    if (radius > MAX_RADIUS) {
       console.log(`Đã vượt quá bán kính tối đa ${MAX_RADIUS}. Dừng tìm kiếm với reqId:`, reqId);
       Alert.alert("No drivers available", "No drivers available in search radius");
-      
+
       // Đặt UI state
       isSearchingRef.current = false;
       setIsSearching(false);
       setShowActionsheet(true);
-      
+
       try {
         // Gọi trực tiếp API để cancel request
         const result = await updateRequestStatus(reqId, token, "Cancel");
@@ -358,7 +362,7 @@ const RescueMapScreen = () => {
       } catch (error) {
         console.error("Lỗi khi tự động hủy request:", error);
       }
-      
+
       return;
     }
     const baseLocation =
@@ -403,7 +407,7 @@ const RescueMapScreen = () => {
         if (acceptedRequestRef.current.status === "Pending") {
           if (radius <= MAX_RADIUS) {
             sendRideRequestToDrivers(radius + 2000, reqId);
-          } 
+          }
           // else {
           //   Alert.alert("No drivers available", "No drivers available nearby. Please try again later.");
           //   handleCancelSearch();
@@ -426,16 +430,16 @@ const RescueMapScreen = () => {
         return;
       }
       // if (newRadius <= MAX_RADIUS) {
-        setTimeout(() => {
-          // Kiểm tra lại trước khi gọi đệ quy trong callback
-          if (!isSearchingRef.current) {
-            console.log("Search has been canceled (in recursion callback). Exiting.");
-            handleCancelSearch();
-            return;
-          }
-          sendRideRequestToDrivers(newRadius, reqId);
-        }, 5000);
-      }
+      setTimeout(() => {
+        // Kiểm tra lại trước khi gọi đệ quy trong callback
+        if (!isSearchingRef.current) {
+          console.log("Search has been canceled (in recursion callback). Exiting.");
+          handleCancelSearch();
+          return;
+        }
+        sendRideRequestToDrivers(newRadius, reqId);
+      }, 5000);
+    }
     //    else {
     //     Alert.alert("No drivers available", "No drivers available in search radius");
     //     // if (handleCancelSearch) {
@@ -459,18 +463,18 @@ const RescueMapScreen = () => {
       console.log("Không thể tạo request");
       return;
     }
-    
+
     console.log("Lưu reqId vào state:", reqId);
     // Đảm bảo requestDetailId được cập nhật
     setRequestDetailId(reqId);
-    
+
     // Đặt trạng thái tìm kiếm
     isSearchingRef.current = true;
     setIsSearching(true);
     setDriverAccepted(false);
-    
+
     // Truyền reqId trực tiếp vào hàm tìm kiếm
-    
+
     // Truyền reqId trực tiếp vào hàm tìm kiếm
     sendRideRequestToDrivers(INITIAL_RADIUS, reqId);
   };
@@ -514,17 +518,17 @@ const RescueMapScreen = () => {
   // };
   const handleCancel = async () => {
     console.log("handleCancel được gọi với requestDetailId:", requestDetailId);
-    
+
     if (!requestDetailId) {
       console.log("requestDetailId không tồn tại, không thể hủy");
       return;
     }
-    
+
     try {
       console.log("Đang hủy request với ID:", requestDetailId);
       const result = await updateRequestStatus(requestDetailId, token, "Cancel");
       console.log("Kết quả hủy request:", result);
-      
+
       if (paymentMethod === "Zalopay" && zpTransId) {
         console.log("Đang hoàn tiền cho giao dịch:", zpTransId);
         await refundTransaction(zpTransId, "User canceled request", fare);
@@ -534,7 +538,7 @@ const RescueMapScreen = () => {
           subscription.remove();
         });
       }
-      
+
       console.log("Request đã được hủy thành công");
       // Cập nhật UI nếu cần
     } catch (error) {
@@ -542,21 +546,21 @@ const RescueMapScreen = () => {
       // Xử lý lỗi (có thể thử hủy lại hoặc hiển thị thông báo)
     }
   };
-  
+
   const handleCancelSearch = async (reqId?: string) => {
     console.log("handleCancelSearch được gọi");
-    
+
     // Ngay lập tức đặt trạng thái tìm kiếm về false
     isSearchingRef.current = false;
     setIsSearching(false);
-    
+
     // Cập nhật UI
     setShowActionsheet(true);
     setShowTracking(false);
-    
+
     // Sử dụng reqId được truyền vào nếu có, nếu không thì dùng state
     const idToCancel = reqId || requestDetailId;
-    
+
     if (idToCancel) {
       console.log("Đang gọi handleCancel với requestDetailId:", idToCancel);
       try {
@@ -642,6 +646,9 @@ const RescueMapScreen = () => {
         setAcceptedReqDetStatus(msg.message.reqStatus)
         setAcceptedReqDetId(msg.message.requestDetailId)
         console.log('Driver has accept the requet: ' + msg.message.requestDetailId)
+        //Initializing direct chat(driverId, requestDetailId)
+        setAcceptedDriverId(msg?.publisher)
+        createDirectChannel(msg?.publisher, msg.message.requestDetailId)
       }
     });
     return () => {
@@ -760,6 +767,7 @@ const RescueMapScreen = () => {
           requestdetailid={requestDetailId}
           eta={directionsInfo?.distance?.text}
           distance={directionsInfo?.duration?.text}
+          driverId={acceptedDriverId}
         />
       )}
 

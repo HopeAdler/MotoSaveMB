@@ -70,15 +70,6 @@ export default function CustomerLayout() {
             ),
           }}
         />
-        <Tabs.Screen
-          name="chat"
-          options={{
-            tabBarLabel: "Chat",
-            tabBarIcon: (tabInfo) => (
-              <MessageCircle size={24} color={tabInfo.color} />
-            ),
-          }}
-        />
         {/* <Tabs.Screen
           name="servicePackage"
           options={{
