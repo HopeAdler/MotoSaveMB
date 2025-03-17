@@ -621,7 +621,13 @@ const FloodRescueMapScreen = () => {
       (msg: any) => {
         const message = msg.message;
         if (msg.publisher === userId || message.role === "Driver") {
-          setUsers((prev) => new Map(prev).set(msg.publisher, msg.message));
+          setUsers((prev) => {
+            const updatedMap = new Map(prev);
+            updatedMap.set(msg.publisher, msg.message);
+            return acceptedDriverId
+              ? new Map([...updatedMap].filter(([key]) => key === acceptedDriverId))
+              : updatedMap;
+          });
         }
       },
       (event: any) => {
@@ -629,7 +635,9 @@ const FloodRescueMapScreen = () => {
           setUsers((prev) => {
             const updated = new Map(prev);
             updated.delete(event.uuid);
-            return updated;
+            return acceptedDriverId
+              ? new Map([...updated].filter(([key]) => key === acceptedDriverId))
+              : updated;
           });
         }
       }
@@ -761,9 +769,10 @@ const FloodRescueMapScreen = () => {
           isOpen={showTracking}
           onClose={() => setShowTracking(false)}
           requestdetailid={requestDetailId}
-          eta={directionsInfo?.distance?.text}
-          distance={directionsInfo?.duration?.text}
+          eta={directionsInfo?.duration?.text}
+          distance={directionsInfo?.distance?.text}
           driverId={acceptedDriverId}
+          setAcceptedReqDetStatus={setAcceptedReqDetStatus}
         />
       )}
 
