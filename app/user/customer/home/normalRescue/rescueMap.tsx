@@ -292,6 +292,7 @@ const RescueMapScreen = () => {
             );
             if (transactionResponse) {
               // handleRequestSuccess(reqId);
+              isSearchingRef.current = true;
               setIsSearching(true);
               setDriverAccepted(false);
               sendRideRequestToDrivers(INITIAL_RADIUS, reqId);
