@@ -88,6 +88,7 @@ const TripDetailsActionSheet: React.FC<TripDetailsActionSheetProps> = ({
               ) : (
                 <>
                   {/* Time and Distance Card */}
+                  { directionsInfo && 
                   <Box className="bg-gray-50 rounded-2xl p-4">
                     <Box className="flex-row justify-between">
                       {/* Duration Section */}
@@ -112,7 +113,7 @@ const TripDetailsActionSheet: React.FC<TripDetailsActionSheetProps> = ({
                         </Text>
                       </Box>
                     </Box>
-                  </Box>
+                  </Box>}
 
                   <Box className="bg-blue-50 rounded-2xl p-4 mt-4">
                     <Box className="items-center">

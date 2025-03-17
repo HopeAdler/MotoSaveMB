@@ -1,17 +1,17 @@
 import { AuthContext } from "@/app/context/AuthContext";
 import { Box } from "@/components/ui/box";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonText } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
 import MapboxGL from "@rnmapbox/maps";
 import axios from "axios";
-import { useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import React, { useContext, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, TouchableOpacity, View } from "react-native";
 import Icon from "react-native-vector-icons/Feather";
 // Import the ActionSheet components from gluestack-ui
 import { updateRequestStatus } from "@/app/services/beAPI";
 import { getDirections } from "@/app/services/goongAPI";
-import { decodePolyline } from "@/app/utils/utils";
+import { decodedToken, decodePolyline } from "@/app/utils/utils";
 import MapViewComponent from "@/components/custom/MapViewComponent";
 import {
   Actionsheet,
@@ -22,6 +22,7 @@ import {
   ActionsheetSectionHeaderText,
 } from "@/components/ui/actionsheet";
 import { useCameraZoom } from "@/app/hooks/useCameraZoom";
+import { MessageSquare } from "lucide-react-native";
 
 type User = {
   uuid: string;
@@ -67,6 +68,7 @@ const RequestMap: React.FC = () => {
   // Inline generic type for search params to satisfy the constraint.
   const { requestdetailid } = useLocalSearchParams<{ requestdetailid: string }>();
   const { token } = useContext(AuthContext);
+  const userId = decodedToken(token)?.id;
   const {
     jsonCurLoc = '{"latitude":0,"longitude":0}',
     jsonUsers = "{}"
@@ -250,6 +252,15 @@ const RequestMap: React.FC = () => {
     }
   }, [routeCoordinates]);
 
+  const toChatScreen = () => {
+    router.push({
+      pathname: "/user/driver/requests/chatScreen",
+      params: {
+        currentUserId: userId,
+        requestDetailId: requestdetailid
+      }
+    });
+  }
   return (
     <Box className="flex-1">
       <MapViewComponent users={users} currentLoc={focusOnMe ? currentLoc : originCoordinates} focusMode={[focusOnMe, setFocusOnMe]} isActionSheetOpen={isActionSheetOpen}>
@@ -294,6 +305,11 @@ const RequestMap: React.FC = () => {
           <ActionsheetSectionHeaderText>
             <Text className="text-lg font-bold">Request Details</Text>
           </ActionsheetSectionHeaderText>
+          <Button variant="outline" size="md" onPress={toChatScreen}>
+            <ButtonText>
+              <MessageSquare size={18} color="#4B5563" style={{ marginTop: 2 }} /> Chat
+            </ButtonText>
+          </Button>
           {loading ? (
             <ActivityIndicator size="large" color="#007AFF" />
           ) : (

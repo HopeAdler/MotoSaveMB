@@ -20,6 +20,7 @@ import { PayZaloEventData, processPayment, refundTransaction } from "@/app/utils
 import { decodedToken } from "@/app/utils/utils";
 import MapViewComponent from "../../../../../components/custom/MapViewComponent";
 import { usePubNubService } from "@/app/services/pubnubService"; // ✅ Use the custom hook
+import { usePubNub } from "../../../../context/PubNubContext";
 const { EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN } = process.env;
 MapboxGL.setAccessToken(`${EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN}`);
 import { User } from "../../../../context/formFields";
@@ -28,8 +29,8 @@ const MAX_RADIUS = 20000;    // 15 km
 // Các hằng số cảnh báo khoảng cách (đơn vị mét)
 const MAX_WARN_PICKUP_DISTANCE = 2000;       // 2 km cho điểm đón
 const MAX_WARN_DESTINATION_DISTANCE = 50000;   // 50 km cho điểm đến
-const RescueMapScreen = () => {
-  const { publishLocation, publishRescueRequest, subscribeToChannel, subscribeToRescueChannel, hereNow, } = usePubNubService();
+const FloodRescueMapScreen = () => {
+  const { publishLocation, publishRescueRequest, subscribeToChannel, subscribeToRescueChannel, hereNow, createDirectChannel } = usePubNubService();
   const { user, token } = useContext(AuthContext);
   const { PayZaloBridge } = NativeModules;
   const userId = decodedToken(token)?.id;
@@ -43,7 +44,7 @@ const RescueMapScreen = () => {
   const [destinationResults, setDestinationResults] = useState<any[]>([]);
   const [routeCoordinates, setRouteCoordinates] = useState<[number, number][]>([]);
   const [directionsInfo, setDirectionsInfo] = useState<any>(null);
-  const [fare, setFare] = useState<number | null>(null);
+  const [fare, setFare] = useState<number | null>(15000);
   const [fareLoading, setFareLoading] = useState<boolean>(false);
   const [paymentLoading, setPaymentLoading] = useState<boolean>(false);
   const [originSelected, setOriginSelected] = useState(false);
@@ -63,11 +64,7 @@ const RescueMapScreen = () => {
   // Flag đánh dấu nếu có driver chấp nhận request
   const [driverAccepted, setDriverAccepted] = useState(false);
   const attemptedDriversRef = useRef<Set<string>>(new Set());
-  //For initializing chat
-  const {
-    createDirectChannel
-  } = usePubNubService();
-  const [acceptedDriverId, setAcceptedDriverId] = useState<string |null>(null);
+  const [acceptedDriverId, setAcceptedDriverId] = useState<string | null>(null);
   // const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isSearchingRef = useRef(isSearching);
   useEffect(() => {
@@ -154,66 +151,66 @@ const RescueMapScreen = () => {
     return () => clearTimeout(timeout);
   }, [originQuery, originCoordinates]);
 
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      if (destinationQuery.trim()) {
-        getAutocomplete(
-          destinationQuery,
-          originCoordinates.latitude && originCoordinates.longitude
-            ? `${originCoordinates.latitude},${originCoordinates.longitude}`
-            : ""
-        ).then(setDestinationResults);
-      } else {
-        setDestinationResults([]);
-      }
-    }, 500);
-    return () => clearTimeout(timeout);
-  }, [destinationQuery, originCoordinates]);
+  //   useEffect(() => {
+  //     const timeout = setTimeout(() => {
+  //       if (destinationQuery.trim()) {
+  //         getAutocomplete(
+  //           destinationQuery,
+  //           originCoordinates.latitude && originCoordinates.longitude
+  //             ? `${originCoordinates.latitude},${originCoordinates.longitude}`
+  //             : ""
+  //         ).then(setDestinationResults);
+  //       } else {
+  //         setDestinationResults([]);
+  //       }
+  //     }, 500);
+  //     return () => clearTimeout(timeout);
+  //   }, [destinationQuery, originCoordinates]);
 
   // Lấy đường đi và tính toán cước
-  useEffect(() => {
-    if (
-      originSelected &&
-      destinationSelected &&
-      originCoordinates.latitude &&
-      destinationCoordinates.latitude
-    ) {
-      const originStr = `${originCoordinates.latitude},${originCoordinates.longitude}`;
-      const destinationStr = `${destinationCoordinates.latitude},${destinationCoordinates.longitude}`;
-      console.log("Calculating direction..");
-      getDirections(originStr, destinationStr)
-        .then((data) => {
-          if (data.routes && data.routes.length > 0) {
-            const encodedPolyline = data.routes[0].overview_polyline.points;
-            const decoded = decodePolyline(encodedPolyline);
-            setRouteCoordinates(decoded);
-            if (data.routes[0].legs && data.routes[0].legs.length > 0) {
-              setDirectionsInfo(data.routes[0].legs[0]);
-            }
-          } else {
-            console.log("No routes found:", data);
-          }
-        })
-        .catch((error) => console.error("Error fetching directions:", error));
-    }
-  }, [originCoordinates, destinationCoordinates, originSelected, destinationSelected]);
+  //   useEffect(() => {
+  //     if (
+  //       originSelected &&
+  //       destinationSelected &&
+  //       originCoordinates.latitude &&
+  //       destinationCoordinates.latitude
+  //     ) {
+  //       const originStr = `${originCoordinates.latitude},${originCoordinates.longitude}`;
+  //       const destinationStr = `${destinationCoordinates.latitude},${destinationCoordinates.longitude}`;
+  //       console.log("Calculating direction..");
+  //       getDirections(originStr, destinationStr)
+  //         .then((data) => {
+  //           if (data.routes && data.routes.length > 0) {
+  //             const encodedPolyline = data.routes[0].overview_polyline.points;
+  //             const decoded = decodePolyline(encodedPolyline);
+  //             setRouteCoordinates(decoded);
+  //             if (data.routes[0].legs && data.routes[0].legs.length > 0) {
+  //               setDirectionsInfo(data.routes[0].legs[0]);
+  //             }
+  //           } else {
+  //             console.log("No routes found:", data);
+  //           }
+  //         })
+  //         .catch((error) => console.error("Error fetching directions:", error));
+  //     }
+  //   }, [originCoordinates, destinationCoordinates, originSelected, destinationSelected]);
 
-  useEffect(() => {
-    if (directionsInfo && !showActionsheet) {
-      const distanceValue = directionsInfo.distance?.value || 0;
-      setFareLoading(true);
-      calculateFare(distanceValue)
-        .then((money) => {
-          setFare(money);
-          setShowActionsheet(true);
-          setFareLoading(false);
-        })
-        .catch((error) => {
-          console.error("Error calculating fare:", error);
-          setFareLoading(false);
-        });
-    }
-  }, [directionsInfo]);
+  //   useEffect(() => {
+  //     if (directionsInfo && !showActionsheet) {
+  //       const distanceValue = directionsInfo.distance?.value || 0;
+  //       setFareLoading(true);
+  //       calculateFare(distanceValue)
+  //         .then((money) => {
+  //           setFare(money);
+  //           setShowActionsheet(true);
+  //           setFareLoading(false);
+  //         })
+  //         .catch((error) => {
+  //           console.error("Error calculating fare:", error);
+  //           setFareLoading(false);
+  //         });
+  //     }
+  //   }, [directionsInfo]);
 
   // Hàm kiểm tra hợp lệ vị trí (cho nút confirm)
   const isLocationValid = () => {
@@ -254,7 +251,7 @@ const RescueMapScreen = () => {
   };
 
   const handlePayment = async () => {
-    const callbackUrl = "myapp://user/customer/home/normalRescue/rescueMap";
+    const callbackUrl = "myapp://user/customer/home/floodRescue/floodRescueMap";
     if (!token) return;
     setPaymentLoading(true);
     const payload: RescueRequestPayload = {
@@ -646,7 +643,6 @@ const RescueMapScreen = () => {
         setAcceptedReqDetStatus(msg.message.reqStatus)
         setAcceptedReqDetId(msg.message.requestDetailId)
         console.log('Driver has accept the requet: ' + msg.message.requestDetailId)
-        //Initializing direct chat(driverId, requestDetailId)
         setAcceptedDriverId(msg?.publisher)
         createDirectChannel(msg?.publisher, msg.message.requestDetailId)
       }
@@ -691,7 +687,7 @@ const RescueMapScreen = () => {
             )}
           />
         )}
-        <Box className="mt-2">
+        {/* <Box className="mt-2">
           <Input variant="outline" size="md" className="bg-white" isDisabled={!originSelected}>
             <InputField placeholder="Search destination" value={destinationQuery} onChangeText={handleDestinationChange} />
           </Input>
@@ -707,7 +703,7 @@ const RescueMapScreen = () => {
               </Pressable>
             )}
           />
-        )}
+        )} */}
       </Box>
 
       <Box className="flex-1">
@@ -727,35 +723,35 @@ const RescueMapScreen = () => {
               <MapboxGL.Callout title="Origin" />
             </MapboxGL.PointAnnotation>
           )}
-          {destinationCoordinates.latitude !== 0 && (
+          {/* {destinationCoordinates.latitude !== 0 && (
             <MapboxGL.PointAnnotation id="destination-marker" coordinate={[destinationCoordinates.longitude, destinationCoordinates.latitude]}>
               <Box className="w-40 h-40 items-center relative z-10 -bottom-1 border-red-400 border-2">
                 <CircleChevronDown color="#0080FF" size={30} />
               </Box>
             </MapboxGL.PointAnnotation>
-          )}
-          {routeCoordinates.length > 0 && (
+          )} */}
+          {/* {routeCoordinates.length > 0 && (
             <MapboxGL.ShapeSource
               id="routeSource"
               shape={{ type: "Feature", geometry: { type: "LineString", coordinates: routeCoordinates }, properties: {} }}
             >
               <MapboxGL.LineLayer id="routeLine" style={{ lineColor: "#ff0000", lineWidth: 4 }} />
             </MapboxGL.ShapeSource>
-          )}
+          )} */}
         </MapViewComponent>
       </Box>
 
-      {showActionsheet && directionsInfo && (
+      {showActionsheet && (
         <TripDetailsActionSheet
           isOpen={showActionsheet}
           onClose={() => setShowActionsheet(false)}
           onPayment={paymentMethod === "Tiền mặt" ? handleFindDriver : handlePayment}
           onCancelSearch={handleCancelSearch}
           fare={fare}
-          fareLoading={fareLoading}
+          fareLoading={false}
           paymentLoading={paymentLoading}
           isSearching={isSearching}
-          directionsInfo={directionsInfo}
+          directionsInfo={null}
           paymentMethodState={[paymentMethod, setPaymentMethod]}
           confirmDisabled={!isLocationValid()}
         />
@@ -775,7 +771,7 @@ const RescueMapScreen = () => {
         <Text>Số người online: {users.size}</Text>
       </View> */}
 
-      {!showActionsheet && directionsInfo && (
+      {!showActionsheet && (
         <Pressable
           onPress={() => setShowActionsheet(true)}
           className="absolute bottom-20 right-2 w-10 h-10 bg-white rounded-full items-center justify-center shadow-sm"
@@ -796,4 +792,4 @@ const RescueMapScreen = () => {
   );
 };
 
-export default RescueMapScreen;
+export default FloodRescueMapScreen;

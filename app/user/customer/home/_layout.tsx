@@ -8,6 +8,7 @@ export default function Homelayout() {
       <Stack.Screen name="servicePackage" options={{ headerShown: false }} />
       <Stack.Screen name="feedback" options={{ headerShown: false }} />
       <Stack.Screen name="normalRescue" options={{ headerShown: false }} />
+      <Stack.Screen name="floodRescue" options={{ headerShown: false }} />
     </Stack>
   );
 }
