@@ -1,6 +1,6 @@
 import { AuthContext } from "@/app/context/AuthContext";
 import { useCameraZoom } from "@/app/hooks/useCameraZoom";
-import { calculateFare, createRescueRequest, createTransaction, RescueRequestPayload, updateRequestStatus, } from "@/app/services/beAPI";
+import { calculateFare, createFloodRescueRequest, createRescueRequest, createTransaction, FloodRescueRequestPayload, RescueRequestPayload, updateRequestStatus, } from "@/app/services/beAPI";
 import { geocodeAddress, getAutocomplete, getDirections, getReverseGeocode, } from "@/app/services/goongAPI";
 import { decodePolyline } from "@/app/utils/utils";
 import { Box } from "@/components/ui/box";
@@ -228,17 +228,14 @@ const FloodRescueMapScreen = () => {
     attemptedDriversRef.current = new Set();
     if (!token) return;
 
-    const payload: RescueRequestPayload = {
+    const payload: FloodRescueRequestPayload = {
       pickuplong: originCoordinates.longitude,
       pickuplat: originCoordinates.latitude,
-      deslng: destinationCoordinates.longitude,
-      deslat: destinationCoordinates.latitude,
       pickuplocation: originQuery,
-      destination: destinationQuery,
       totalprice: fare || 0,
     };
     try {
-      const result = await createRescueRequest(payload, token);
+      const result = await createFloodRescueRequest(payload, token);
       console.log(result);
       setShowActionsheet(true);
       // setShowCountdownSheet(true);
@@ -254,17 +251,14 @@ const FloodRescueMapScreen = () => {
     const callbackUrl = "myapp://user/customer/home/floodRescue/floodRescueMap";
     if (!token) return;
     setPaymentLoading(true);
-    const payload: RescueRequestPayload = {
+    const payload: FloodRescueRequestPayload = {
       pickuplong: originCoordinates.longitude,
       pickuplat: originCoordinates.latitude,
-      deslng: destinationCoordinates.longitude,
-      deslat: destinationCoordinates.latitude,
       pickuplocation: originQuery,
-      destination: destinationQuery,
       totalprice: fare || 0,
     };
     try {
-      const result = await createRescueRequest(payload, token);
+      const result = await createFloodRescueRequest(payload, token);
       console.log(result);
       const reqId = result.requestdetailid;
       setRequestDetailId(reqId);
