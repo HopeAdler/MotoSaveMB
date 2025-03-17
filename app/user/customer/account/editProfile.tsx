@@ -19,14 +19,15 @@ import {
   RadioIcon,
 } from "@/components/ui/radio";
 import { useLocalSearchParams, router } from "expo-router";
-import { Alert, Image, Pressable, ActivityIndicator } from "react-native";
+import { Alert, Image, Pressable, ActivityIndicator, ScrollView } from "react-native";
 import axios from "axios";
 import { useContext } from "react";
 import { AuthContext } from "@/app/context/AuthContext";
 import * as ImagePicker from "expo-image-picker";
 import { storage } from "@/firebaseConfig";
-import { User, ChevronLeft, Camera, CircleIcon, ChevronDown } from "lucide-react-native";
+import { User, ChevronLeft, Camera, CircleIcon, ChevronDown, CalendarDaysIcon } from "lucide-react-native";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 interface FormData {
   fullname: string;
@@ -283,148 +284,175 @@ export default function EditProfile() {
     </Pressable>
   );
 
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
+  const handleDateChange = (event: any, selectedDate?: Date) => {
+    setShowDatePicker(false);
+    if (event.type === 'set' && selectedDate) {
+      // Format date as YYYY-MM-DD
+      const formattedDate = selectedDate.toISOString().split('T')[0];
+      updateForm({ dob: formattedDate });
+    }
+  };
+
   return (
     <Box className="flex-1 bg-gray-50">
-      <Box className="bg-blue-600 px-4 pt-6 pb-20 rounded-b-[40px] shadow-lg">
-        <Box className="flex-row items-center justify-between mb-6">
-          <Pressable onPress={() => router.back()} className="p-2 -ml-2">
-            <ChevronLeft size={24} color="white" />
-          </Pressable>
-
-          {isFormChanged && (
-            <Pressable onPress={handleSubmit} className="p-2">
-              <Text className="text-white font-medium text-lg">Save</Text>
+      <ScrollView>
+        <Box className="bg-blue-600 px-4 pt-6 pb-20 rounded-b-[40px] shadow-lg">
+          <Box className="flex-row items-center justify-between mb-6">
+            <Pressable onPress={() => router.back()} className="p-2 -ml-2">
+              <ChevronLeft size={24} color="white" />
             </Pressable>
-          )}
-        </Box>
 
-        <Box className="items-center">
-          <Box className="relative w-28 h-28">
-            <Box className="w-28 h-28 bg-white rounded-full items-center justify-center mb-4 shadow-xl border-4 border-white overflow-hidden">
-              {selectedImage ? (
-                <Image
-                  source={{ uri: selectedImage.uri }}
-                  className="w-full h-full"
-                  resizeMode="cover"
-                />
-              ) : form.avatar ? (
-                <Image
-                  source={{ uri: form.avatar }}
-                  className="w-full h-full"
-                  resizeMode="cover"
-                />
-              ) : (
-                <User size={48} color="#3B82F6" />
-              )}
-            </Box>
-
-            <Pressable
-              onPress={pickImage}
-              className="absolute bottom-0 right-0 w-9 h-9 bg-blue-500 rounded-full items-center justify-center shadow-lg border-2 border-white"
-            >
-              <Camera size={18} color="white" />
-            </Pressable>
+            {isFormChanged && (
+              <Pressable onPress={handleSubmit} className="p-2">
+                <Text className="text-white font-medium text-lg">Save</Text>
+              </Pressable>
+            )}
           </Box>
-        </Box>
-      </Box>
 
-      <Box className="px-4 -mt-12">
-        <Box className="bg-white rounded-3xl shadow-lg p-6">
-          <Box className="space-y-5">
-            <Box>
-              <Text className="text-base font-medium text-gray-600 mb-2">
-                Full Name
-              </Text>
-              <Input className="bg-gray-50 rounded-xl border-0 shadow-sm">
-                <InputField
-                  value={form.fullname}
-                  onChangeText={(text: string) =>
-                    updateForm({ fullname: text })
-                  }
-                  className="h-14 px-4 text-lg"
-                  placeholder="Enter your full name"
-                />
-              </Input>
-            </Box>
+          <Box className="items-center">
+            <Box className="relative w-28 h-28">
+              <Box className="w-28 h-28 bg-white rounded-full items-center justify-center mb-4 shadow-xl border-4 border-white overflow-hidden">
+                {selectedImage ? (
+                  <Image
+                    source={{ uri: selectedImage.uri }}
+                    className="w-full h-full"
+                    resizeMode="cover"
+                  />
+                ) : form.avatar ? (
+                  <Image
+                    source={{ uri: form.avatar }}
+                    className="w-full h-full"
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <User size={48} color="#3B82F6" />
+                )}
+              </Box>
 
-            <Box>
-              <Text className="text-base font-medium text-gray-600 mb-2">
-                Gender
-              </Text>
               <Pressable
-                onPress={() => setShowGenderSheet(true)}
-                className="bg-gray-50 rounded-xl border-0 shadow-sm h-14 px-4 flex-row items-center justify-between"
+                onPress={pickImage}
+                className="absolute bottom-0 right-0 w-9 h-9 bg-blue-500 rounded-full items-center justify-center shadow-lg border-2 border-white"
               >
-                <Text
-                  className={`text-lg ${form.gender ? "text-gray-900" : "text-gray-400"}`}
-                >
-                  {form.gender || "Select your gender"}
-                </Text>
-                <ChevronDown size={24} color="#9CA3AF" />
+                <Camera size={18} color="white" />
               </Pressable>
             </Box>
+          </Box>
+        </Box>
 
-            <Box>
-              <Text className="text-base font-medium text-gray-600 mb-2">
-                Date of Birth
-              </Text>
-              <Input className="bg-gray-50 rounded-xl border-0 shadow-sm">
-                <InputField
-                  value={form.dob}
-                  onChangeText={(text: string) => updateForm({ dob: text })}
-                  placeholder="YYYY-MM-DD"
-                  className="h-14 px-4 text-lg"
-                />
-              </Input>
-            </Box>
+        <Box className="px-4 -mt-12">
+          <Box className="bg-white rounded-3xl shadow-lg p-5">
+            <Box className="space-y-4">
+              <Box>
+                <Text className="text-sm font-medium text-gray-600 mb-1.5">
+                  Full Name
+                </Text>
+                <Input className="bg-gray-50 rounded-xl border-0 shadow-sm">
+                  <InputField
+                    value={form.fullname}
+                    onChangeText={(text: string) =>
+                      updateForm({ fullname: text })
+                    }
+                    className="h-12 px-3 text-base"
+                    placeholder="Enter your full name"
+                  />
+                </Input>
+              </Box>
 
-            <Box>
-              <Text className="text-base font-medium text-gray-600 mb-2">
-                Address
-              </Text>
-              <Input className="bg-gray-50 rounded-xl border-0 shadow-sm">
-                <InputField
-                  value={form.address}
-                  onChangeText={(text: string) => updateForm({ address: text })}
-                  className="h-14 px-4 text-lg"
-                  placeholder="Enter your address"
-                />
-              </Input>
-            </Box>
+              <Box>
+                <Text className="text-sm font-medium text-gray-600 mb-1.5">
+                  Gender
+                </Text>
+                <Pressable
+                  onPress={() => setShowGenderSheet(true)}
+                  className="bg-gray-50 rounded-xl border-0 shadow-sm h-12 px-3 flex-row items-center justify-between"
+                >
+                  <Text
+                    className={`text-base ${form.gender ? "text-gray-900" : "text-gray-400"}`}
+                  >
+                    {form.gender || "Select your gender"}
+                  </Text>
+                  <ChevronDown size={20} color="#9CA3AF" />
+                </Pressable>
+              </Box>
 
-            <Box>
-              <Text className="text-base font-medium text-gray-600 mb-2">
-                License Plate
-              </Text>
-              <Input className="bg-gray-50 rounded-xl border-0 shadow-sm">
-                <InputField
-                  value={form.licenseplate}
-                  onChangeText={(text: string) =>
-                    updateForm({ licenseplate: text })
-                  }
-                  className="h-14 px-4 text-lg"
-                  placeholder="Enter license plate number"
-                />
-              </Input>
+              <Box>
+                <Text className="text-sm font-medium text-gray-600 mb-1.5">
+                  Date of Birth
+                </Text>
+                <Pressable
+                  onPress={() => setShowDatePicker(true)}
+                  className="bg-gray-50 rounded-xl border-0 shadow-sm h-12 px-3 flex-row items-center justify-between"
+                >
+                  <Text
+                    className={`text-base ${form.dob ? "text-gray-900" : "text-gray-400"}`}
+                  >
+                    {form.dob || "Select your date of birth"}
+                  </Text>
+                  <CalendarDaysIcon size={20} color="#9CA3AF" />
+                </Pressable>
+                
+                {showDatePicker && (
+                  <DateTimePicker
+                    value={form.dob ? new Date(form.dob) : new Date()}
+                    mode="date"
+                    display="default"
+                    onChange={handleDateChange}
+                    maximumDate={new Date()}
+                    minimumDate={new Date(1900, 0, 1)}
+                  />
+                )}
+              </Box>
+
+              <Box>
+                <Text className="text-sm font-medium text-gray-600 mb-1.5">
+                  Address
+                </Text>
+                <Input className="bg-gray-50 rounded-xl border-0 shadow-sm">
+                  <InputField
+                    value={form.address}
+                    onChangeText={(text: string) => updateForm({ address: text })}
+                    className="h-12 px-3 text-base"
+                    placeholder="Enter your address"
+                  />
+                </Input>
+              </Box>
+
+              <Box>
+                <Text className="text-sm font-medium text-gray-600 mb-1.5">
+                  License Plate
+                </Text>
+                <Input className="bg-gray-50 rounded-xl border-0 shadow-sm">
+                  <InputField
+                    value={form.licenseplate}
+                    onChangeText={(text: string) =>
+                      updateForm({ licenseplate: text })
+                    }
+                    className="h-12 px-3 text-base"
+                    placeholder="Enter license plate number"
+                  />
+                </Input>
+              </Box>
             </Box>
           </Box>
         </Box>
-      </Box>
 
-      <Box className="px-4 mt-6">
-        <Divider className="mb-4" />
-        <Button
-          variant="outline"
-          className="bg-white border-red-100 rounded-2xl shadow-sm w-full"
-          onPress={handleLogout}
-        >
-          <Box className="flex-row items-center justify-center py-2">
-            <Text className="text-red-500 font-semibold text-base">
-              Log Out
-            </Text>
-          </Box>
-        </Button>
-      </Box>
+        <Box className="px-4 mt-4 mb-4">
+          <Divider className="mb-3" />
+          <Button
+            variant="outline"
+            className="bg-white border-red-100 rounded-xl shadow-sm w-full"
+            onPress={handleLogout}
+          >
+            <Box className="flex-row items-center justify-center py-2.5">
+              <Text className="text-red-500 font-semibold text-sm">
+                Log Out
+              </Text>
+            </Box>
+          </Button>
+        </Box>
+      </ScrollView>
 
       {isLoading && (
         <Box className="absolute inset-0 bg-black/50 items-center justify-center">
