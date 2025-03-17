@@ -220,15 +220,15 @@ const RescueMapScreen = () => {
           case "Accepted":
             startStr = originStr;
             endStr = destinationStr;
-            break; // ✅ Use break instead of return
+            break;
           case "Pickup":
             startStr = driverLoc;
             endStr = originStr;
-            break; // ✅ Use break instead of return
+            break;
           case "Processing":
             startStr = driverLoc;
             endStr = destinationStr;
-            break; // ✅ Use break instead of return
+            break;
         }
 
         getDirections(startStr, endStr)
