@@ -42,6 +42,8 @@ export interface RequestDetail {
   brandname: string;
   vehicletype: string;
   vehiclestatus: string;
+  requestid: string;
+  servicepackagename: string;
 }
 
 
