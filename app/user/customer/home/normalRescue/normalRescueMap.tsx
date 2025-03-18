@@ -23,6 +23,7 @@ import { usePubNubService } from "@/app/services/pubnubService"; // ✅ Use the 
 const { EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN } = process.env;
 MapboxGL.setAccessToken(`${EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN}`);
 import { User } from "../../../../context/formFields";
+import { GoBackButton } from "@/components/custom/GoBackButton";
 const INITIAL_RADIUS = 5000; // 5 km
 const MAX_RADIUS = 20000;    // 15 km
 // Các hằng số cảnh báo khoảng cách (đơn vị mét)
@@ -726,14 +727,7 @@ const RescueMapScreen = () => {
 
   return (
     <Box className="flex-1">
-      <Box className="absolute top-4 left-4 z-20">
-        <Pressable
-          onPress={() => router.navigate("/user/customer/home/servicePackage")}
-          className="w-10 h-10 bg-white rounded-full items-center justify-center shadow-sm"
-        >
-          <ChevronLeft size={24} color="#374151" />
-        </Pressable>
-      </Box>
+      <GoBackButton />
 
       <Box className="absolute top-0 left-0 w-full z-10 p-4 pt-16">
         <Input variant="outline" size="md" className="bg-white">

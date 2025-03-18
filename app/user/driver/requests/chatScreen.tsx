@@ -1,7 +1,8 @@
-import { router, useLocalSearchParams } from "expo-router";
 import ChatViewComponent from "@/components/custom/ChatViewComponent";
-import { Pressable, Text } from "react-native";
-import { ChevronLeft } from "lucide-react-native";
+import { GoBackButton } from "@/components/custom/GoBackButton";
+import { Box } from "@/components/ui/box";
+import { useLocalSearchParams } from "expo-router";
+import { Text } from "react-native";
 
 const ChatScreen = () => {
     const { currentUserId, requestDetailId } = useLocalSearchParams();
@@ -11,19 +12,14 @@ const ChatScreen = () => {
     }
 
     return (
-        <>
-            <Pressable
-                onPress={() => router.back()}
-                className="w-10 h-10 bg-white rounded-full items-center justify-center shadow-sm"
-            >
-                <ChevronLeft size={24} color="#374151" />
-            </Pressable>
+        <Box className="flex-1 p-5">
+            <GoBackButton/>
             <Text>Chat với khách hàng</Text>
             <ChatViewComponent
                 currentUserId={currentUserId as string}
                 requestDetailId={requestDetailId as string}
             />
-        </>
+        </Box>
     );
 }
 

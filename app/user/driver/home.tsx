@@ -31,6 +31,7 @@ interface LocationProps {
 
 interface RequestItem {
   requestid: string;
+  servicepackagename: string;
   requestdetailid: string;
   requesttype: string;
   customername: string;

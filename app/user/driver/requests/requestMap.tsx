@@ -22,6 +22,7 @@ import {
   ActionsheetSectionHeaderText,
 } from "@/components/ui/actionsheet";
 import { MessageSquare } from "lucide-react-native";
+import { GoBackButton } from "@/components/custom/GoBackButton";
 
 type User = {
   uuid: string;
@@ -262,6 +263,7 @@ const RequestMap: React.FC = () => {
   }
   return (
     <Box className="flex-1">
+      <GoBackButton/>
       <MapViewComponent users={users} currentLoc={focusOnMe ? currentLoc : originCoordinates} focusMode={[focusOnMe, setFocusOnMe]} isActionSheetOpen={isActionSheetOpen}>
         <MapboxGL.Camera ref={camera}
           centerCoordinate={

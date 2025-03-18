@@ -49,7 +49,7 @@ const ServicePackage = () => {
           </Pressable>
 
           <Pressable
-            onPress={() => router.navigate("/user/customer/home/normalRescue/rescueMap")}
+            onPress={() => router.navigate("/user/customer/home/normalRescue/normalRescueMap")}
           >
             <Card className="bg-white rounded-2xl p-6 shadow-md border border-gray-100">
               <Box className="flex-row items-center">
