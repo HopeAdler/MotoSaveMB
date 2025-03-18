@@ -2,6 +2,7 @@ import { AuthContext } from "@/app/context/AuthContext";
 import { useCameraZoom } from "@/app/hooks/useCameraZoom";
 import {
   calculateFare,
+  createEmergencyRescueRequest,
   createRescueRequest,
   createTransaction,
   RescueRequestPayload,
@@ -222,7 +223,7 @@ const EmergencyRescueMapScreen = () => {
       totalprice: fare || 0,
     };
     try {
-      const result = await createRescueRequest(payload, token);
+      const result = await createEmergencyRescueRequest(payload, token);
       setShowActionsheet(true);
       setRequestDetailId(result.requestdetailid);
       return result.requestdetailid;
@@ -233,7 +234,7 @@ const EmergencyRescueMapScreen = () => {
 
   // Xử lý thanh toán qua ZaloPay
   const handlePayment = async () => {
-    const callbackUrl = "myapp://user/customer/home/normalRescue/rescueMap";
+    const callbackUrl = "myapp://user/customer/home/emergencyRescue/emergencyRescueMap";
     if (!token) return;
     setPaymentLoading(true);
     const payload: RescueRequestPayload = {
@@ -246,7 +247,7 @@ const EmergencyRescueMapScreen = () => {
       totalprice: fare || 0,
     };
     try {
-      const result = await createRescueRequest(payload, token);
+      const result = await createEmergencyRescueRequest(payload, token);
       const reqId = result.requestdetailid;
       setRequestDetailId(reqId);
       setShowActionsheet(true);
