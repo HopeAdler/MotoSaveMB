@@ -65,6 +65,7 @@ export default function CSettingscreen() {
       pathname: "/user/customer/account/editProfile",
       params: {
         fullname: profile?.fullname || "",
+        email: profile?.email || "",
         gender: profile?.gender || "",
         dob: profile?.dob || "",
         address: profile?.address || "",

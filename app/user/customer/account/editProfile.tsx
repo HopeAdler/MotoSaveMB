@@ -31,20 +31,22 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 
 interface FormData {
   fullname: string;
-  gender: string;
-  dob: string;
-  address: string;
-  licenseplate: string;
-  avatar: string;
+  email: string | null;
+  gender: string | null;
+  dob: string | null;
+  address: string | null;
+  licenseplate: string | null;
+  avatar: string | null;
 }
 
 interface UpdateProfilePayload {
   fullname: string;
-  gender: string;
-  dob: string;
-  address: string;
-  licenseplate: string;
-  avatar: string;
+  email: string | null;
+  gender: string | null;
+  dob: string | null;
+  address: string | null;
+  licenseplate: string | null;
+  avatar: string | null;
 }
 
 const isValidDate = (dateString: string): boolean => {
@@ -73,11 +75,12 @@ export default function EditProfile() {
 
   const [form, setForm] = useState<FormData>(() => ({
     fullname: params.fullname as string,
-    gender: params.gender as string,
-    dob: params.dob ? formatDateString(params.dob as string) : "",
-    address: params.address as string,
-    licenseplate: (params.licenseplate as string) || "",
-    avatar: params.avatar as string,
+    email: params.email as string | null,
+    gender: params.gender as string | null,
+    dob: params.dob ? formatDateString(params.dob as string) : null,
+    address: params.address as string | null,
+    licenseplate: params.licenseplate as string | null,
+    avatar: params.avatar as string | null,
   }));
 
   const [selectedImage, setSelectedImage] = useState<{
@@ -101,10 +104,12 @@ export default function EditProfile() {
       
       const fieldComparisons = {
         gender: () => updates.gender !== params.gender,
+        email: () => updates.email !== params.email,
         fullname: () => updates.fullname !== params.fullname,
-        dob: () => updates.dob !== (params.dob ? formatDateString(params.dob as string) : ""),
+        dob: () => updates.dob !== (params.dob ? formatDateString(params.dob as string) : null),
         address: () => updates.address !== params.address,
-        licenseplate: () => updates.licenseplate !== params.licenseplate
+        licenseplate: () => updates.licenseplate !== params.licenseplate,
+        avatar: () => updates.avatar !== params.avatar
       };
 
       const updatedField = Object.keys(updates)[0] as keyof FormData;
@@ -199,11 +204,12 @@ export default function EditProfile() {
 
       const payload: UpdateProfilePayload = {
         fullname: form.fullname.trim(),
-        gender: form.gender?.trim() || "",
-        dob: form.dob?.trim() || "",
-        address: form.address?.trim() || "",
-        licenseplate: form.licenseplate?.trim() || "",
-        avatar: avatarUrl,
+        email: form.email?.trim() || null,
+        gender: form.gender?.trim() || null,
+        dob: form.dob?.trim() || null,
+        address: form.address?.trim() || null,
+        licenseplate: form.licenseplate?.trim() || null,
+        avatar: avatarUrl || null,
       };
 
       const response = await axios.put(
@@ -229,6 +235,7 @@ export default function EditProfile() {
         // Update params to match new values
         const params = {
           fullname: form.fullname,
+          email: form.email,
           gender: form.gender,
           dob: form.dob,
           address: form.address,
@@ -362,6 +369,22 @@ export default function EditProfile() {
 
               <Box>
                 <Text className="text-sm font-medium text-gray-600 mb-1.5">
+                  Email Address
+                </Text>
+                <Input className="bg-gray-50 rounded-xl border-0 shadow-sm">
+                  <InputField
+                    value={form.email || ''}
+                    onChangeText={(text: string) => updateForm({ email: text || null })}
+                    className="h-12 px-3 text-base"
+                    placeholder="Enter your email address (optional)"
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                  />
+                </Input>
+              </Box>
+
+              <Box>
+                <Text className="text-sm font-medium text-gray-600 mb-1.5">
                   Gender
                 </Text>
                 <Pressable
@@ -371,7 +394,7 @@ export default function EditProfile() {
                   <Text
                     className={`text-base ${form.gender ? "text-gray-900" : "text-gray-400"}`}
                   >
-                    {form.gender || "Select your gender"}
+                    {form.gender || "Select your gender (optional)"}
                   </Text>
                   <ChevronDown size={20} color="#9CA3AF" />
                 </Pressable>
@@ -388,7 +411,7 @@ export default function EditProfile() {
                   <Text
                     className={`text-base ${form.dob ? "text-gray-900" : "text-gray-400"}`}
                   >
-                    {form.dob || "Select your date of birth"}
+                    {form.dob || "Select your date of birth (optional)"}
                   </Text>
                   <CalendarDaysIcon size={20} color="#9CA3AF" />
                 </Pressable>
@@ -411,10 +434,10 @@ export default function EditProfile() {
                 </Text>
                 <Input className="bg-gray-50 rounded-xl border-0 shadow-sm">
                   <InputField
-                    value={form.address}
-                    onChangeText={(text: string) => updateForm({ address: text })}
+                    value={form.address || ''}
+                    onChangeText={(text: string) => updateForm({ address: text || null })}
                     className="h-12 px-3 text-base"
-                    placeholder="Enter your address"
+                    placeholder="Enter your address (optional)"
                   />
                 </Input>
               </Box>
@@ -425,12 +448,12 @@ export default function EditProfile() {
                 </Text>
                 <Input className="bg-gray-50 rounded-xl border-0 shadow-sm">
                   <InputField
-                    value={form.licenseplate}
+                    value={form.licenseplate || ''}
                     onChangeText={(text: string) =>
-                      updateForm({ licenseplate: text })
+                      updateForm({ licenseplate: text || null })
                     }
                     className="h-12 px-3 text-base"
-                    placeholder="Enter license plate number"
+                    placeholder="Enter license plate number (optional)"
                   />
                 </Input>
               </Box>
@@ -439,18 +462,22 @@ export default function EditProfile() {
         </Box>
 
         <Box className="px-4 mt-4 mb-4">
-          <Divider className="mb-3" />
-          <Button
-            variant="outline"
-            className="bg-white border-red-100 rounded-xl shadow-sm w-full"
+          <Divider className="mb-4" />
+          <Pressable
             onPress={handleLogout}
+            className="flex-row items-center justify-center py-2.5"
           >
-            <Box className="flex-row items-center justify-center py-2.5">
-              <Text className="text-red-500 font-semibold text-sm">
-                Log Out
-              </Text>
-            </Box>
-          </Button>
+            <Text 
+              className="font-semibold text-lg text-gray-600 active:text-gray-400"
+              style={{
+                textShadowColor: 'rgba(0, 0, 0, 0.1)',
+                textShadowOffset: { width: 0, height: 1 },
+                textShadowRadius: 2,
+              }}
+            >
+              Log Out
+            </Text>
+          </Pressable>
         </Box>
       </ScrollView>
 
