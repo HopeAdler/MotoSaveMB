@@ -40,6 +40,7 @@ import { User } from "../../../../context/formFields";
 
 // Import StationSelect component đã tách riêng
 import StationSelect, { Station } from "@/components/custom/StationSelect";
+import { GoBackButton } from "@/components/custom/GoBackButton";
 
 const { EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN } = process.env;
 MapboxGL.setAccessToken(`${EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN}`);
@@ -604,14 +605,7 @@ const EmergencyRescueMapScreen = () => {
   return (
     <Box className="flex-1">
       {/* Nút back */}
-      <Box className="absolute top-4 left-4 z-20">
-        <Pressable
-          onPress={() => router.navigate("/user/customer/home/servicePackage")}
-          className="w-10 h-10 bg-white rounded-full items-center justify-center shadow-sm"
-        >
-          <ChevronLeft size={24} color="#374151" />
-        </Pressable>
-      </Box>
+      <GoBackButton />
 
       {/* Input origin và chọn station cho destination */}
       <Box className="absolute top-0 left-0 w-full z-10 p-4 pt-16">
