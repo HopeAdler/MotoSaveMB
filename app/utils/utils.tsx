@@ -2,6 +2,7 @@ import { Dispatch, SetStateAction, useMemo } from "react";
 import { jwtDecode, JwtPayload } from "jwt-decode";
 import polyline from "@mapbox/polyline";
 import { Alert, Linking, Platform } from "react-native";
+import { ActivityItem } from "@/app/user/customer/activity/index.tsx";
 // Hàm dịch các tên trường sang tiếng Việt
 export const translateFieldName = (field: string): string => {
   // const fieldTranslations: Record<string, string> = {
@@ -140,6 +141,28 @@ export const handlePhoneCall = async (phoneNumber: string | undefined) => {
   }
 };
 
+export const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+};
+
+export const groupActivitiesByDate = (activities: ActivityItem[]) => {
+  return activities.reduce((groups, activity) => {
+    const date = new Date(activity.createddate).toLocaleDateString('en-GB');
+    if (!groups[date]) {
+      groups[date] = [];
+    }
+    groups[date].push(activity);
+    return groups;
+  }, {} as Record<string, ActivityItem[]>);
+};
+
 const utils = {
   translateFieldName,
   validateField,
@@ -148,6 +171,8 @@ const utils = {
   decodedToken,
   decodePolyline,
   handlePhoneCall,
+  formatDate,
+  groupActivitiesByDate,
 };
 
 export default utils;
