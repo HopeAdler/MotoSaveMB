@@ -2,6 +2,7 @@ import { AuthContext } from "@/app/context/AuthContext";
 import { useCameraZoom } from "@/app/hooks/useCameraZoom";
 import {
   calculateFare,
+  createEmergencyRescueRequest,
   createRescueRequest,
   createTransaction,
   RescueRequestPayload,
@@ -39,6 +40,7 @@ import { User } from "../../../../context/formFields";
 
 // Import StationSelect component đã tách riêng
 import StationSelect, { Station } from "@/components/custom/StationSelect";
+import { GoBackButton } from "@/components/custom/GoBackButton";
 
 const { EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN } = process.env;
 MapboxGL.setAccessToken(`${EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN}`);
@@ -222,7 +224,7 @@ const EmergencyRescueMapScreen = () => {
       totalprice: fare || 0,
     };
     try {
-      const result = await createRescueRequest(payload, token);
+      const result = await createEmergencyRescueRequest(payload, token);
       setShowActionsheet(true);
       setRequestDetailId(result.requestdetailid);
       return result.requestdetailid;
@@ -233,7 +235,7 @@ const EmergencyRescueMapScreen = () => {
 
   // Xử lý thanh toán qua ZaloPay
   const handlePayment = async () => {
-    const callbackUrl = "myapp://user/customer/home/normalRescue/rescueMap";
+    const callbackUrl = "myapp://user/customer/home/emergencyRescue/emergencyRescueMap";
     if (!token) return;
     setPaymentLoading(true);
     const payload: RescueRequestPayload = {
@@ -246,7 +248,7 @@ const EmergencyRescueMapScreen = () => {
       totalprice: fare || 0,
     };
     try {
-      const result = await createRescueRequest(payload, token);
+      const result = await createEmergencyRescueRequest(payload, token);
       const reqId = result.requestdetailid;
       setRequestDetailId(reqId);
       setShowActionsheet(true);
@@ -603,14 +605,7 @@ const EmergencyRescueMapScreen = () => {
   return (
     <Box className="flex-1">
       {/* Nút back */}
-      <Box className="absolute top-4 left-4 z-20">
-        <Pressable
-          onPress={() => router.navigate("/user/customer/home/servicePackage")}
-          className="w-10 h-10 bg-white rounded-full items-center justify-center shadow-sm"
-        >
-          <ChevronLeft size={24} color="#374151" />
-        </Pressable>
-      </Box>
+      <GoBackButton />
 
       {/* Input origin và chọn station cho destination */}
       <Box className="absolute top-0 left-0 w-full z-10 p-4 pt-16">
