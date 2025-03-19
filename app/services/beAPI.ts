@@ -31,6 +31,18 @@ export interface Feedback {
   comment: string;
 }
 
+// Hàm fetch danh sách station
+export async function fetchStations(): Promise<any> {
+  try {
+    const response = await axios.get("https://motor-save-be.vercel.app/api/v1/stations");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching stations", error);
+    Alert.alert("Lỗi", "Không thể lấy danh sách trạm sửa xe");
+    throw error;
+  }
+}
+
 export async function createRescueRequest(
   payload: RescueRequestPayload,
   token: string
@@ -168,7 +180,6 @@ export async function calculateFare(distance: number): Promise<number> {
     const response = await axios.get(
       `https://motor-save-be.vercel.app/api/v1/distance/calculate?distance=${distance}`
     );
-    // Giả sử response.data.totalMoney chứa số tiền cước
     return response.data.totalMoney;
   } catch (error) {
     console.error("Error calculating fare", error);
@@ -176,25 +187,19 @@ export async function calculateFare(distance: number): Promise<number> {
   }
 }
 
-export async function fetchRequests
-  (
-    token: string,
-  ): Promise<any> {
+export async function fetchRequests(token: string): Promise<any> {
   try {
     const response = await axios.get(
       "https://motor-save-be.vercel.app/api/v1/requests/driver",
       { headers: { Authorization: "Bearer " + token } }
     );
-    return (response.data);
+    return response.data;
   } catch (error) {
     console.error("Error fetching requests:", error);
-  };
+  }
 }
 
-export async function acceptRequest
-  (
-    requestdetailid: string, token: string
-  ): Promise<any> {
+export async function acceptRequest(requestdetailid: string, token: string): Promise<any> {
   try {
     await axios.put(
       `https://motor-save-be.vercel.app/api/v1/requests/${requestdetailid}/accept`,
@@ -206,7 +211,7 @@ export async function acceptRequest
     console.error("Error accepting request:", error);
     Alert.alert("Error", "Failed to accept request");
   }
-};
+}
 
 export async function cancelRequest(
   requestdetailid: string,
@@ -231,16 +236,18 @@ export async function cancelRequest(
   }
 }
 
-
-
 const beAPI = {
   createRescueRequest,
+  createEmergencyRescueRequest,
+  createFloodRescueRequest,
   createTransaction,
-  calculateFare,
+  createFeedback,
   updateRequestStatus,
+  calculateFare,
   fetchRequests,
   acceptRequest,
-  cancelRequest
+  cancelRequest,
+  fetchStations, // Thêm fetchStations vào export
 };
 
 export default beAPI;

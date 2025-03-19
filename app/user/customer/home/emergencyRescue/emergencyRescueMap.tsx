@@ -3,7 +3,6 @@ import { useCameraZoom } from "@/app/hooks/useCameraZoom";
 import {
   calculateFare,
   createEmergencyRescueRequest,
-  createRescueRequest,
   createTransaction,
   RescueRequestPayload,
   updateRequestStatus,
@@ -25,10 +24,10 @@ import {
   ChevronLeft,
   ChevronUp,
   CircleChevronDown,
-  LocateFixed,
+  LocateFixed, Cog,
 } from "lucide-react-native";
 import React, { useContext, useEffect, useRef, useState } from "react";
-import { Alert, FlatList, Linking, NativeEventEmitter, NativeModules, Text, View } from "react-native";
+import { Alert, FlatList, NativeEventEmitter, NativeModules, Text } from "react-native";
 import TrackingActionSheet from "@/components/custom/TrackingActionSheet";
 import TripDetailsActionSheet from "@/components/custom/TripDetailsActionSheet";
 import { getCurrentLocation, requestLocationPermission, watchLocation } from "@/app/services/locationService";
@@ -37,10 +36,9 @@ import { decodedToken } from "@/app/utils/utils";
 import MapViewComponent from "../../../../../components/custom/MapViewComponent";
 import { usePubNubService } from "@/app/services/pubnubService";
 import { User } from "../../../../context/formFields";
-
-// Import StationSelect component đã tách riêng
 import StationSelect, { Station } from "@/components/custom/StationSelect";
-import { GoBackButton } from "@/components/custom/GoBackButton";
+import beAPI from "@/app/services/beAPI";
+import { Filter } from "react-native-svg";
 
 const { EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN } = process.env;
 MapboxGL.setAccessToken(`${EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN}`);
@@ -50,6 +48,7 @@ const INITIAL_RADIUS = 5000; // 5 km
 const MAX_RADIUS = 20000;    // 20 km
 const MAX_WARN_PICKUP_DISTANCE = 2000;       // 2 km cho điểm đón
 const MAX_WARN_DESTINATION_DISTANCE = 50000;   // 50 km cho điểm đến
+const SERVICE_STATION_RADIUS = 20000;          // 20 km phạm vi phục vụ
 
 const EmergencyRescueMapScreen = () => {
   const {
@@ -69,6 +68,7 @@ const EmergencyRescueMapScreen = () => {
   const [destinationCoordinates, setDestinationCoordinates] = useState({ latitude: 0, longitude: 0 });
   const [originQuery, setOriginQuery] = useState("");
   const [originResults, setOriginResults] = useState<any[]>([]);
+  const [stationQuery, setStationQuery] = useState<Station>();
   const [routeCoordinates, setRouteCoordinates] = useState<[number, number][]>([]);
   const [directionsInfo, setDirectionsInfo] = useState<any>(null);
   const [fare, setFare] = useState<number | null>(null);
@@ -81,10 +81,8 @@ const EmergencyRescueMapScreen = () => {
   const [showTracking, setShowTracking] = useState(false);
   const [zpTransId, setZpTransId] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState(false);
-  const [sentDriverIds, setSentDriverIds] = useState<Set<string>>(new Set());
   const [acceptedReqDetId, setAcceptedReqDetId] = useState<string>("");
   const [acceptedReqDetStatus, setAcceptedReqDetStatus] = useState<string>("Pending");
-  const [driverAccepted, setDriverAccepted] = useState(false);
   const attemptedDriversRef = useRef<Set<string>>(new Set());
   const { createDirectChannel } = usePubNubService();
   const [acceptedDriverId, setAcceptedDriverId] = useState<string | null>(null);
@@ -93,6 +91,19 @@ const EmergencyRescueMapScreen = () => {
     isSearchingRef.current = isSearching;
   }, [isSearching]);
 
+  // State để lưu station đã chọn (ID)
+  const [selectedStationId, setSelectedStationId] = useState<string>("");
+
+  // State để lưu danh sách station (fetch qua beAPI)
+  const [stations, setStations] = useState<Station[]>([]);
+  useEffect(() => {
+    beAPI.fetchStations()
+      .then((data: Station[]) => {
+        setStations(data);
+      })
+      .catch((error) => console.error("Error fetching stations from beAPI:", error));
+  }, []);
+
   // Refs
   const camera = useRef<MapboxGL.Camera>(null);
   useCameraZoom(camera, routeCoordinates);
@@ -100,14 +111,44 @@ const EmergencyRescueMapScreen = () => {
   // Khi originCoordinates chưa có query thì reverse geocode
   useEffect(() => {
     if (!originQuery && originCoordinates.latitude && originCoordinates.longitude) {
-      getReverseGeocode(originCoordinates.latitude, originCoordinates.longitude).then((address) => {
-        if (address) {
-          setOriginQuery(address);
-          setOriginSelected(true);
-        }
-      });
+      getReverseGeocode(originCoordinates.latitude, originCoordinates.longitude)
+        .then((address) => {
+          if (address) {
+            setOriginQuery(address);
+            setOriginSelected(true);
+          }
+        });
     }
   }, [originCoordinates]);
+
+  // Tự động chọn station gần nhất nếu currentLoc và stations có dữ liệu và chưa có destination
+  useEffect(() => {
+    if (
+      currentLoc.latitude &&
+      currentLoc.longitude &&
+      stations.length > 0 &&
+      destinationCoordinates.latitude === 0
+    ) {
+      const nearest = stations.reduce((prev, curr) => {
+        const prevDist = getDistance(currentLoc, {
+          latitude: parseFloat(prev.lat),
+          longitude: parseFloat(prev.long),
+        });
+        const currDist = getDistance(currentLoc, {
+          latitude: parseFloat(curr.lat),
+          longitude: parseFloat(curr.long),
+        });
+        return currDist < prevDist ? curr : prev;
+      }, stations[0]);
+      setDestinationCoordinates({
+        latitude: parseFloat(nearest.lat),
+        longitude: parseFloat(nearest.long),
+      });
+      setSelectedStationId(nearest.id);
+      // Gọi luôn callback để cập nhật dữ liệu bên ngoài
+      handleStationSelect(nearest);
+    }
+  }, [currentLoc, stations, destinationCoordinates]);
 
   // Xử lý khi người dùng chọn điểm đón (origin)
   const handleFetchOriginLocation = async (address: string) => {
@@ -200,7 +241,8 @@ const EmergencyRescueMapScreen = () => {
 
   // Hàm kiểm tra hợp lệ vị trí để kích hoạt nút confirm
   const isLocationValid = () => {
-    if (originCoordinates.latitude === 0 || destinationCoordinates.latitude === 0) return false;
+    if (originCoordinates.latitude === 0 || destinationCoordinates.latitude === 0)
+      return false;
     if (currentLoc.latitude !== 0 && currentLoc.longitude !== 0) {
       const distanceFromCurrent = getDistance(currentLoc, originCoordinates);
       if (distanceFromCurrent > MAX_WARN_PICKUP_DISTANCE) return false;
@@ -208,6 +250,15 @@ const EmergencyRescueMapScreen = () => {
     const distanceOriginToDest = getDistance(originCoordinates, destinationCoordinates);
     if (distanceOriginToDest > MAX_WARN_DESTINATION_DISTANCE) return false;
     return true;
+  };
+
+  // Hàm xử lý lựa chọn station cho destination
+  const handleStationSelect = (station: Station) => {
+    setDestinationCoordinates({
+      latitude: parseFloat(station.lat),
+      longitude: parseFloat(station.long),
+    });
+    setSelectedStationId(station.id);
   };
 
   // Tạo yêu cầu cứu hộ
@@ -220,7 +271,7 @@ const EmergencyRescueMapScreen = () => {
       deslng: destinationCoordinates.longitude,
       deslat: destinationCoordinates.latitude,
       pickuplocation: originQuery,
-      destination: "", // Có thể cập nhật tên station nếu cần
+      destination: stationQuery?.address || '', // Có thể cập nhật tên station nếu cần
       totalprice: fare || 0,
     };
     try {
@@ -244,7 +295,7 @@ const EmergencyRescueMapScreen = () => {
       deslng: destinationCoordinates.longitude,
       deslat: destinationCoordinates.latitude,
       pickuplocation: originQuery,
-      destination: "",
+      destination: selectedStationId,
       totalprice: fare || 0,
     };
     try {
@@ -271,7 +322,7 @@ const EmergencyRescueMapScreen = () => {
             if (transactionResponse) {
               isSearchingRef.current = true;
               setIsSearching(true);
-              setDriverAccepted(false);
+              // setDriverAccepted(false);
               sendRideRequestToDrivers(INITIAL_RADIUS, reqId);
             }
           } catch (error) {
@@ -304,68 +355,12 @@ const EmergencyRescueMapScreen = () => {
     }
   }, [acceptedReqDetId, acceptedReqDetStatus]);
 
+  useEffect(() => {
+    if (selectedStationId) {
+      setStationQuery(stations.find((station: Station) => station.id === selectedStationId));
+    }
+  }, [selectedStationId, stations]);
   // Gửi yêu cầu đến các tài xế theo bán kính tìm kiếm
-  // const sendRideRequestToDrivers = async (radius: number, reqId: string) => {
-  //   if (!isSearchingRef.current) return;
-  //   if (acceptedRequestRef.current.id === reqId && acceptedRequestRef.current.status !== "Pending") return;
-  //   if (radius > MAX_RADIUS) {
-  //     Alert.alert("No drivers available", "No drivers available in search radius");
-  //     isSearchingRef.current = false;
-  //     setIsSearching(false);
-  //     setShowActionsheet(true);
-  //     try {
-  //       await updateRequestStatus(reqId, token, "Cancel");
-  //     } catch (error) {
-  //       console.error("Error cancelling request:", error);
-  //     }
-  //     return;
-  //   }
-  //   const baseLocation =
-  //     originCoordinates.latitude !== 0 && originCoordinates.longitude !== 0
-  //       ? originCoordinates
-  //       : currentLoc;
-  //   const nearbyDrivers: (User & { distance: number })[] = [];
-  //   users.forEach((userData) => {
-  //     if (userData.role && userData.role.toLowerCase() === "driver") {
-  //       const distance = getDistance(
-  //         { latitude: baseLocation.latitude, longitude: baseLocation.longitude },
-  //         { latitude: userData.latitude, longitude: userData.longitude }
-  //       );
-  //       if (distance <= radius) {
-  //         nearbyDrivers.push({ ...userData, distance });
-  //       }
-  //     }
-  //   });
-  //   nearbyDrivers.sort((a, b) => a.distance - b.distance);
-  //   const newDrivers = nearbyDrivers.filter(
-  //     (driver) => !attemptedDriversRef.current.has(driver.uuid)
-  //   );
-  //   if (newDrivers.length > 0 && reqId) {
-  //     newDrivers.forEach((driver) => {
-  //       attemptedDriversRef.current.add(driver.uuid);
-  //       publishRescueRequest(driver.uuid, reqId);
-  //     });
-  //     setTimeout(() => {
-  //       if (!isSearchingRef.current) return;
-  //       if (acceptedRequestRef.current.id === reqId && acceptedRequestRef.current.status !== "Pending") return;
-  //       if (acceptedRequestRef.current.status === "Pending" && radius <= MAX_RADIUS) {
-  //         sendRideRequestToDrivers(radius + 2000, reqId);
-  //       }
-  //     }, 20000);
-  //   } else {
-  //     const newRadius = radius + 2000;
-  //     if (acceptedRequestRef.current.id === reqId && acceptedRequestRef.current.status !== "Pending") return;
-  //     if (!isSearchingRef.current) return;
-  //     setTimeout(() => {
-  //       if (!isSearchingRef.current) {
-  //         handleCancelSearch();
-  //         return;
-  //       }
-  //       sendRideRequestToDrivers(newRadius, reqId);
-  //     }, 5000);
-  //   }
-  // };
-
   const sendRideRequestToDrivers = async (radius: number, reqId: string) => {
     // Kiểm tra ngay từ đầu: nếu người dùng đã hủy thì dừng luôn
     if (!isSearchingRef.current) {
@@ -459,7 +454,16 @@ const EmergencyRescueMapScreen = () => {
       if (!isSearchingRef.current) {
         console.log("Search has been canceled. Exiting.");
         // handleCancelSearch();
+        try {
+          // Gọi trực tiếp API để cancel request
+          const result = await updateRequestStatus(reqId, token, "Cancel");
+          console.log("Đã hủy request thành công:", result);
+        } catch (error) {
+          console.error("Lỗi khi tự động hủy request:", error);
+        }
+
         return;
+        // return;
       }
       // if (newRadius <= MAX_RADIUS) {
       setTimeout(() => {
@@ -472,7 +476,15 @@ const EmergencyRescueMapScreen = () => {
         sendRideRequestToDrivers(newRadius, reqId);
       }, 5000);
     }
-  }
+    //    else {
+    //     Alert.alert("No drivers available", "No drivers available in search radius");
+    //     // if (handleCancelSearch) {
+    //       handleCancelSearch();
+    //     // }
+    //     return
+    //   }
+    // }
+  };
 
   // Bắt đầu tìm tài xế
   const handleFindDriver = async () => {
@@ -481,7 +493,6 @@ const EmergencyRescueMapScreen = () => {
     setRequestDetailId(reqId);
     isSearchingRef.current = true;
     setIsSearching(true);
-    setDriverAccepted(false);
     sendRideRequestToDrivers(INITIAL_RADIUS, reqId);
   };
 
@@ -489,7 +500,7 @@ const EmergencyRescueMapScreen = () => {
   const handleCancel = async () => {
     if (!requestDetailId) return;
     try {
-      const result = await updateRequestStatus(requestDetailId, token, "Cancel");
+      await updateRequestStatus(requestDetailId, token, "Cancel");
       if (paymentMethod === "Zalopay" && zpTransId) {
         await refundTransaction(zpTransId, "User canceled request", fare);
         const payZaloEmitter = new NativeEventEmitter(PayZaloBridge);
@@ -594,18 +605,18 @@ const EmergencyRescueMapScreen = () => {
     hereNow();
   }, []);
 
-  // Xử lý lựa chọn station cho destination qua component StationSelect
-  const handleStationSelect = (station: Station) => {
-    setDestinationCoordinates({
-      latitude: parseFloat(station.lat),
-      longitude: parseFloat(station.long),
-    });
-  };
 
   return (
     <Box className="flex-1">
       {/* Nút back */}
-      <GoBackButton />
+      <Box className="absolute top-4 left-4 z-20">
+        <Pressable
+          onPress={() => router.navigate("/user/customer/home/servicePackage")}
+          className="w-10 h-10 bg-white rounded-full items-center justify-center shadow-sm"
+        >
+          <ChevronLeft size={24} color="#374151" />
+        </Pressable>
+      </Box>
 
       {/* Input origin và chọn station cho destination */}
       <Box className="absolute top-0 left-0 w-full z-10 p-4 pt-16">
@@ -634,9 +645,15 @@ const EmergencyRescueMapScreen = () => {
             )}
           />
         )}
-        {/* Thay thế destination input bằng StationSelect */}
+        {/* StationSelect để chọn destination */}
         <Box className="mt-2">
-          <StationSelect onSelectStation={handleStationSelect} />
+          <StationSelect
+            onSelectStation={handleStationSelect}
+            currentLocation={currentLoc}
+            maxDistance={SERVICE_STATION_RADIUS}
+            stations={stations}
+            selectedStationId={selectedStationId}
+          />
         </Box>
       </Box>
 
@@ -685,6 +702,41 @@ const EmergencyRescueMapScreen = () => {
               </Box>
             </MapboxGL.PointAnnotation>
           )}
+          {/* Vẽ marker cho các station trong phạm vi phục vụ */}
+          {stations
+            .filter((station) => {
+              if (currentLoc.latitude === 0 && currentLoc.longitude === 0) return false;
+              const distance = getDistance(currentLoc, {
+                latitude: parseFloat(station.lat),
+                longitude: parseFloat(station.long),
+              });
+              return distance <= SERVICE_STATION_RADIUS;
+            })
+            .map((station) => {
+              const distance = getDistance(currentLoc, {
+                latitude: parseFloat(station.lat),
+                longitude: parseFloat(station.long),
+              });
+              return (
+                <MapboxGL.PointAnnotation
+                  key={station.id}
+                  id={`station-${station.id}`}
+                  coordinate={[parseFloat(station.long), parseFloat(station.lat)]}
+                >
+                  <Box
+                    style={{ width: 28, height: 28, alignItems: "center", justifyContent: "center", backgroundColor: "black" }}
+                  // className="bg-black border-2 border-white rounded-full "
+                  >
+
+                    <Cog color="#FF0000" size={28} />
+                    <MapboxGL.Callout title={station.name} />
+                    {/* <Text style={{ fontSize: 10, color: "white" }}>
+                      {(distance / 1000).toFixed(1)}km
+                    </Text> */}
+                  </Box>
+                </MapboxGL.PointAnnotation>
+              );
+            })}
           {routeCoordinates.length > 0 && (
             <MapboxGL.ShapeSource
               id="routeSource"
@@ -724,7 +776,8 @@ const EmergencyRescueMapScreen = () => {
           eta={directionsInfo?.distance?.text}
           distance={directionsInfo?.duration?.text}
           driverId={acceptedDriverId}
-          setAcceptedReqDetStatus={setAcceptedReqDetStatus} />
+          setAcceptedReqDetStatus={setAcceptedReqDetStatus}
+        />
       )}
       {!showActionsheet && directionsInfo && (
         <Pressable
