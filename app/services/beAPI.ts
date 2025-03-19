@@ -213,6 +213,20 @@ export async function acceptRequest(requestdetailid: string, token: string): Pro
   }
 }
 
+export async function createRepairRequest(requestId: string, token: string): Promise<any> {
+  try {
+    await axios.post(
+      `https://motor-save-be.vercel.app/api/v1/requests/repair/${requestId}`,
+      {},
+      { headers: { Authorization: "Bearer " + token } }
+    );
+    Alert.alert("Success", "Repair request created!");
+  } catch (error) {
+    console.error("Error creating reppair request:", error);
+    Alert.alert("Error", "Failed to create repair request");
+  }
+}
+
 export async function cancelRequest(
   requestdetailid: string,
   token: string,

@@ -64,9 +64,11 @@ const MapViewComponent: React.FC<MapViewComponentProps> = ({
           zoomLevel={14}
         // centerCoordinate={[currentLoc.longitude, currentLoc.latitude]}
         />
-        {Array.from(users.values()).map((user) => (
-          <UserMarker key={user.uuid} user={user} />
-        ))}
+        {
+          Array.from(users.entries()).map(([key, user]) => (
+            <UserMarker key={key} user={user} />
+          ))
+        }
         {children /* Render additional components passed from parent */}
       </MapboxGL.MapView>
       <View >
