@@ -55,7 +55,7 @@ export async function fetchStations(): Promise<any> {
 }
 
 export async function createRescueRequest(
-  payload: EmergencyRescueRequestPayload,
+  payload: RescueRequestPayload,
   token: string
 ): Promise<any> {
   try {
@@ -76,7 +76,7 @@ export async function createRescueRequest(
 }
 
 export async function createEmergencyRescueRequest(
-  payload: RescueRequestPayload,
+  payload: EmergencyRescueRequestPayload,
   token: string
 ): Promise<any> {
   try {

@@ -7,13 +7,12 @@ import axios from "axios";
 import AuthContext from "@/app/context/AuthContext";
 import { RepairRequestDetail } from "@/app/context/formFields";
 
-const repairRequest = () => {
+const RepairRequestScreen = () => {
   const { requestid } = useLocalSearchParams<{
     requestid: string;
   }>();
   const { token } = useContext(AuthContext);
   const [requestDetail, setRequestDetail] = useState<RepairRequestDetail | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
   const fetchRequestDetail = async () => {
     try {
       const response = await axios.get<RepairRequestDetail>(
@@ -23,9 +22,7 @@ const repairRequest = () => {
       setRequestDetail(response.data);
     } catch (error) {
       console.error("Error fetching request details:", error);
-    } finally {
-      setLoading(false);
-    }
+    } 
   };
   useEffect(() => {
     fetchRequestDetail();
@@ -145,4 +142,4 @@ const repairRequest = () => {
   );
 };
 
-export default repairRequest;
+export default RepairRequestScreen;
