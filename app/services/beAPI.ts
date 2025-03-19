@@ -11,6 +11,17 @@ export interface RescueRequestPayload {
   totalprice: number;
 }
 
+export interface EmergencyRescueRequestPayload {
+  pickuplong: number;
+  pickuplat: number;
+  deslng: number;
+  deslat: number;
+  pickuplocation: string;
+  destination: string;
+  totalprice: number;
+  stationid: string;
+}
+
 export interface FloodRescueRequestPayload {
   pickuplong: number;
   pickuplat: number;
@@ -44,7 +55,7 @@ export async function fetchStations(): Promise<any> {
 }
 
 export async function createRescueRequest(
-  payload: RescueRequestPayload,
+  payload: EmergencyRescueRequestPayload,
   token: string
 ): Promise<any> {
   try {
