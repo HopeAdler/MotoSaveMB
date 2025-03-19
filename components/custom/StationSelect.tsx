@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Alert } from "react-native";
+import { getDistance } from "geolib";
 import {
   Select,
   SelectTrigger,
@@ -13,8 +14,6 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { ChevronDownIcon } from "@/components/ui/icon";
-
-// Định nghĩa kiểu dữ liệu cho Station
 export interface Station {
   id: string;
   name: string;
@@ -27,23 +26,65 @@ export interface Station {
 
 interface StationSelectProps {
   onSelectStation: (station: Station) => void;
+  currentLocation?: { latitude: number; longitude: number };
+  maxDistance?: number; // khoảng cách tối đa phục vụ
+  stations: Station[];
+  selectedStationId: string;
 }
 
-const StationSelect: React.FC<StationSelectProps> = ({ onSelectStation }) => {
-  const [stations, setStations] = useState<Station[]>([]);
+const StationSelect: React.FC<StationSelectProps> = ({
+  onSelectStation,
+  currentLocation,
+  maxDistance,
+  stations,
+  selectedStationId,
+}) => {
   const [selectedValue, setSelectedValue] = useState<string>("");
 
-  useEffect(() => {
-    fetch("https://motor-save-be.vercel.app/api/v1/stations")
-      .then((res) => res.json())
-      .then((data: Station[]) => {
-        setStations(data);
-      })
-      .catch((error) => {
-        console.error("Lỗi khi lấy danh sách station:", error);
-        Alert.alert("Lỗi", "Không thể lấy danh sách trạm sửa xe");
+  // Sắp xếp các station dựa trên khoảng cách từ currentLocation
+  let sortedStations = stations;
+  if (currentLocation && stations.length > 0) {
+    sortedStations = stations.slice().sort((a, b) => {
+      const distanceA = getDistance(currentLocation, {
+        latitude: parseFloat(a.lat),
+        longitude: parseFloat(a.long),
       });
-  }, []);
+      const distanceB = getDistance(currentLocation, {
+        latitude: parseFloat(b.lat),
+        longitude: parseFloat(b.long),
+      });
+      return distanceA - distanceB;
+    });
+    if (maxDistance) {
+      sortedStations = sortedStations.filter((station) => {
+        const distance = getDistance(currentLocation, {
+          latitude: parseFloat(station.lat),
+          longitude: parseFloat(station.long),
+        });
+        return distance <= maxDistance;
+      });
+    }
+  }
+
+  // Nếu selectedStationId có giá trị, cập nhật selectedValue
+  useEffect(() => {
+    if (selectedStationId) {
+      setSelectedValue(selectedStationId);
+    }
+  }, [selectedStationId]);
+
+  // Tính nhãn hiển thị dựa trên selectedStationId
+  let selectedLabel= "";
+  if (selectedValue && currentLocation) {
+    const sel = stations.find((s) => s.id === selectedValue);
+    if (sel) {
+      const distance = getDistance(currentLocation, {
+        latitude: parseFloat(sel.lat),
+        longitude: parseFloat(sel.long),
+      });
+      selectedLabel = sel.name + ` (${(distance / 1000).toFixed(1)} km)`;
+    }
+  }
 
   const handleValueChange = (value: string) => {
     setSelectedValue(value);
@@ -55,12 +96,13 @@ const StationSelect: React.FC<StationSelectProps> = ({ onSelectStation }) => {
 
   return (
     <Select
-      selectedValue={selectedValue}
+      selectedValue={selectedLabel}
       onValueChange={handleValueChange}
-      defaultValue=""
+      // defaultValue={selectedLabel}
+      // initialLabel={selectedLabel}
     >
       <SelectTrigger variant="outline" size="md">
-        <SelectInput placeholder="Chọn trạm sửa xe" />
+        <SelectInput placeholder="Chọn trạm sửa xe"/>
         <SelectIcon as={ChevronDownIcon} />
       </SelectTrigger>
       <SelectPortal>
@@ -69,9 +111,19 @@ const StationSelect: React.FC<StationSelectProps> = ({ onSelectStation }) => {
           <SelectDragIndicatorWrapper>
             <SelectDragIndicator />
           </SelectDragIndicatorWrapper>
-          {stations.map((station) => (
-            <SelectItem key={station.id} label={station.name} value={station.id} />
-          ))}
+          {sortedStations.map((station) => {
+            let label = station.name;
+            if (currentLocation) {
+              const distance = getDistance(currentLocation, {
+                latitude: parseFloat(station.lat),
+                longitude: parseFloat(station.long),
+              });
+              label += ` (${(distance / 1000).toFixed(1)} km)`;
+            }
+            return (
+              <SelectItem key={station.id} label={label} value={station.id} />
+            );
+          })}
         </SelectContent>
       </SelectPortal>
     </Select>
