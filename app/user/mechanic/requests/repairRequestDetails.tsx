@@ -1,11 +1,8 @@
-import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, Button } from "react-native";
-import { useRouter } from "expo-router";
 import { GoBackButton } from "@/components/custom/GoBackButton";
-import { Select } from "@/components/ui/select";
+import React, { useState } from "react";
+import { Button, FlatList, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 
 export default function RepairDetailsScreen() {
-  const router = useRouter();
   const [repairs, setRepairs] = useState([{ id: 1, detail: "", price: "" }]);
 
   const addRepairItem = () => {

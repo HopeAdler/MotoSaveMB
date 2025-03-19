@@ -4,7 +4,6 @@ import { renderRepairRequestItem } from "@/components/custom/RepairRequestItem";
 import { Box } from "@/components/ui/box";
 import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
-import axios from "axios";
 import { router } from "expo-router";
 import {
   GalleryThumbnails,
@@ -13,7 +12,7 @@ import {
   Wrench
 } from "lucide-react-native";
 import React, { useContext, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, FlatList, Pressable, View } from "react-native";
+import { FlatList, Pressable, View } from "react-native";
 import { Avatar } from "react-native-elements";
 
 interface ServiceCardProps {

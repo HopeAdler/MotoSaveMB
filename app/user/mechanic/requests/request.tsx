@@ -1,5 +1,5 @@
 import AuthContext from "@/app/context/AuthContext";
-import { getPendingRepairRequests, getRepairRequestsByMechanic } from "@/app/services/beAPI";
+import { getRepairRequestsByMechanic } from "@/app/services/beAPI";
 import { renderRepairRequestItem } from "@/components/custom/RepairRequestItem";
 import { Box } from "@/components/ui/box";
 // import axios from "axios";
