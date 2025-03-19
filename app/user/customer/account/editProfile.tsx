@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { Box } from "@/components/ui/box";
 import { Text } from "@/components/ui/text";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonText } from "@/components/ui/button";
 import { Divider } from "@/components/ui/divider";
 import { Input, InputField } from "@/components/ui/input";
 import {
@@ -32,7 +32,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 interface FormData {
   fullname: string;
   email: string | null;
-  gender: string | null;
+  gender: string | undefined;
   dob: string | null;
   address: string | null;
   licenseplate: string | null;
@@ -42,7 +42,7 @@ interface FormData {
 interface UpdateProfilePayload {
   fullname: string;
   email: string | null;
-  gender: string | null;
+  gender: string | undefined; // Changed from string | null
   dob: string | null;
   address: string | null;
   licenseplate: string | null;
@@ -76,7 +76,7 @@ export default function EditProfile() {
   const [form, setForm] = useState<FormData>(() => ({
     fullname: params.fullname as string,
     email: params.email as string | null,
-    gender: params.gender as string | null,
+    gender: params.gender as string || undefined,
     dob: params.dob ? formatDateString(params.dob as string) : null,
     address: params.address as string | null,
     licenseplate: params.licenseplate as string | null,
@@ -205,7 +205,7 @@ export default function EditProfile() {
       const payload: UpdateProfilePayload = {
         fullname: form.fullname.trim(),
         email: form.email?.trim() || null,
-        gender: form.gender?.trim() || null,
+        gender: form.gender?.trim() || undefined,
         dob: form.dob?.trim() || null,
         address: form.address?.trim() || null,
         licenseplate: form.licenseplate?.trim() || null,
@@ -264,9 +264,20 @@ export default function EditProfile() {
     }
   };
 
-  const handleLogout = React.useCallback(() => {
-    dispatch?.({ type: "LOGOUT" });
-    router.replace("/auth/login");
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const handleLogout = useCallback(async () => {
+    try {
+      setIsLoggingOut(true);
+      dispatch?.({ type: "LOGOUT" });
+      await new Promise(resolve => setTimeout(resolve, 100));
+      router.replace("/auth/login");
+    } catch (error) {
+      console.error("Logout error:", error);
+      Alert.alert("Error", "Failed to log out. Please try again.");
+    } finally {
+      setIsLoggingOut(false);
+    }
   }, [dispatch]);
 
   const GenderOption = ({
@@ -463,21 +474,22 @@ export default function EditProfile() {
 
         <Box className="px-4 mt-4 mb-4">
           <Divider className="mb-4" />
-          <Pressable
+          <Button
             onPress={handleLogout}
-            className="flex-row items-center justify-center py-2.5"
+            disabled={isLoggingOut}
+            variant="solid"
+            className={`rounded-xl py-2 ${
+              isLoggingOut ? 'bg-gray-100' : 'bg-white active:bg-gray-50'
+            }`}
           >
-            <Text 
-              className="font-semibold text-lg text-gray-600 active:text-gray-400"
-              style={{
-                textShadowColor: 'rgba(0, 0, 0, 0.1)',
-                textShadowOffset: { width: 0, height: 1 },
-                textShadowRadius: 2,
-              }}
+            <ButtonText 
+              className={`font-medium text-base ${
+                isLoggingOut ? 'text-gray-400' : 'text-red-600'
+              }`}
             >
-              Log Out
-            </Text>
-          </Pressable>
+              {isLoggingOut ? 'Logging out...' : 'Log Out'}
+            </ButtonText>
+          </Button>
         </Box>
       </ScrollView>
 
@@ -510,7 +522,7 @@ export default function EditProfile() {
 
           <Box className="w-full">
             <RadioGroup
-              value={form.gender}
+              value={form.gender || undefined}
               onChange={(value) => {
                 updateForm({ gender: value });
                 setShowGenderSheet(false);
