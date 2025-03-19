@@ -4,6 +4,7 @@ import {
   calculateFare,
   createEmergencyRescueRequest,
   createTransaction,
+  EmergencyRescueRequestPayload,
   RescueRequestPayload,
   updateRequestStatus,
 } from "@/app/services/beAPI";
@@ -265,14 +266,15 @@ const EmergencyRescueMapScreen = () => {
   const handleCreateRequest = async (): Promise<string | void> => {
     attemptedDriversRef.current = new Set();
     if (!token) return;
-    const payload: RescueRequestPayload = {
+    const payload: EmergencyRescueRequestPayload = {
       pickuplong: originCoordinates.longitude,
       pickuplat: originCoordinates.latitude,
       deslng: destinationCoordinates.longitude,
       deslat: destinationCoordinates.latitude,
       pickuplocation: originQuery,
-      destination: stationQuery?.address || '', // Có thể cập nhật tên station nếu cần
+      destination: stationQuery?.address || '',
       totalprice: fare || 0,
+      stationid: stationQuery?.id || ""
     };
     try {
       const result = await createEmergencyRescueRequest(payload, token);
@@ -289,14 +291,15 @@ const EmergencyRescueMapScreen = () => {
     const callbackUrl = "myapp://user/customer/home/emergencyRescue/emergencyRescueMap";
     if (!token) return;
     setPaymentLoading(true);
-    const payload: RescueRequestPayload = {
+    const payload: EmergencyRescueRequestPayload = {
       pickuplong: originCoordinates.longitude,
       pickuplat: originCoordinates.latitude,
       deslng: destinationCoordinates.longitude,
       deslat: destinationCoordinates.latitude,
       pickuplocation: originQuery,
-      destination: selectedStationId,
+      destination: stationQuery?.name || "",
       totalprice: fare || 0,
+      stationid: stationQuery?.id || ""
     };
     try {
       const result = await createEmergencyRescueRequest(payload, token);
