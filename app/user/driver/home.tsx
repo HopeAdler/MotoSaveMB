@@ -151,8 +151,8 @@ export default function DHomeScreen() {
 
       <View className="flex-1">
         <Box className="p-4">
-          <Box className="mb-6">
-            <Text className="text-lg font-bold mb-4">Hàng chờ yêu cầu</Text>
+          <Box className="mb-3 h-2/5 flex flex-auto">
+            <Text className="text-lg font-bold mb-4">Hàng chờ yêu cầu ({requestDetails?.length})</Text>
             {requestDetails && requestDetails.length > 0 ? (
               <FlatList
                 data={requestDetails}
@@ -166,7 +166,7 @@ export default function DHomeScreen() {
             )}
           </Box>
 
-          <Box className="mb-6">
+          <Box className="mb-3 h-1/4 flex flex-auto">
             <Text className="text-lg font-bold mb-4">Nghiệp vụ liên quan</Text>
             <Box className="flex flex-row flex-wrap">
               <ServiceCard icon={Truck} title="Xe cứu hộ" color="#8b5cf6" />
@@ -174,7 +174,7 @@ export default function DHomeScreen() {
             </Box>
           </Box>
 
-          <Box className="mb-6">
+          <Box className="mb-3 h-1/4 flex flex-auto">
             <Text className="text-lg font-bold mb-4">Yêu cầu đang thực hiện</Text>
             <Box className="bg-white rounded-lg shadow-sm">
               <RecentLocation name="Home" distance="0.5 km" />

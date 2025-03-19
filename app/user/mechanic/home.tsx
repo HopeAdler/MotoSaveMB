@@ -1,7 +1,10 @@
 import { AuthContext } from "@/app/context/AuthContext";
+import { getPendingRepairRequests } from "@/app/services/beAPI";
+import { renderRepairRequestItem } from "@/components/custom/RepairRequestItem";
 import { Box } from "@/components/ui/box";
 import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
+import axios from "axios";
 import { router } from "expo-router";
 import {
   GalleryThumbnails,
@@ -9,11 +12,9 @@ import {
   MapPinHouseIcon,
   Wrench
 } from "lucide-react-native";
-import React, { useContext } from "react";
-import { FlatList, Pressable, View } from "react-native";
+import React, { useContext, useEffect, useRef, useState } from "react";
+import { ActivityIndicator, FlatList, Pressable, View } from "react-native";
 import { Avatar } from "react-native-elements";
-import { dummyRepairRequests } from "./requests/dummydata";
-import { renderItem } from "@/components/custom/RepairRequestItem";
 
 interface ServiceCardProps {
   icon: LucideIcon;
@@ -24,6 +25,18 @@ interface ServiceCardProps {
 interface StationProps {
   name: string;
   location: string;
+}
+
+interface RepairRequest {
+  requestid: string;
+  customername: string;
+  customerphone: string;
+  requesttype: string;
+  servicepackagename: string;
+  requestdetailid: string;
+  stationid: string;
+  requeststatus: string;
+  createddate: string;
 }
 
 const ServiceCard: React.FC<ServiceCardProps> = ({
@@ -53,13 +66,43 @@ const StationInfo: React.FC<StationProps> = ({ name, location }) => (
   </Pressable>
 );
 
-const pendingRepairRequest = dummyRepairRequests.filter(r => r.requeststatus === "Pending")
+// const pendingRepairRequest = dummyRepairRequests.filter(r => r.requeststatus === "Pending")
 export default function MHomeScreen() {
   const { user, dispatch, token } = useContext(AuthContext);
   const handleLogout = async () => {
     dispatch?.({ type: "LOGOUT" });
     router.replace("/auth/login");
   };
+  const [loading, setLoading] = useState(true);
+  const [pendingRepairRequests, setPendingRepairRequests] = useState<RepairRequest[]>([]);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const fetchPendingRepairRequest = async (isInitialFetch = false) => {
+    try {
+      if (isInitialFetch) setLoading(true); // Only show loading on first fetch
+
+      const results = await getPendingRepairRequests(token);
+
+      // Prevent unnecessary state updates
+      setPendingRepairRequests((prevRepairRequests) => {
+        const isDataChanged = JSON.stringify(prevRepairRequests) !== JSON.stringify(results);
+        return isDataChanged ? results : prevRepairRequests;
+      });
+
+    } catch (error) {
+      console.error("Error fetching requests:", error);
+    } finally {
+      if (isInitialFetch) setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchPendingRepairRequest(); // Fetch every 5 seconds
+    }, 5000);
+
+    return () => clearInterval(interval); 
+  }, []);
 
   return (
     <Box className="flex-1 bg-gray-50">
@@ -79,22 +122,22 @@ export default function MHomeScreen() {
 
       <View className="flex-1">
         <Box className="p-4">
-          <Box className="mb-6">
-            <Text className="text-lg font-bold mb-4">Hàng chờ yêu cầu</Text>
-            {pendingRepairRequest.length > 0 ? (
+          <Box className="mb-3 h-2/5 flex flex-auto">
+            <Text className="text-lg font-bold mb-4">Hàng chờ yêu cầu ({pendingRepairRequests?.length})</Text>
+            {pendingRepairRequests && pendingRepairRequests.length > 0 ? (
               <FlatList
-                data={pendingRepairRequest}
+                data={pendingRepairRequests}
                 keyExtractor={(item) => `${item.requestdetailid}-${item.requeststatus}`}
                 renderItem={({ item }) =>
-                  renderItem({ item, router })
-                }
+                  renderRepairRequestItem({ token, item, router })
+              }
               />
             ) : (
-              <Text>Hiện chưa có yêu cầu nào</Text>
+              <Text>Hiện chưa có yêu cầu sửa xe nào</Text>
             )}
           </Box>
 
-          <Box className="mb-6">
+          <Box className="mb-3 h-1/4 flex flex-auto">
             <Text className="text-lg font-bold mb-4">Nghiệp vụ liên quan</Text>
             <Box className="flex flex-row flex-wrap">
               <ServiceCard icon={Wrench} title="Sửa xe" color="#8b5cf6" />
@@ -102,7 +145,7 @@ export default function MHomeScreen() {
             </Box>
           </Box>
 
-          <Box className="mb-6">
+          <Box className="mb-3 h-1/4 flex flex-auto">
             <Text className="text-lg font-bold mb-4">Trạm của tôi</Text>
             <Box className="bg-white rounded-lg shadow-sm">
               <StationInfo name="Trạm 1" location="Số X, đường Y, phố Z" />
