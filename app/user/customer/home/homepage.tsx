@@ -1,133 +1,149 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { AuthContext } from "@/app/context/AuthContext";
 import { Box } from "@/components/ui/box";
 import { Text } from "@/components/ui/text";
-import { Button } from "@/components/ui/button";
 import { ScrollView, Pressable } from "react-native";
 import {
-  Car,
-  Ambulance,
-  Wrench,
-  Battery,
-  Fuel,
-  Settings,
-  Search,
-  MapPin,
+  Car, Ambulance, Wrench, Battery, Fuel, 
+  Search, Bell
 } from "lucide-react-native";
 import { router } from "expo-router";
 import LoadingScreen from "../../../loading/loading";
-import { LucideIcon } from "lucide-react-native";
 
 interface ServiceCardProps {
-  icon: LucideIcon;
+  icon: React.ElementType;
   title: string;
   color: string;
+  onPress: () => void;
 }
 
-interface LocationProps {
-  name: string;
-  distance: string;
-}
-
-const ServiceCard: React.FC<ServiceCardProps> = ({
-  icon: Icon,
-  title,
-  color,
-}) => (
-  <Pressable>
-    <Box className="w-24 h-24 mx-2 bg-white rounded-lg shadow-sm">
-      <Box className="p-4 flex items-center justify-center">
-        <Icon color={color} size={32} />
-        <Text className="text-xs text-center font-medium mt-2">{title}</Text>
+const ServiceCard: React.FC<ServiceCardProps> = ({ icon: Icon, title, color, onPress }) => (
+  <Pressable 
+    onPress={onPress}
+    className="mr-3"
+  >
+    <Box className="w-[150px] bg-white/90 backdrop-blur-sm rounded-3xl p-4 border border-gray-100/30 shadow-sm">
+      <Box 
+        className="w-12 h-12 rounded-2xl items-center justify-center mb-3" 
+        style={{ backgroundColor: `${color}15` }}
+      >
+        <Icon color={color} size={22} />
       </Box>
-    </Box>
-  </Pressable>
-);
-
-const RecentLocation: React.FC<LocationProps> = ({ name, distance }) => (
-  <Pressable>
-    <Box className="flex flex-row items-center p-3 border-b border-gray-100">
-      <MapPin className="text-gray-400 mr-3" size={20} />
-      <Box className="flex-1">
-        <Text className="font-medium">{name}</Text>
-        <Text className="text-xs text-gray-500">{distance} away</Text>
-      </Box>
+      <Text className="text-[15px] font-semibold text-gray-800">{title}</Text>
+      <Text className="text-xs text-gray-500">Available 24/7</Text>
     </Box>
   </Pressable>
 );
 
 export default function CHomeScreen() {
   const { user, dispatch } = useContext(AuthContext);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+
 
   useEffect(() => {
-    if (!user) return;
-    setIsLoading(false);
-    if (user.role !== "Customer") router.replace("/error/403");
-  }, [user]);
+  }, []);
+
+
+
+  if (!user) {
+    router.replace("/auth/login");
+    return null;
+  }
+
+  if (user.role !== "Customer") {
+    router.replace("/error/403");
+    return null;
+  }
 
   if (isLoading) return <LoadingScreen />;
 
-  const handleLogout = async () => {
-    dispatch?.({ type: "LOGOUT" });
-    router.replace("/auth/login");
-  };
-
   return (
     <Box className="flex-1 bg-gray-50">
-      <Box className="bg-blue-600 p-4 pb-6">
-        <Box className="flex flex-row items-center justify-between mb-4">
-          <Text className="text-white text-lg font-bold">RescueMe</Text>
-          <Button variant="outline" onPress={handleLogout}>
-            <Text className="text-white">Logout</Text>
-          </Button>
-        </Box>
+      <Box className="bg-blue-600 pt-14 pb-24 rounded-b-[32px]">
+        <Box className="px-5">
+          <Box className="flex-row items-center justify-between mb-6">
+            <Box className="flex-row items-center">
+              <Box className="w-12 h-12 bg-white/10 backdrop-blur-lg rounded-2xl items-center justify-center mr-4 border border-white/10">
+                <Text className="text-xl font-bold text-white">
+                  {user?.username?.[0]?.toUpperCase()}
+                </Text>
+              </Box>
+              <Box>
+                <Text className="text-blue-100/80 text-sm">Welcome back</Text>
+                <Text className="text-white text-lg font-bold">{user?.username}</Text>
+              </Box>
+            </Box>
+            <Pressable className="w-12 h-12 bg-white/10 backdrop-blur-lg rounded-2xl items-center justify-center border border-white/10">
+              <Bell color="white" size={22} />
+            </Pressable>
+          </Box>
 
-        <Pressable className="w-full bg-white rounded-full flex flex-row items-center px-4 py-3">
-          <Search size={20} className="text-gray-400 mr-2" />
-          <Text className="text-gray-400">Where do you need help?</Text>
-        </Pressable>
+          <Box className="mt-4">
+            <Pressable className="bg-white/10 backdrop-blur-lg rounded-2xl flex-row items-center px-5 py-4 border border-white/10">
+              <Search size={22} color="#fff" className="opacity-70 mr-3" />
+              <Text className="text-white/90 text-base font-medium">Find nearby rescue</Text>
+            </Pressable>
+          </Box>
+        </Box>
       </Box>
 
-      <ScrollView className="flex-1">
-        <Box className="p-4">
-          <Box className="mb-6">
-            <Text className="text-lg font-bold mb-4">Emergency Services</Text>
-            <Box className="flex flex-row flex-wrap justify-between">
-              <ServiceCard icon={Ambulance} title="Medical" color="#ef4444" />
-              <ServiceCard icon={Car} title="Towing" color="#3b82f6" />
-              <ServiceCard icon={Wrench} title="Repair" color="#10b981" />
-            </Box>
-          </Box>
-
-          <Box className="mb-6">
-            <Text className="text-lg font-bold mb-4">Quick Services</Text>
-            <Box className="flex flex-row flex-wrap justify-between">
-              <ServiceCard icon={Battery} title="Battery" color="#8b5cf6" />
-              <ServiceCard icon={Fuel} title="Fuel" color="#f59e0b" />
-              <ServiceCard icon={Settings} title="Tire" color="#6366f1" />
-            </Box>
-          </Box>
-
-          <Box className="mb-6">
-            <Text className="text-lg font-bold mb-4">Recent Locations</Text>
-            <Box className="bg-white rounded-lg shadow-sm">
-              <RecentLocation name="Home" distance="0.5 km" />
-              <RecentLocation name="Office" distance="2.3 km" />
-              <RecentLocation name="Workshop" distance="3.1 km" />
-            </Box>
-          </Box>
-
-          <Button
-            variant="solid"
-            className="w-full bg-red-500 mb-4"
-            onPress={() => router.navigate("/user/customer/home/servicePackage")}
-          >
-            <Text className="text-lg font-bold text-white">
-              SOS - Get Help Now
-            </Text>
-          </Button>
+      <ScrollView className="flex-1 -mt-16 px-5" showsVerticalScrollIndicator={false}>
+        <Box className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-6">
+          <Text className="text-lg font-semibold text-gray-800 mb-4">Emergency Services</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="gap-3">
+            <ServiceCard 
+              icon={Car}
+              title="Normal Rescue"
+              color="#2563eb"
+              onPress={() => router.navigate("/user/customer/home/normalRescue/normalRescueMap")}
+            />
+            <ServiceCard
+              icon={Ambulance} 
+              title="Emergency"
+              color="#dc2626"
+              onPress={() => router.navigate("/user/customer/home/emergencyRescue/emergencyRescueMap")}
+            />
+            <ServiceCard
+              icon={Wrench}
+              title="Flood Rescue"
+              color="#059669"
+              onPress={() => router.navigate("/user/customer/home/floodRescue/floodRescueMap")}
+            />
+          </ScrollView>
         </Box>
+
+        <Box className="mb-5">
+          <Text className="text-lg font-semibold text-gray-800 mb-4">Quick Services</Text>
+          <Box className="flex-row space-x-3">
+            <Pressable className="flex-1 bg-white/80 backdrop-blur-sm p-4 rounded-3xl border border-gray-100/50">
+              <Box className="w-12 h-12 bg-violet-50 rounded-2xl items-center justify-center mb-3">
+                <Battery color="#7c3aed" size={22} />
+              </Box>
+              <Text className="text-base font-semibold text-gray-800">Battery Jump</Text>
+              <Text className="text-xs text-gray-500 mt-0.5">Quick assistance</Text>
+            </Pressable>
+
+            <Pressable className="flex-1 bg-white/80 backdrop-blur-sm p-4 rounded-3xl border border-gray-100/50">
+              <Box className="w-12 h-12 bg-amber-50 rounded-2xl items-center justify-center mb-3">
+                <Fuel color="#d97706" size={22} />
+              </Box>
+              <Text className="text-base font-semibold text-gray-800">Fuel Delivery</Text>
+              <Text className="text-xs text-gray-500 mt-0.5">Emergency fuel</Text>
+            </Pressable>
+          </Box>
+        </Box>
+
+        <Pressable
+          onPress={() => router.navigate("/user/customer/home/servicePackage")}
+          className="bg-red-500 rounded-2xl shadow-sm mb-6 overflow-hidden"
+        >
+          <Box className="px-5 py-4 flex-row items-center justify-center">
+            <Box className="w-12 h-12 bg-white/10 rounded-2xl items-center justify-center mr-3">
+              <Text className="text-xl font-bold text-white">SOS</Text>
+            </Box>
+            <Text className="text-lg font-semibold text-white">Emergency Assistance</Text>
+          </Box>
+        </Pressable>
       </ScrollView>
     </Box>
   );
