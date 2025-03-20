@@ -1,8 +1,14 @@
-import { useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import React, { useContext, useEffect, useState } from "react";
 import { Box } from "@/components/ui/box";
 import { Text } from "@/components/ui/text";
-import { Car, CheckCircle2, Phone, User } from "lucide-react-native";
+import {
+  AlertCircle,
+  Car,
+  CheckCircle2,
+  Phone,
+  User,
+} from "lucide-react-native";
 import axios from "axios";
 import AuthContext from "@/app/context/AuthContext";
 import { RepairRequestDetail } from "@/app/context/formFields";
@@ -12,7 +18,8 @@ const RepairRequestScreen = () => {
     requestid: string;
   }>();
   const { token } = useContext(AuthContext);
-  const [requestDetail, setRequestDetail] = useState<RepairRequestDetail | null>(null);
+  const [requestDetail, setRequestDetail] =
+    useState<RepairRequestDetail | null>(null);
   const fetchRequestDetail = async () => {
     try {
       const response = await axios.get<RepairRequestDetail>(
@@ -22,7 +29,7 @@ const RepairRequestScreen = () => {
       setRequestDetail(response.data);
     } catch (error) {
       console.error("Error fetching request details:", error);
-    } 
+    }
   };
   useEffect(() => {
     fetchRequestDetail();
@@ -58,7 +65,9 @@ const RepairRequestScreen = () => {
       { title: "Done", status: "Done" },
     ];
 
-    const currentStepIndex = steps.findIndex((step) => step.status === requestDetail?.requeststatus);
+    const currentStepIndex = steps.findIndex(
+      (step) => step.status === requestDetail?.requeststatus
+    );
 
     return (
       <Box className="mt-6">
@@ -108,30 +117,54 @@ const RepairRequestScreen = () => {
         <Text className="text-lg font-semibold text-gray-900 mb-4">
           Mechanic Information
         </Text>
-        <Box className="space-y-4">
-          <Box className="flex-row items-center">
-            <User size={20} color="#6B7280" />
-            <Box className="ml-3">
-              <Text className="text-sm text-gray-500">Mechanic Name</Text>
-              <Text className="text-base text-gray-900">{requestDetail?.mechanicname}</Text>
-            </Box>
+        <Box className="flex-row items-center">
+          <User size={20} color="#6B7280" />
+          <Box className="ml-3">
+            <Text className="text-sm text-gray-500">Mechanic Name</Text>
+            <Text className="text-base text-gray-900">
+              {requestDetail?.mechanicname}
+            </Text>
           </Box>
+        </Box>
 
-          <Box className="flex-row items-center">
-            <Phone size={20} color="#6B7280" />
-            <Box className="ml-3">
-              <Text className="text-sm text-gray-500">Phone Number</Text>
-              <Text className="text-base text-gray-900">{requestDetail?.mechanicphone}</Text>
-            </Box>
+        <Box className="flex-row items-center">
+          <Phone size={20} color="#6B7280" />
+          <Box className="ml-3">
+            <Text className="text-sm text-gray-500">Phone Number</Text>
+            <Text className="text-base text-gray-900">
+              {requestDetail?.mechanicphone}
+            </Text>
           </Box>
-
-          <Box className="flex-row items-center">
-            <Car size={20} color="#6B7280" />
-            <Box className="ml-3">
-              <Text className="text-sm text-gray-500">Station</Text>
-              <Text className="text-base text-gray-900">{requestDetail?.stationname}</Text>
-            </Box>
+        </Box>
+        <Box className="flex-row items-center">
+          <Car size={20} color="#6B7280" />
+          <Box className="ml-3">
+            <Text className="text-sm text-gray-500">Station</Text>
+            <Text className="text-base text-gray-900">
+              {requestDetail?.stationname}
+            </Text>
           </Box>
+        </Box>
+        <Box className="flex-row items-center">
+          <AlertCircle size={20} color="#6B7280" />
+          <Box className="ml-3">
+            <Text className="text-sm text-gray-500">Address</Text>
+            <Text className="text-base text-gray-900">
+              {requestDetail?.stationaddress}
+            </Text>
+          </Box>
+        </Box>
+        <Box className="flex-row justify-center mt-6">
+          <Text
+            className="text-blue-600 font-semibold"
+            onPress={() =>
+              router.navigate(
+                "/user/customer/home/emergencyRescue/repairCostPreview"
+              )
+            }
+          >
+            Xem bảng giá sửa xe
+          </Text>
         </Box>
       </Box>
       <Box className="bg-white rounded-2xl shadow-sm p-4 mb-4">
