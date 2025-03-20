@@ -11,6 +11,17 @@ export interface RescueRequestPayload {
   totalprice: number;
 }
 
+export interface EmergencyRescueRequestPayload {
+  pickuplong: number;
+  pickuplat: number;
+  deslng: number;
+  deslat: number;
+  pickuplocation: string;
+  destination: string;
+  totalprice: number;
+  stationid: string;
+}
+
 export interface FloodRescueRequestPayload {
   pickuplong: number;
   pickuplat: number;
@@ -65,7 +76,7 @@ export async function createRescueRequest(
 }
 
 export async function createEmergencyRescueRequest(
-  payload: RescueRequestPayload,
+  payload: EmergencyRescueRequestPayload,
   token: string
 ): Promise<any> {
   try {
@@ -199,6 +210,30 @@ export async function fetchRequests(token: string): Promise<any> {
   }
 }
 
+export async function getPendingRepairRequests(token: string): Promise<any> {
+  try {
+    const response = await axios.get(
+      "https://motor-save-be.vercel.app/api/v1/requests/mechanic/pending",
+      { headers: { Authorization: "Bearer " + token } }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching requests:", error);
+  }
+}
+
+export async function getRepairRequestsByMechanic(token: string): Promise<any> {
+  try {
+    const response = await axios.get(
+      "https://motor-save-be.vercel.app/api/v1/requests/mechanic",
+      { headers: { Authorization: "Bearer " + token } }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching requests:", error);
+  }
+}
+
 export async function acceptRequest(requestdetailid: string, token: string): Promise<any> {
   try {
     await axios.put(
@@ -224,6 +259,20 @@ export async function createRepairRequest(requestId: string, token: string): Pro
   } catch (error) {
     console.error("Error creating reppair request:", error);
     Alert.alert("Error", "Failed to create repair request");
+  }
+}
+
+export async function acceptRepairRequest(requestdetailid: string, token: string): Promise<any> {
+  try {
+    await axios.put(
+      `https://motor-save-be.vercel.app/api/v1/requests/mechanic/${requestdetailid}/accept`,
+      {},
+      { headers: { Authorization: "Bearer " + token } }
+    );
+    Alert.alert("Success", "Repair request accepted!");
+  } catch (error) {
+    console.error("Error accepting request:", error);
+    Alert.alert("Error", "Failed to accept repair request");
   }
 }
 

@@ -1,17 +1,37 @@
 import { useLocalSearchParams } from "expo-router";
-import React, { useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { Box } from "@/components/ui/box";
 import { Text } from "@/components/ui/text";
 import { Car, CheckCircle2, Phone, User } from "lucide-react-native";
+import axios from "axios";
+import AuthContext from "@/app/context/AuthContext";
+import { RepairRequestDetail } from "@/app/context/formFields";
 
-const repairRequest = () => {
+const RepairRequestScreen = () => {
   const { requestid } = useLocalSearchParams<{
     requestid: string;
   }>();
-  console.log(requestid);
-  const [status, setStatus] = useState("Pending");
+  const { token } = useContext(AuthContext);
+  const [requestDetail, setRequestDetail] = useState<RepairRequestDetail | null>(null);
+  const fetchRequestDetail = async () => {
+    try {
+      const response = await axios.get<RepairRequestDetail>(
+        `https://motor-save-be.vercel.app/api/v1/requests/repair/detail/${requestid}`,
+        { headers: { Authorization: "Bearer " + token } }
+      );
+      setRequestDetail(response.data);
+    } catch (error) {
+      console.error("Error fetching request details:", error);
+    } 
+  };
+  useEffect(() => {
+    fetchRequestDetail();
+    const interval = setInterval(fetchRequestDetail, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
   const getStatusColor = () => {
-    switch (status) {
+    switch (requestDetail?.requeststatus) {
       case "Pending":
         return "bg-orange-500";
       case "Inspecting":
@@ -38,7 +58,7 @@ const repairRequest = () => {
       { title: "Done", status: "Done" },
     ];
 
-    const currentStepIndex = steps.findIndex((step) => step.status === status);
+    const currentStepIndex = steps.findIndex((step) => step.status === requestDetail?.requeststatus);
 
     return (
       <Box className="mt-6">
@@ -93,7 +113,7 @@ const repairRequest = () => {
             <User size={20} color="#6B7280" />
             <Box className="ml-3">
               <Text className="text-sm text-gray-500">Mechanic Name</Text>
-              <Text className="text-base text-gray-900">Nguyen Van A</Text>
+              <Text className="text-base text-gray-900">{requestDetail?.mechanicname}</Text>
             </Box>
           </Box>
 
@@ -101,7 +121,7 @@ const repairRequest = () => {
             <Phone size={20} color="#6B7280" />
             <Box className="ml-3">
               <Text className="text-sm text-gray-500">Phone Number</Text>
-              <Text className="text-base text-gray-900">0947424890</Text>
+              <Text className="text-base text-gray-900">{requestDetail?.mechanicphone}</Text>
             </Box>
           </Box>
 
@@ -109,7 +129,7 @@ const repairRequest = () => {
             <Car size={20} color="#6B7280" />
             <Box className="ml-3">
               <Text className="text-sm text-gray-500">Station</Text>
-              <Text className="text-base text-gray-900">Station 1</Text>
+              <Text className="text-base text-gray-900">{requestDetail?.stationname}</Text>
             </Box>
           </Box>
         </Box>
@@ -122,4 +142,4 @@ const repairRequest = () => {
   );
 };
 
-export default repairRequest;
+export default RepairRequestScreen;

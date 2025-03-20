@@ -48,10 +48,12 @@ export default function CustomerLayout() {
         <Tabs.Screen
           name="payment"
           options={{
-            tabBarLabel: "Payment",
-            tabBarIcon: (tabInfo) => (
-              <CreditCard size={24} color={tabInfo.color} />
-            ),
+            // tabBarLabel: "Payment",
+            // tabBarIcon: (tabInfo) => (
+            //   <CreditCard size={24} color={tabInfo.color} />
+            // ),
+            href: null,
+            tabBarStyle: { display: "none" },
           }}
         />
         <Tabs.Screen
