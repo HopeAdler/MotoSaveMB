@@ -34,17 +34,17 @@ const RepairCostPreviewScreen = () => {
   const renderItem = ({ item }: { item: RepairCostItem }) => (
     <Box className="bg-white rounded-2xl shadow-sm p-4 mb-4">
       <Box className="flex-row items-center justify-between">
-        <Text className="text-base text-gray-500">Tên hạng mục:</Text>
+        <Text className="text-base font-medium text-gray-900">Tên hạng mục:</Text>
         <Text className="text-sm text-gray-900">{item?.name}</Text>
       </Box>
 
       <Box className="flex-row items-center justify-between">
-        <Text className="text-base text-gray-500">Mô tả:</Text>
+        <Text className="text-base font-medium text-gray-900">Mô tả:</Text>
         <Text className="text-sm text-gray-900">{item?.description}</Text>
       </Box>
       <Box className="flex-row items-center justify-between">
-        <Text className="text-base text-gray-500">Chi phí sửa chữa:</Text>
-        <Text className="text-sm text-green-500">
+        <Text className="text-base font-medium text-gray-900">Chi phí sửa chữa:</Text>
+        <Text className="text-base font-semibold text-gray-900">
           {item?.min.toLocaleString()}VNĐ - {item?.max.toLocaleString()}VNĐ
         </Text>
       </Box>

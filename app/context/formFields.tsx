@@ -62,6 +62,13 @@ export interface RepairRequestDetail {
   mechanicavatar: string;
 }
 
+export interface RepairQuote {
+  id: string;
+  repairname: string;
+  detail: string;
+  cost: number;
+  requestdetailid: string;
+}
 
 const formFields = {
   registerForm,
