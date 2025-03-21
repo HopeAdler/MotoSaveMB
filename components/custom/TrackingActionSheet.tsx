@@ -125,7 +125,7 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
             params: { requestdetailid },
           });
         }
-      }, 5000);
+      }, 3000);
       return () => clearTimeout(timer);
     }
   }, [requestDetail?.requeststatus]);
