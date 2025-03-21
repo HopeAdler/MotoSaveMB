@@ -1,8 +1,7 @@
-import { Dispatch, SetStateAction, useMemo } from "react";
 import { jwtDecode, JwtPayload } from "jwt-decode";
 import polyline from "@mapbox/polyline";
 import { Alert, Linking, Platform } from "react-native";
-import { ActivityItem } from "@/app/user/customer/activity/index.tsx";
+
 // Hàm dịch các tên trường sang tiếng Việt
 export const translateFieldName = (field: string): string => {
   // const fieldTranslations: Record<string, string> = {
@@ -162,6 +161,20 @@ export const groupActivitiesByDate = (activities: ActivityItem[]) => {
     return groups;
   }, {} as Record<string, ActivityItem[]>);
 };
+
+export interface ActivityItem {
+  requestid: string;
+  drivername: string | null;
+  driverphone: string | null;
+  requesttype: string;
+  requestdetailid: string;
+  servicepackagename: string;
+  pickuplocation: string;
+  destination: string;
+  requeststatus: string;
+  createddate: string;
+  staffid: string | null;
+}
 
 const utils = {
   translateFieldName,

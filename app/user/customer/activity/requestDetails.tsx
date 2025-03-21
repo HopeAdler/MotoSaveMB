@@ -1,16 +1,15 @@
 import { Box } from "@/components/ui/box";
 import { Text } from "@/components/ui/text";
-import { ScrollView } from "react-native";
+import { ScrollView, Image, Linking, Alert } from "react-native";
 import { useContext, useEffect, useState, useCallback } from "react";
 import { AuthContext } from "@/app/context/AuthContext";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import axios from "axios";
-import { MapPin, Clock, AlertCircle, Phone, User, Car, CreditCard } from "lucide-react-native";
+import { MapPin, Clock, AlertCircle, Phone, CreditCard, MessageSquare, ChevronLeft } from "lucide-react-native";
 import { Pressable } from "@/components/ui/pressable";
-import { GoBackButton } from "@/components/custom/GoBackButton";
-import { StatusBadge, getStatusColor } from "@/components/custom/StatusBadge";
+import { getStatusColor } from "@/components/custom/StatusBadge";
 import { formatDate } from "@/app/utils/utils";
-import { Linking } from "react-native";
+import { handlePhoneCall, decodedToken } from "@/app/utils/utils";
 
 interface RequestDetail {
   customername: string;
@@ -133,6 +132,8 @@ export default function RequestDetailsScreen() {
   const [requestDetail, setRequestDetail] = useState<RequestDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [fallbackImage, setFallbackImage] = useState(false);
+  const router = useRouter();
 
   const fetchRequestDetail = useCallback(async () => {
     try {
@@ -154,6 +155,30 @@ export default function RequestDetailsScreen() {
       Linking.openURL(`tel:${requestDetail.driverphone}`);
     }
   }, [requestDetail?.driverphone]);
+
+  const handleCall = useCallback(() => {
+    if (requestDetail?.driverphone) {
+      handlePhoneCall(requestDetail.driverphone);
+    } else {
+      Alert.alert("Error", "Driver phone number not available");
+    }
+  }, [requestDetail?.driverphone]);
+
+  const handleChat = useCallback(() => {
+    router.push({
+      pathname: "/user/customer/home/chatScreen",
+      params: {
+        currentUserId: decodedToken(token)?.id,
+        staffId: requestDetail?.staffid,
+        requestDetailId: requestDetail?.requestdetailid,
+      }
+    });
+  }, [requestDetail, token]);
+
+  const handleImageError = () => {
+    // Fallback to default avatar
+    setFallbackImage(true);
+  };
 
   useEffect(() => {
     fetchRequestDetail();
@@ -185,11 +210,20 @@ export default function RequestDetailsScreen() {
     );
   }
 
+  const statusColorClass = getStatusColor(requestDetail.requeststatus);
+
   return (
     <Box className="flex-1 bg-gray-50">
       <ScrollView>
-        <Box className="bg-blue-600 px-4 pt-12">
-          <GoBackButton color="white" />
+        <Box className="bg-blue-600 px-4 pt-6">
+          <Box className="mb-2">
+            <Pressable
+              onPress={() => router.back()}
+              className="w-8 h-8 items-center justify-center bg-white/20 rounded-lg"
+            >
+              <ChevronLeft color="white" size={24} />
+            </Pressable>
+          </Box>
         </Box>
 
         <Box className="bg-blue-600 px-4 pb-6 rounded-b-[32px]">
@@ -206,12 +240,57 @@ export default function RequestDetailsScreen() {
         </Box>
 
         <Box className="px-4 -mt-6">
-          <Box className="bg-white rounded-2xl shadow-sm overflow-hidden mb-4">
-            <Box className={`w-full py-2 ${getStatusColor(requestDetail.requeststatus)}`}>
-              <Text className="text-center font-medium">
-                {requestDetail.requeststatus}
-              </Text>
+          {requestDetail.drivername && (
+            <Box className="bg-white rounded-2xl shadow-sm overflow-hidden mb-4">
+              <Box className={`w-full py-2 ${statusColorClass}`}>
+                <Text className="text-center font-medium">
+                  {requestDetail.requeststatus}
+                </Text>
+              </Box>
+              <Box className="p-4">
+                <Box className="space-y-4">
+                  <Box className="flex-row items-center">
+                    <Box className="w-16 h-16 rounded-full overflow-hidden border-2 border-gray-100">
+                      <Image
+                        source={{
+                          uri: fallbackImage ? "https://example.com/default-avatar.png" : "https://pbs.twimg.com/media/GEXDdESbIAAd5Qt?format=jpg&name=large",
+                        }}
+                        className="w-full h-full"
+                        resizeMode="cover"
+                        onError={handleImageError}
+                      />
+                    </Box>
+                    <Box className="ml-4 flex-1">
+                      <Text className="text-lg font-semibold text-gray-900">{requestDetail.drivername}</Text>
+                      <Text className="text-base text-gray-600 mt-1">
+                        {requestDetail.brandname} • {requestDetail.licenseplate}
+                      </Text>
+                    </Box>
+                  </Box>
+
+                  <Box className="flex-row space-x-3 mt-2 pt-4 border-t border-gray-100">
+                    <Pressable
+                      onPress={handleCall}
+                      className="flex-1 flex-row items-center justify-center bg-blue-50 p-3 rounded-xl active:opacity-80"
+                    >
+                      <Phone size={20} color="#3B82F6" />
+                      <Text className="ml-2 text-blue-600 font-medium">Call Driver</Text>
+                    </Pressable>
+                    
+                    <Pressable
+                      onPress={handleChat}
+                      className="flex-1 flex-row items-center justify-center bg-green-50 p-3 rounded-xl active:opacity-80"
+                    >
+                      <MessageSquare size={20} color="#059669" />
+                      <Text className="ml-2 text-green-600 font-medium">Chat</Text>
+                    </Pressable>
+                  </Box>
+                </Box>
+              </Box>
             </Box>
+          )}
+
+          <Box className="bg-white rounded-2xl shadow-sm mb-4">
             <Box className="p-4">
               <Text className="text-lg font-semibold text-gray-900 mb-4">
                 Service Information
@@ -244,56 +323,26 @@ export default function RequestDetailsScreen() {
                     </Text>
                   </Box>
                 </Box>
-
-                <Box className="flex-row items-center">
-                  <CreditCard size={20} color="#6B7280" />
-                  <Box className="ml-3">
-                    <Text className="text-sm text-gray-500">Total Price</Text>
-                    <Text className="text-base text-gray-900">
-                      {requestDetail.totalprice.toLocaleString('vi-VN')} VND
-                    </Text>
-                  </Box>
-                </Box>
               </Box>
             </Box>
           </Box>
 
-          {requestDetail.drivername && (
-            <Box className="bg-white rounded-2xl shadow-sm p-4 mb-4">
+          <Box className="bg-white rounded-2xl shadow-sm mb-4">
+            <Box className="p-4">
               <Text className="text-lg font-semibold text-gray-900 mb-4">
-                Driver Information
+                Payment Information
               </Text>
-              <Box className="space-y-4">
-                <Box className="flex-row items-center">
-                  <User size={20} color="#6B7280" />
-                  <Box className="ml-3">
-                    <Text className="text-sm text-gray-500">Driver Name</Text>
-                    <Text className="text-base text-gray-900">{requestDetail.drivername}</Text>
-                  </Box>
+              <Box className="flex-row items-center justify-between bg-gray-50 p-4 rounded-xl">
+                <Box>
+                  <Text className="text-sm text-gray-500">Total Price</Text>
+                  <Text className="text-xl font-bold text-gray-900">
+                    {requestDetail.totalprice.toLocaleString('vi-VN')} VND
+                  </Text>
                 </Box>
-
-                <Box className="flex-row items-center">
-                  <Phone size={20} color="#6B7280" />
-                  <Box className="ml-3">
-                    <Text className="text-sm text-gray-500">Phone Number</Text>
-                    <Text className="text-base text-gray-900">{requestDetail.driverphone}</Text>
-                  </Box>
-                </Box>
-
-                {requestDetail.licenseplate && (
-                  <Box className="flex-row items-center">
-                    <Car size={20} color="#6B7280" />
-                    <Box className="ml-3">
-                      <Text className="text-sm text-gray-500">Vehicle Info</Text>
-                      <Text className="text-base text-gray-900">
-                        {requestDetail.licenseplate} - {requestDetail.brandname}
-                      </Text>
-                    </Box>
-                  </Box>
-                )}
+                <CreditCard size={24} color="#6B7280" />
               </Box>
             </Box>
-          )}
+          </Box>
         </Box>
       </ScrollView>
     </Box>

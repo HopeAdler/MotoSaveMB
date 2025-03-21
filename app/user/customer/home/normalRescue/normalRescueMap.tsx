@@ -692,6 +692,7 @@ const RescueMapScreen = () => {
         }
       },
       (event: any) => {
+        console.log(event)
         if (event.action === "leave" || event.action === "timeout") {
           setUsers((prev) => {
             const updated = new Map(prev);

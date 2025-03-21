@@ -9,7 +9,7 @@ import React, { useContext, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, TouchableOpacity, View } from "react-native";
 import Icon from "react-native-vector-icons/Feather";
 // Import the ActionSheet components from gluestack-ui
-import { updateRequestStatus } from "@/app/services/beAPI";
+import { createRepairRequest, updateRequestStatus } from "@/app/services/beAPI";
 import { getDirections } from "@/app/services/goongAPI";
 import { decodedToken, decodePolyline } from "@/app/utils/utils";
 import MapViewComponent from "@/components/custom/MapViewComponent";
@@ -33,6 +33,8 @@ type User = {
 };
 
 interface RequestDetail {
+  requestid: string,
+  servicepackagename: string,
   customername: string;
   customerphone: string;
   pickuplocation: string;
@@ -111,6 +113,9 @@ const RequestMap: React.FC = () => {
     }
     const result = await updateRequestStatus(requestdetailid, token, newStatus);
     fetchRequestDetail();
+    if (result && requestDetail?.requeststatus === "Processing" && requestDetail?.servicepackagename === "Cứu hộ đến trạm") {
+      createRepairRequest(requestDetail?.requestid, token)
+    }
   };
 
   const changeButtonColor = (): string => {
@@ -263,7 +268,7 @@ const RequestMap: React.FC = () => {
   }
   return (
     <Box className="flex-1">
-      <GoBackButton/>
+      <GoBackButton />
       <MapViewComponent users={users} currentLoc={focusOnMe ? currentLoc : originCoordinates} focusMode={[focusOnMe, setFocusOnMe]} isActionSheetOpen={isActionSheetOpen}>
         <MapboxGL.Camera ref={camera}
           centerCoordinate={
@@ -340,6 +345,20 @@ const RequestMap: React.FC = () => {
               <Text className="text-green-600 font-semibold">
                 💰 Tổng tiền: {requestDetail?.totalprice.toLocaleString()} VND
               </Text>
+              <View
+                className="flex flex-row justify-around"
+              >
+                <Button
+                  className={`${changeButtonColor()} p-2 rounded`}
+                  size="lg"
+                  onPress={changeRequestStatus}
+                  disabled={requestDetail?.requeststatus === 'Done' ? true : false}
+                >
+                  <Text className="text-white text-center">
+                    {changeButtonTitle()}
+                  </Text>
+                </Button>
+              </View>
             </View>
           )}
         </ActionsheetContent>
@@ -355,21 +374,6 @@ const RequestMap: React.FC = () => {
       </TouchableOpacity>
       {/* )} */}
 
-      {/* Buttons Container – fixed at the bottom */}
-      <View
-        className="absolute bottom-5 left-0 right-0 flex flex-row justify-around"
-      >
-        <Button
-          className={`${changeButtonColor()} p-2 rounded`}
-          size="lg"
-          onPress={changeRequestStatus}
-          disabled={requestDetail?.requeststatus === 'Done' ? true : false}
-        >
-          <Text className="text-white text-center">
-            {changeButtonTitle()}
-          </Text>
-        </Button>
-      </View>
     </Box>
   );
 };

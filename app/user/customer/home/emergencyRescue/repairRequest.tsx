@@ -1,17 +1,106 @@
-import { useLocalSearchParams } from "expo-router";
-import React, { useState } from "react";
+import { router, useLocalSearchParams } from "expo-router";
+import React, { useContext, useEffect, useState } from "react";
 import { Box } from "@/components/ui/box";
 import { Text } from "@/components/ui/text";
-import { Car, CheckCircle2, Phone, User } from "lucide-react-native";
+import {
+  AlertCircle,
+  Car,
+  CheckCircle2,
+  ChevronDownIcon,
+  MessageSquare,
+  Phone,
+  User,
+} from "lucide-react-native";
+import axios from "axios";
+import AuthContext from "@/app/context/AuthContext";
+import { RepairQuote, RepairRequestDetail } from "@/app/context/formFields";
+import { FlatList, Pressable, ScrollView } from "react-native";
+import { Input, InputField } from "@/components/ui/input";
+import {
+  Select,
+  SelectTrigger,
+  SelectInput,
+  SelectIcon,
+  SelectPortal,
+  SelectBackdrop,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+import { Button, ButtonText } from "@/components/ui/button";
+import { getAutocomplete } from "@/app/services/goongAPI";
+import { decodedToken, handlePhoneCall } from "@/app/utils/utils";
 
-const repairRequest = () => {
+const RepairRequestScreen = () => {
   const { requestid } = useLocalSearchParams<{
     requestid: string;
   }>();
-  console.log(requestid);
-  const [status, setStatus] = useState("Pending");
+  const [paymentMethod, setPaymentMethod] = useState("Tiền mặt");
+  const [destinationQuery, setDestinationQuery] = useState("");
+  const [destinationResults, setDestinationResults] = useState<any[]>([]);
+  const [destinationSelected, setDestinationSelected] = useState(false);
+  const [originCoordinates, setOriginCoordinates] = useState({
+    latitude: 0,
+    longitude: 0,
+  });
+  const handleDestinationChange = (text: string) => {
+    setDestinationQuery(text);
+    setDestinationSelected(false);
+  };
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (destinationQuery.trim()) {
+        getAutocomplete(
+          destinationQuery,
+          originCoordinates.latitude && originCoordinates.longitude
+            ? `${originCoordinates.latitude},${originCoordinates.longitude}`
+            : ""
+        ).then(setDestinationResults);
+      } else {
+        setDestinationResults([]);
+      }
+    }, 500);
+    return () => clearTimeout(timeout);
+  }, [destinationQuery, originCoordinates]);
+  const { token } = useContext(AuthContext);
+  const userId = decodedToken(token)?.id;
+  const [requestDetail, setRequestDetail] =
+    useState<RepairRequestDetail | null>(null);
+  const [repairQuotes, setRepairQuotes] = useState<RepairQuote[]>([]);
+  const fetchRequestDetail = async () => {
+    try {
+      const response = await axios.get<RepairRequestDetail>(
+        `https://motor-save-be.vercel.app/api/v1/requests/repair/detail/${requestid}`,
+        { headers: { Authorization: "Bearer " + token } }
+      );
+      setRequestDetail(response.data);
+    } catch (error) {
+      console.error("Error fetching request details:", error);
+    }
+  };
+  const fetchRepairQuote = async () => {
+    try {
+      const response = await axios.get<RepairQuote[]>(
+        `https://motor-save-be.vercel.app/api/v1/repairquotes/requestdetail/${requestDetail?.requestdetailid}`
+      );
+      setRepairQuotes(response.data);
+    } catch (error) {
+      console.error("Error fetching repair quotes:", error);
+    }
+  };
+  useEffect(() => {
+    fetchRequestDetail();
+    const interval = setInterval(fetchRequestDetail, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (requestDetail?.requeststatus !== "Pending" && requestDetail?.requeststatus !== "Inspecting" ) {
+      fetchRepairQuote();
+    }
+  }, [requestDetail?.requeststatus]);
+
   const getStatusColor = () => {
-    switch (status) {
+    switch (requestDetail?.requeststatus) {
       case "Pending":
         return "bg-orange-500";
       case "Inspecting":
@@ -28,6 +117,22 @@ const repairRequest = () => {
         return "bg-gray-200";
     }
   };
+
+  const handleCall = () => {
+    handlePhoneCall(requestDetail?.mechanicphone);
+  };
+
+  const toChatScreen = () => {
+    router.push({
+      pathname: "/user/customer/home/chatScreen",
+      params: {
+        currentUserId: userId,
+        staffId: requestDetail?.mechanicid,
+        requestDetailId: requestDetail?.requestdetailid,
+      },
+    });
+  };
+
   const renderProgressSteps = () => {
     const steps = [
       { title: "Pending", status: "Pending" },
@@ -38,7 +143,9 @@ const repairRequest = () => {
       { title: "Done", status: "Done" },
     ];
 
-    const currentStepIndex = steps.findIndex((step) => step.status === status);
+    const currentStepIndex = steps.findIndex(
+      (step) => step.status === requestDetail?.requeststatus
+    );
 
     return (
       <Box className="mt-6">
@@ -83,17 +190,22 @@ const repairRequest = () => {
     );
   };
   return (
-    <Box className="flex-1 px-4 py-6">
-      <Box className="bg-white rounded-2xl shadow-sm p-4 mb-4">
-        <Text className="text-lg font-semibold text-gray-900 mb-4">
-          Mechanic Information
-        </Text>
-        <Box className="space-y-4">
+    <ScrollView
+      contentContainerStyle={{ flexGrow: 1 }}
+      keyboardShouldPersistTaps="handled"
+    >
+      <Box className="flex-1 px-4 py-6">
+        <Box className="bg-white rounded-2xl shadow-sm p-4 mb-4">
+          <Text className="text-lg font-bold text-gray-900 mb-4 text-center">
+            Mechanic Information
+          </Text>
           <Box className="flex-row items-center">
             <User size={20} color="#6B7280" />
             <Box className="ml-3">
               <Text className="text-sm text-gray-500">Mechanic Name</Text>
-              <Text className="text-base text-gray-900">Nguyen Van A</Text>
+              <Text className="text-base text-gray-900">
+                {requestDetail?.mechanicname}
+              </Text>
             </Box>
           </Box>
 
@@ -101,25 +213,176 @@ const repairRequest = () => {
             <Phone size={20} color="#6B7280" />
             <Box className="ml-3">
               <Text className="text-sm text-gray-500">Phone Number</Text>
-              <Text className="text-base text-gray-900">0947424890</Text>
+              <Text className="text-base text-gray-900">
+                {requestDetail?.mechanicphone}
+              </Text>
             </Box>
           </Box>
-
           <Box className="flex-row items-center">
             <Car size={20} color="#6B7280" />
             <Box className="ml-3">
               <Text className="text-sm text-gray-500">Station</Text>
-              <Text className="text-base text-gray-900">Station 1</Text>
+              <Text className="text-base text-gray-900">
+                {requestDetail?.stationname}
+              </Text>
             </Box>
           </Box>
+          <Box className="flex-row items-center">
+            <AlertCircle size={20} color="#6B7280" />
+            <Box className="ml-3">
+              <Text className="text-sm text-gray-500">Address</Text>
+              <Text className="text-base text-gray-900">
+                {requestDetail?.stationaddress}
+              </Text>
+            </Box>
+          </Box>
+          <Box className="flex-row justify-center mt-6">
+            <Text
+              className="text-blue-600 font-semibold"
+              onPress={() =>
+                router.navigate(
+                  "/user/customer/home/emergencyRescue/repairCostPreview"
+                )
+              }
+            >
+              Xem bảng giá sửa xe
+            </Text>
+          </Box>
         </Box>
+        <Box className="bg-white rounded-2xl shadow-sm p-4 mb-4">
+          {renderProgressSteps()}
+        </Box>
+        {/* Repair Quote List */}
+        {requestDetail?.requeststatus !== "Pending" && requestDetail?.requeststatus !== "Inspecting" && (
+          <Box className="flex-1 bg-white rounded-2xl shadow-sm p-4 mb-4">
+            <Text className="text-lg font-bold text-gray-900 mb-4 text-center">
+              Repair Quote
+            </Text>
+
+            <FlatList
+              data={repairQuotes}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
+                <Box className="flex-row justify-between items-center py-3 border-b border-gray-500">
+                  <Box>
+                    <Text className="text-base font-medium text-gray-900">
+                      {item.repairname}
+                    </Text>
+                    {/* <Text className="text-sm text-gray-500">{item.detail}</Text> */}
+                  </Box>
+                  <Text className="text-base font-semibold text-gray-900">
+                    {item.cost.toLocaleString()} VND
+                  </Text>
+                </Box>
+              )}
+            />
+
+            {/* Total Price */}
+            <Box className="flex-row justify-between items-center my-4 pt-3">
+              <Text className="text-base font-semibold text-gray-900">
+                Total Price
+              </Text>
+              <Text className="text-lg font-bold text-red-500">
+                {requestDetail?.totalprice} VND
+              </Text>
+            </Box>
+
+            {/* Return vehicle location */}
+            <Box className="mt-2">
+              <Text className="text-base font-semibold text-gray-900 mb-2">
+                Return vehicle location (Optional)
+              </Text>
+              <Input variant="outline" size="md" className="bg-white">
+                <InputField
+                  placeholder="Search destination"
+                  value={destinationQuery}
+                  onChangeText={handleDestinationChange}
+                />
+              </Input>
+            </Box>
+            {destinationResults.length > 0 && (
+              <FlatList
+                data={destinationResults}
+                keyExtractor={(_item, index) => index.toString()}
+                className="bg-white rounded max-h-40"
+                renderItem={({ item }) => (
+                  <Pressable
+                    onPress={() => {
+                      setDestinationQuery(item.description);
+                    }}
+                    className="p-2"
+                  >
+                    <Text className="text-black">{item.description}</Text>
+                  </Pressable>
+                )}
+              />
+            )}
+            {/* Payment method */}
+            <Box className="mt-4">
+              <Text className="text-base font-semibold text-gray-900 mb-2">
+                Payment Method
+              </Text>
+              <Select
+                selectedValue={paymentMethod}
+                onValueChange={(value: any) => setPaymentMethod(value)}
+              >
+                <SelectTrigger className="border border-gray-200 rounded-xl p-5 flex-row items-center justify-between bg-gray-50 h-13">
+                  <SelectInput
+                    placeholder="Select payment method"
+                    className="text-lg flex-1"
+                  />
+                  <SelectIcon as={ChevronDownIcon} />
+                </SelectTrigger>
+                <SelectPortal>
+                  <SelectBackdrop />
+                  <SelectContent>
+                    <SelectItem label="Tiền mặt" value="Tiền mặt" />
+                    <SelectItem label="Zalopay" value="Zalopay" />
+                  </SelectContent>
+                </SelectPortal>
+              </Select>
+            </Box>
+
+            {/* Action Buttons */}
+            <Box className="flex-row justify-between mt-6">
+              <Button
+                variant="outline"
+                className="flex-1 mx-2 border-red-500"
+                onPress={() => console.log("Cancel Pressed")}
+              >
+                <ButtonText className="text-red-500">Cancel</ButtonText>
+              </Button>
+
+              <Button
+                variant="solid"
+                className="flex-1 mx-2 bg-blue-500"
+                onPress={() => console.log("Confirm Pressed")}
+              >
+                <ButtonText className="text-white">Confirm</ButtonText>
+              </Button>
+            </Box>
+          </Box>
+        )}
+        {/* Phone and chat button */}
+        {requestDetail?.requeststatus !== "Pending" && (
+          <>
+            <Pressable
+              onPress={handleCall}
+              className="absolute top-20 right-5 w-10 h-10 bg-blue-500 rounded-full items-center justify-center shadow-sm"
+            >
+              <Phone size={18} color="white" />
+            </Pressable>
+            <Pressable
+              onPress={toChatScreen}
+              className="absolute top-40 right-5 w-10 h-10 bg-blue-500 rounded-full items-center justify-center shadow-sm"
+            >
+              <MessageSquare size={18} color="white" />
+            </Pressable>
+          </>
+        )}
       </Box>
-      <Box className="bg-white rounded-2xl shadow-sm p-4 mb-4">
-        {renderProgressSteps()}
-      </Box>
-      <Box className="flex-1 bg-white rounded-2xl shadow-sm p-4 mb-4"></Box>
-    </Box>
+    </ScrollView>
   );
 };
 
-export default repairRequest;
+export default RepairRequestScreen;

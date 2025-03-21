@@ -1,3 +1,4 @@
+import { acceptRepairRequest } from "@/app/services/beAPI";
 import { Box } from "@/components/ui/box";
 import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
@@ -9,19 +10,20 @@ import { View } from "react-native";
 
 interface RepairRequestItem {
   requestid: string;
-  servicepackagename: string;
-  requestdetailid: string;
-  requesttype: string;
   customername: string;
   customerphone: string;
-  stationid: string;
+  requesttype: string;
+  servicepackagename: string;
+  requestdetailid: string;
   requeststatus: string;
   createddate: string;
 }
-export const renderItem = ({
+export const renderRepairRequestItem = ({
+  token,
   item,
-  router,
+  router
 }: {
+  token: string
   item: RepairRequestItem;
   router: Router;
 }) => (
@@ -33,7 +35,6 @@ export const renderItem = ({
     <VStack space="sm">
       <Text className="text-lg font-bold">{item.customername}</Text>
       <Text className="text-gray-600">📞 {item.customerphone}</Text>
-      <Text className="text-gray-700">📍 {item.stationid}</Text>
       <Text className="text-gray-500">
         🕒 {moment(item.createddate).format("DD/MM/YYYY HH:mm")}
       </Text>
@@ -41,21 +42,12 @@ export const renderItem = ({
         <Button
           className="bg-blue-500 p-2 rounded mt-2"
           onPress={async () => {
-            // if (!pubnub) {
-            //     Alert.alert("Error", "PubNub is not initialized");
-            //     return;
-            // }
-            // try {
-            //     await acceptRequest(item.requestdetailid, token);
-            //     try {
-            //         await publishAcceptRequest(item.requestdetailid);
-            Alert.alert("Success", "Request accepted and notification sent!");
-            //     } catch (pubnubError) {
-            //         Alert.alert("Warning", "Request accepted, but notification failed");
-            //     }
-            // } catch (apiError) {
-            //     Alert.alert("Error", "Failed to accept request");
-            // }
+            try {
+              await acceptRepairRequest(item.requestdetailid, token);
+              Alert.alert("Success", "Request accepted and notification sent!");
+            } catch (apiError) {
+              Alert.alert("Error", "Failed to accept request");
+            }
           }}
         >
           <Text className="text-white text-center">Accept</Text>
@@ -66,7 +58,7 @@ export const renderItem = ({
           onPress={() =>
             router.push({
               pathname: "/user/mechanic/requests/repairRequestDetails",
-              params: { requestdetailid: item.requestdetailid.toString() },
+              params: { requestDetailId: item.requestdetailid.toString(), requestId: item.requestid.toString() },
             })
           }
         >

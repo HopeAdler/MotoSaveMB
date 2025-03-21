@@ -46,6 +46,29 @@ export interface RequestDetail {
   servicepackagename: string;
 }
 
+export interface RepairRequestDetail {
+  requestid: string;
+  requesttype: string;
+  requestdetailid: string;
+  requeststatus: string;
+  totalprice: number,
+  createddate: string;
+  stationid: string;
+  stationname: string;
+  stationaddress: string;
+  mechanicid: string;
+  mechanicname: string;
+  mechanicphone: string;
+  mechanicavatar: string;
+}
+
+export interface RepairQuote {
+  id: string;
+  repairname: string;
+  detail: string;
+  cost: number;
+  requestdetailid: string;
+}
 
 const formFields = {
   registerForm,
