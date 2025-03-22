@@ -58,7 +58,7 @@ export const renderRepairRequestItem = ({
           onPress={() =>
             router.push({
               pathname: "/user/mechanic/requests/repairRequestDetails",
-              params: { requestdetailid: item.requestdetailid.toString() },
+              params: { requestDetailId: item.requestdetailid.toString(), requestId: item.requestid.toString() },
             })
           }
         >

@@ -42,6 +42,13 @@ export interface Feedback {
   comment: string;
 }
 
+export interface RepairQuote {
+  detail: string;
+  cost: number;
+  requestdetailid: string,
+  repaircostpreviewid: number,
+}
+
 // Hàm fetch danh sách station
 export async function fetchStations(): Promise<any> {
   try {
@@ -160,6 +167,52 @@ export async function createFeedback(
   }
 }
 
+export async function createRepairQuote(
+  payload: RepairQuote,
+  token: string
+): Promise<any> {
+  try {
+    const response = await axios.post(
+      `https://motor-save-be.vercel.app/api/v1/repairquotes`,
+      payload,
+      {
+        headers: {
+          Authorization: "Bearer " + token,
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error creating repairquote", error);
+    throw error;
+  }
+}
+export async function updateRepairRequestStatus(
+  requestdetailid: string,
+  token: string,
+  status: string
+): Promise<any> {
+  try {
+    const response = await axios.put(
+      `https://motor-save-be.vercel.app/api/v1/requests/${requestdetailid}/repair/status`,
+      { newStatus: status },
+      {
+        headers: {
+          Authorization: "Bearer " + token,
+        },
+      }
+    );
+    return response.data;
+  } catch (error: any) {
+    if (error.response) {
+      console.error("Error updating repair request status:", error.response.data);
+    } else {
+      console.error("Network or unknown error:", error.message);
+    }
+    throw error;
+  }
+}
+
 export async function updateRequestStatus(
   requestdetailid: string,
   token: string,
@@ -234,6 +287,30 @@ export async function getRepairRequestsByMechanic(token: string): Promise<any> {
   }
 }
 
+export async function getRepairRequestDetailForMechanic(token: string, requestId: string): Promise<any> {
+  try {
+    const response = await axios.get(
+      `https://motor-save-be.vercel.app/api/v1/requests/mechanic/repair/detail/${requestId}`,
+      { headers: { Authorization: "Bearer " + token } }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching requests:", error);
+  }
+}
+
+export async function getRepairQuotesByRequestDetailId(requestDetailId: string): Promise<any> {
+  try {
+    const response = await axios.get(
+      `https://motor-save-be.vercel.app/api/v1/repairquotes/requestdetail/${requestDetailId}`,
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching repair quotes:", error);
+  }
+}
+
+
 export async function acceptRequest(requestdetailid: string, token: string): Promise<any> {
   try {
     await axios.put(
@@ -273,6 +350,15 @@ export async function acceptRepairRequest(requestdetailid: string, token: string
   } catch (error) {
     console.error("Error accepting request:", error);
     Alert.alert("Error", "Failed to accept repair request");
+  }
+}
+
+export async function getRepairCostPreview() {
+  try {
+    const response = await axios.get("https://motor-save-be.vercel.app/api/v1/repaircostpreviews");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching repaircostpreviews:", error);
   }
 }
 

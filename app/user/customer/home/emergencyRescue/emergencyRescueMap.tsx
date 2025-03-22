@@ -26,6 +26,9 @@ import {
   ChevronUp,
   CircleChevronDown,
   LocateFixed, Cog,
+  MapPin,
+  Pen,
+  Pin,
 } from "lucide-react-native";
 import React, { useContext, useEffect, useRef, useState } from "react";
 import { Alert, FlatList, NativeEventEmitter, NativeModules, Text } from "react-native";
@@ -438,11 +441,6 @@ const EmergencyRescueMapScreen = () => {
           if (radius <= MAX_RADIUS) {
             sendRideRequestToDrivers(radius + 2000, reqId);
           }
-          // else {
-          //   Alert.alert("No drivers available", "No drivers available nearby. Please try again later.");
-          //   handleCancelSearch();
-          //   return
-          // }
         }
       }, 20000);
     } else {
@@ -479,14 +477,6 @@ const EmergencyRescueMapScreen = () => {
         sendRideRequestToDrivers(newRadius, reqId);
       }, 5000);
     }
-    //    else {
-    //     Alert.alert("No drivers available", "No drivers available in search radius");
-    //     // if (handleCancelSearch) {
-    //       handleCancelSearch();
-    //     // }
-    //     return
-    //   }
-    // }
   };
 
   // Bắt đầu tìm tài xế
@@ -678,32 +668,46 @@ const EmergencyRescueMapScreen = () => {
             />
           )}
           {currentLoc.latitude !== 0 && (
-            <MapboxGL.PointAnnotation
-              id="current-location"
-              coordinate={[currentLoc.longitude, currentLoc.latitude]}
-            >
-              <Box style={{ width: 28, height: 28, alignItems: "center", justifyContent: "center" }}>
-                <LocateFixed color="#0080FF" size={28} />
-              </Box>
-            </MapboxGL.PointAnnotation>
+            // <MapboxGL.PointAnnotation
+            //   id="current-location"
+            //   coordinate={[currentLoc.longitude, currentLoc.latitude]}
+            // >
+            <Box style={{ width: 20, height: 20, alignItems: "center", justifyContent: "center" }}>
+
+              <MapboxGL.LocationPuck pulsing="default" puckBearingEnabled puckBearing="course" key="current-location" visible />
+
+            </Box>
+            // </MapboxGL.PointAnnotation>
           )}
           {originCoordinates.latitude !== 0 && (
-            <MapboxGL.PointAnnotation
-              id="origin-marker"
-              coordinate={[originCoordinates.longitude, originCoordinates.latitude]}
-            >
-              <MapboxGL.Callout title="Origin" />
-            </MapboxGL.PointAnnotation>
+            // <MapboxGL.PointAnnotation
+            //   id="origin-marker"
+            //   coordinate={[originCoordinates.longitude, originCoordinates.latitude]}
+
+            // >
+            <MapboxGL.MarkerView id="origin-marker" coordinate={[originCoordinates.longitude, originCoordinates.latitude]}>
+
+              {/* <MapboxGL.Callout title="Origin" /> */}
+              <Box style={{ width: 200, height: 200, alignItems: "center", justifyContent: "center", top: -10 }}>
+                {/* <LocateFixed color="#374151" size={28} /> */}
+                <Pin color="#374151" size={28} absoluteStrokeWidth fill={"#3B82F6"} scale={0.9} />
+              </Box>
+            </MapboxGL.MarkerView>
+            // </MapboxGL.PointAnnotation>
           )}
           {destinationCoordinates.latitude !== 0 && (
-            <MapboxGL.PointAnnotation
+            <MapboxGL.MarkerView
               id="destination-marker"
               coordinate={[destinationCoordinates.longitude, destinationCoordinates.latitude]}
             >
-              <Box className="w-40 h-40 items-center relative z-10 -bottom-1 border-red-400 border-2">
+              {/* <Box className="w-40 h-40 items-center relative z-10 -bottom-1 border-red-400 border-2">
                 <CircleChevronDown color="#0080FF" size={30} />
+              </Box> */}
+              <Box style={{ width: 50, height: 150, alignItems: "center", justifyContent: "center", top: -10, right: -10 }}>
+                {/* <LocateFixed color="#374151" size={28} /> */}
+                <MapPin color="#374151" size={28} absoluteStrokeWidth fill={"#3B82F6"} scale={0.9} rotation={0} />
               </Box>
-            </MapboxGL.PointAnnotation>
+            </MapboxGL.MarkerView>
           )}
           {/* Vẽ marker cho các station trong phạm vi phục vụ */}
           {stations
@@ -728,7 +732,6 @@ const EmergencyRescueMapScreen = () => {
                 >
                   <Box
                     style={{ width: 28, height: 28, alignItems: "center", justifyContent: "center", backgroundColor: "black" }}
-                  // className="bg-black border-2 border-white rounded-full "
                   >
 
                     <Cog color="#FF0000" size={28} />
