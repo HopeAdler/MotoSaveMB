@@ -262,6 +262,17 @@ export async function fetchRequests(token: string): Promise<any> {
     console.error("Error fetching requests:", error);
   }
 }
+export async function fetchStationOfAStaff(token: string): Promise<any> {
+  try {
+    const response = await axios.get(
+      "https://motor-save-be.vercel.app/api/v1/staffinstations/station/staff",
+      { headers: { Authorization: "Bearer " + token } }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching requests:", error);
+  }
+}
 
 export async function getPendingRepairRequests(token: string): Promise<any> {
   try {
