@@ -70,6 +70,8 @@ const RescueMapScreen = () => {
   } = usePubNubService();
   const [acceptedDriverId, setAcceptedDriverId] = useState<string | null>(null);
   // const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // State để lưu vehicle id đã chọn
+  const [selectedVehicleId, setSelectedVehicleId] = useState<string>("");
   const isSearchingRef = useRef(isSearching);
   useEffect(() => {
     isSearchingRef.current = isSearching;
@@ -816,6 +818,7 @@ const RescueMapScreen = () => {
           isSearching={isSearching}
           directionsInfo={directionsInfo}
           paymentMethodState={[paymentMethod, setPaymentMethod]}
+          selectVehicleState={[selectedVehicleId, setSelectedVehicleId]}
           confirmDisabled={!isLocationValid()}
         />
       )}

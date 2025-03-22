@@ -26,7 +26,7 @@ import { AuthContext } from "@/app/context/AuthContext";
 import CreateVehicleModal, { Brand } from "@/components/custom/modal/CreateVehicleModal";
 
 // Interface cho customer vehicle theo API hiện tại
-interface CustomerVehicle {
+export interface CustomerVehicle {
   vehicleid: string;
   brandname: string;
   licenseplate: string;
@@ -48,6 +48,7 @@ interface TripDetailsActionSheetProps {
   isSearching: boolean;
   directionsInfo: any;
   paymentMethodState: [string, React.Dispatch<React.SetStateAction<string>>];
+  selectVehicleState: [string, React.Dispatch<React.SetStateAction<string>>];
   confirmDisabled?: boolean;
 }
 
@@ -74,6 +75,7 @@ const TripDetailsActionSheet: React.FC<TripDetailsActionSheetProps> = ({
   isSearching,
   directionsInfo,
   paymentMethodState: [paymentMethod, setPaymentMethod],
+  selectVehicleState: [selectVehicleId, setSelectVehicleId],
 }) => {
   const { token } = useContext(AuthContext);
 
@@ -254,6 +256,7 @@ const TripDetailsActionSheet: React.FC<TripDetailsActionSheetProps> = ({
                               setSelectedVehicle("");
                             } else {
                               setSelectedVehicle(value);
+                              setSelectVehicleId(value)
                             }
                           }}
                         >

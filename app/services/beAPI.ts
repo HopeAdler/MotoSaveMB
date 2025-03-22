@@ -2,11 +2,11 @@ import axios from "axios";
 import { Alert } from "react-native";
 
 export interface RescueRequestPayload {
-  pickuplong: number;
-  pickuplat: number;
+  pickuplong: number | any;
+  pickuplat: number | any;
   deslng: number;
   deslat: number;
-  pickuplocation: string;
+  pickuplocation: string | any;
   destination: string;
   totalprice: number;
 }
@@ -20,6 +20,7 @@ export interface EmergencyRescueRequestPayload {
   destination: string;
   totalprice: number;
   stationid: string;
+  vehicleid: string;
 }
 
 export interface FloodRescueRequestPayload {
@@ -30,7 +31,7 @@ export interface FloodRescueRequestPayload {
 }
 
 export interface Transaction {
-  requestdetailid: string;
+  requestdetailid: string | any;
   zptransid: string;
   totalamount: number | null;
   paymentmethod: string;
@@ -120,6 +121,28 @@ export async function createFloodRescueRequest(
     return response.data;
   } catch (error) {
     console.error("Error creating rescue request", error);
+    throw error;
+  }
+}
+
+export async function createReturnVehicleRequest(
+  payload: RescueRequestPayload,
+  token: string,
+  requestId: string | any,
+): Promise<any> {
+  try {
+    const response = await axios.post(
+      `https://motor-save-be.vercel.app/api/v1/requests/returnVehicle/${requestId}`,
+      payload,
+      {
+        headers: {
+          Authorization: "Bearer " + token,
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error creating return request", error);
     throw error;
   }
 }
@@ -326,6 +349,20 @@ export async function acceptRequest(requestdetailid: string, token: string): Pro
   try {
     await axios.put(
       `https://motor-save-be.vercel.app/api/v1/requests/${requestdetailid}/accept`,
+      {},
+      { headers: { Authorization: "Bearer " + token } }
+    );
+    Alert.alert("Success", "Request accepted!");
+  } catch (error) {
+    console.error("Error accepting request:", error);
+    Alert.alert("Error", "Failed to accept request");
+  }
+}
+
+export async function acceptRepairQuote(requestdetailid: string | any, token: string): Promise<any> {
+  try {
+    await axios.put(
+      `https://motor-save-be.vercel.app/api/v1/requests/repairQuote/${requestdetailid}/accept`,
       {},
       { headers: { Authorization: "Bearer " + token } }
     );
