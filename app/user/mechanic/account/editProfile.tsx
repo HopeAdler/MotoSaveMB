@@ -69,7 +69,7 @@ const formatDateString = (isoDate: string): string => {
   return isoDate.split("T")[0];
 };
 
-export default function EditProfile() {
+export default function MEditProfile() {
   const { token, dispatch } = useContext(AuthContext);
   const params = useLocalSearchParams();
 

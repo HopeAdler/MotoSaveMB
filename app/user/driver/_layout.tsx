@@ -5,8 +5,9 @@ import { decodedToken } from "@/app/utils/utils";
 import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
 import "@/global.css";
 import { Tabs, useRouter, useSegments } from "expo-router";
-import { ChartArea, DollarSign, House, List, MessageCircle } from "lucide-react-native";
+import { ChartArea, DollarSign, House, List, CircleUserRound } from "lucide-react-native";
 import { useContext, useEffect, useRef, useState } from "react";
+import axios from "axios";
 
 type User = {
   uuid: string;
@@ -57,6 +58,16 @@ export default function DriverLayout() {
       });
     }
   };
+
+   useEffect(() => {
+    if (token) {
+      axios.get("https://motor-save-be.vercel.app/api/v1/auth/profile", {
+        headers: { Authorization: `Bearer ${token}` },
+      }).catch(err => {
+        console.log('Prefetch error:', err);
+      });
+    }
+  }, [token]);
 
   useEffect(() => {
     let locationSubscription: any;
@@ -158,6 +169,15 @@ export default function DriverLayout() {
             headerShown: false,
             tabBarLabel: "Thống kê",
             tabBarIcon: (tabInfo) => <ChartArea size={24} color={tabInfo.color} />,
+          }}
+        />
+      <Tabs.Screen
+          name="account"
+          options={{
+            tabBarLabel: "Account",
+            tabBarIcon: (tabInfo) => (
+              <CircleUserRound size={24} color={tabInfo.color} />
+            ),
           }}
         />
       </Tabs>
