@@ -67,6 +67,8 @@ const FloodRescueMapScreen = () => {
   const attemptedDriversRef = useRef<Set<string>>(new Set());
   const [acceptedDriverId, setAcceptedDriverId] = useState<string | null>(null);
   // const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // State để lưu vehicle id đã chọn
+  const [selectedVehicleId, setSelectedVehicleId] = useState<string>("");
   const isSearchingRef = useRef(isSearching);
   useEffect(() => {
     isSearchingRef.current = isSearching;
@@ -800,6 +802,7 @@ const FloodRescueMapScreen = () => {
           isSearching={isSearching}
           directionsInfo={null}
           paymentMethodState={[paymentMethod, setPaymentMethod]}
+          selectVehicleState={[selectedVehicleId, setSelectedVehicleId]}
           confirmDisabled={!isLocationValid()}
         />
       )}

@@ -56,6 +56,8 @@ export interface RepairRequestDetail {
   stationid: string;
   stationname: string;
   stationaddress: string;
+  long: number;
+  lat: number;
   mechanicid: string;
   mechanicname: string;
   mechanicphone: string;
