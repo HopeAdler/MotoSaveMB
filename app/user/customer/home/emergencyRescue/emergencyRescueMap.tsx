@@ -33,7 +33,7 @@ import {
 import React, { useContext, useEffect, useRef, useState } from "react";
 import { Alert, FlatList, NativeEventEmitter, NativeModules, Text } from "react-native";
 import TrackingActionSheet from "@/components/custom/TrackingActionSheet";
-import TripDetailsActionSheet from "@/components/custom/TripDetailsActionSheet";
+import TripDetailsActionSheet, { CustomerVehicle } from "@/components/custom/TripDetailsActionSheet";
 import { getCurrentLocation, requestLocationPermission, watchLocation } from "@/app/services/locationService";
 import { PayZaloEventData, processPayment, refundTransaction } from "@/app/utils/payment";
 import { decodedToken } from "@/app/utils/utils";
@@ -97,7 +97,8 @@ const EmergencyRescueMapScreen = () => {
 
   // State để lưu station đã chọn (ID)
   const [selectedStationId, setSelectedStationId] = useState<string>("");
-
+  // State để lưu vehicle id đã chọn
+  const [selectedVehicleId, setSelectedVehicleId] = useState<string>("");
   // State để lưu danh sách station (fetch qua beAPI)
   const [stations, setStations] = useState<Station[]>([]);
   useEffect(() => {
@@ -277,7 +278,8 @@ const EmergencyRescueMapScreen = () => {
       pickuplocation: originQuery,
       destination: stationQuery?.address || '',
       totalprice: fare || 0,
-      stationid: stationQuery?.id || ""
+      stationid: stationQuery?.id || "",
+      vehicleid: selectedVehicleId,
     };
     try {
       const result = await createEmergencyRescueRequest(payload, token);
@@ -302,7 +304,8 @@ const EmergencyRescueMapScreen = () => {
       pickuplocation: originQuery,
       destination: stationQuery?.name || "",
       totalprice: fare || 0,
-      stationid: stationQuery?.id || ""
+      stationid: stationQuery?.id || "",
+      vehicleid: selectedVehicleId,
     };
     try {
       const result = await createEmergencyRescueRequest(payload, token);
@@ -771,6 +774,7 @@ const EmergencyRescueMapScreen = () => {
           isSearching={isSearching}
           directionsInfo={directionsInfo}
           paymentMethodState={[paymentMethod, setPaymentMethod]}
+          selectVehicleState={[selectedVehicleId, setSelectedVehicleId]}
           confirmDisabled={!isLocationValid()}
         />
       )}
