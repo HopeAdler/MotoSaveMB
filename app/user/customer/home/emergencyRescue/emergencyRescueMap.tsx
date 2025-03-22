@@ -43,6 +43,8 @@ import { User } from "../../../../context/formFields";
 import StationSelect, { Station } from "@/components/custom/StationSelect";
 import beAPI from "@/app/services/beAPI";
 import { Filter } from "react-native-svg";
+import { OriginMarker, DestinationMarker, renderStationMarkers } from "@/components/custom/CustomMapMarker";
+import { BackButton, SearchInput, SearchResults, ActionSheetToggle } from "../../../../../components/custom/MapUIComponents";
 
 const { EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN } = process.env;
 MapboxGL.setAccessToken(`${EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN}`);
@@ -604,45 +606,34 @@ const EmergencyRescueMapScreen = () => {
 
   return (
     <Box className="flex-1">
-      {/* Nút back */}
-      <Box className="absolute top-4 left-4 z-20">
-        <Pressable
-          onPress={() => router.navigate("/user/customer/home/servicePackage")}
-          className="w-10 h-10 bg-white rounded-full items-center justify-center shadow-sm"
-        >
-          <ChevronLeft size={24} color="#374151" />
-        </Pressable>
-      </Box>
+    {/* Header & Back button */}
+    <Box className="absolute top-4 left-4 z-20">
+      <BackButton onPress={() => router.navigate("/user/customer/home/servicePackage")} />
+    </Box>
 
-      {/* Input origin và chọn station cho destination */}
-      <Box className="absolute top-0 left-0 w-full z-10 p-4 pt-16">
-        <Input variant="outline" size="md" className="bg-white">
-          <InputField
-            placeholder="Search origin"
-            value={originQuery}
-            onChangeText={handleOriginChange}
-          />
-        </Input>
-        {originResults.length > 0 && !originSelected && (
-          <FlatList
-            data={originResults}
-            keyExtractor={(_item, index) => index.toString()}
-            className="bg-white rounded max-h-40"
-            renderItem={({ item }) => (
-              <Pressable
-                onPress={() => {
-                  setOriginQuery(item.description);
-                  handleFetchOriginLocation(item.description);
-                }}
-                className="p-2"
-              >
-                <Text className="text-black">{item.description}</Text>
-              </Pressable>
-            )}
-          />
-        )}
-        {/* StationSelect để chọn destination */}
-        <Box className="mt-2">
+    {/* Input container with enhanced styling */}
+    <Box className="absolute top-0 left-0 w-full z-10 px-4 pt-16">
+      <Box className="bg-white/95 rounded-xl p-3 shadow-md">
+        {/* Origin search with improved UI */}
+        <SearchInput
+          value={originQuery}
+          onChangeText={handleOriginChange}
+          placeholder="Vui lòng nhập điểm đón"
+          onClear={() => setOriginQuery("")}
+        />
+
+        {/* Search results */}
+        <SearchResults
+          data={originResults}
+          onSelectItem={(item) => {
+            setOriginQuery(item.description);
+            handleFetchOriginLocation(item.description);
+          }}
+          visible={originResults.length > 0 && !originSelected}
+        />
+
+        {/* StationSelect with improved UI */}
+        <Box className="mt-3">
           <StationSelect
             onSelectStation={handleStationSelect}
             currentLocation={currentLoc}
@@ -652,160 +643,156 @@ const EmergencyRescueMapScreen = () => {
           />
         </Box>
       </Box>
-
-      {/* Bản đồ */}
-      <Box className="flex-1">
-        <MapViewComponent
-          users={users}
-          currentLoc={currentLoc}
-          isActionSheetOpen={showActionsheet}
-          focusMode={[true, () => { }]}
-        >
-          {originCoordinates.latitude !== 0 && (
-            <MapboxGL.Camera
-              ref={camera}
-              centerCoordinate={[
-                originCoordinates.longitude,
-                originCoordinates.latitude,
-              ]}
-            />
-          )}
-          {currentLoc.latitude !== 0 && (
-            // <MapboxGL.PointAnnotation
-            //   id="current-location"
-            //   coordinate={[currentLoc.longitude, currentLoc.latitude]}
-            // >
-            <Box style={{ width: 20, height: 20, alignItems: "center", justifyContent: "center" }}>
-
-              <MapboxGL.LocationPuck pulsing="default" puckBearingEnabled puckBearing="course" key="current-location" visible />
-
-            </Box>
-            // </MapboxGL.PointAnnotation>
-          )}
-          {originCoordinates.latitude !== 0 && (
-            // <MapboxGL.PointAnnotation
-            //   id="origin-marker"
-            //   coordinate={[originCoordinates.longitude, originCoordinates.latitude]}
-
-            // >
-            <MapboxGL.MarkerView id="origin-marker" coordinate={[originCoordinates.longitude, originCoordinates.latitude]}>
-
-              {/* <MapboxGL.Callout title="Origin" /> */}
-              <Box style={{ width: 200, height: 200, alignItems: "center", justifyContent: "center", top: -10 }}>
-                {/* <LocateFixed color="#374151" size={28} /> */}
-                <Pin color="#374151" size={28} absoluteStrokeWidth fill={"#3B82F6"} scale={0.9} />
-              </Box>
-            </MapboxGL.MarkerView>
-            // </MapboxGL.PointAnnotation>
-          )}
-          {destinationCoordinates.latitude !== 0 && (
-            <MapboxGL.MarkerView
-              id="destination-marker"
-              coordinate={[destinationCoordinates.longitude, destinationCoordinates.latitude]}
-            >
-              {/* <Box className="w-40 h-40 items-center relative z-10 -bottom-1 border-red-400 border-2">
-                <CircleChevronDown color="#0080FF" size={30} />
-              </Box> */}
-              <Box style={{ width: 50, height: 150, alignItems: "center", justifyContent: "center", top: -10, right: -10 }}>
-                {/* <LocateFixed color="#374151" size={28} /> */}
-                <MapPin color="#374151" size={28} absoluteStrokeWidth fill={"#3B82F6"} scale={0.9} rotation={0} />
-              </Box>
-            </MapboxGL.MarkerView>
-          )}
-          {/* Vẽ marker cho các station trong phạm vi phục vụ */}
-          {stations
-            .filter((station) => {
-              if (currentLoc.latitude === 0 && currentLoc.longitude === 0) return false;
-              const distance = getDistance(currentLoc, {
-                latitude: parseFloat(station.lat),
-                longitude: parseFloat(station.long),
-              });
-              return distance <= SERVICE_STATION_RADIUS;
-            })
-            .map((station) => {
-              const distance = getDistance(currentLoc, {
-                latitude: parseFloat(station.lat),
-                longitude: parseFloat(station.long),
-              });
-              return (
-                <MapboxGL.PointAnnotation
-                  key={station.id}
-                  id={`station-${station.id}`}
-                  coordinate={[parseFloat(station.long), parseFloat(station.lat)]}
-                >
-                  <Box
-                    style={{ width: 28, height: 28, alignItems: "center", justifyContent: "center", backgroundColor: "black" }}
-                  >
-
-                    <Cog color="#FF0000" size={28} />
-                    <MapboxGL.Callout title={station.name} />
-                    {/* <Text style={{ fontSize: 10, color: "white" }}>
-                      {(distance / 1000).toFixed(1)}km
-                    </Text> */}
-                  </Box>
-                </MapboxGL.PointAnnotation>
-              );
-            })}
-          {routeCoordinates.length > 0 && (
-            <MapboxGL.ShapeSource
-              id="routeSource"
-              shape={{
-                type: "Feature",
-                geometry: { type: "LineString", coordinates: routeCoordinates },
-                properties: {},
-              }}
-            >
-              <MapboxGL.LineLayer id="routeLine" style={{ lineColor: "#ff0000", lineWidth: 4 }} />
-            </MapboxGL.ShapeSource>
-          )}
-        </MapViewComponent>
-      </Box>
-
-      {/* ActionSheet hiển thị thông tin chuyến đi, thanh toán, hủy tìm kiếm */}
-      {showActionsheet && directionsInfo && (
-        <TripDetailsActionSheet
-          isOpen={showActionsheet}
-          onClose={() => setShowActionsheet(false)}
-          onPayment={paymentMethod === "Tiền mặt" ? handleFindDriver : handlePayment}
-          onCancelSearch={handleCancelSearch}
-          fare={fare}
-          fareLoading={fareLoading}
-          paymentLoading={paymentLoading}
-          isSearching={isSearching}
-          directionsInfo={directionsInfo}
-          paymentMethodState={[paymentMethod, setPaymentMethod]}
-          selectVehicleState={[selectedVehicleId, setSelectedVehicleId]}
-          confirmDisabled={!isLocationValid()}
-        />
-      )}
-      {showTracking && requestDetailId && acceptedReqDetId && acceptedReqDetStatus !== "Pending" && (
-        <TrackingActionSheet
-          isOpen={showTracking}
-          onClose={() => setShowTracking(false)}
-          requestdetailid={requestDetailId}
-          eta={directionsInfo?.distance?.text}
-          distance={directionsInfo?.duration?.text}
-          driverId={acceptedDriverId}
-          setAcceptedReqDetStatus={setAcceptedReqDetStatus}
-        />
-      )}
-      {!showActionsheet && directionsInfo && (
-        <Pressable
-          onPress={() => setShowActionsheet(true)}
-          className="absolute bottom-20 right-2 w-10 h-10 bg-white rounded-full items-center justify-center shadow-sm"
-        >
-          <ChevronUp size={24} color="#3B82F6" />
-        </Pressable>
-      )}
-      {!showTracking && requestDetailId && acceptedReqDetId && acceptedReqDetStatus !== "Pending" && (
-        <Pressable
-          onPress={() => setShowTracking(true)}
-          className="absolute bottom-20 right-2 w-10 h-10 bg-white rounded-full items-center justify-center shadow-sm"
-        >
-          <ChevronUp size={24} color="#3B82F6" />
-        </Pressable>
-      )}
     </Box>
+
+    {/* Map with enhanced markers */}
+    <Box className="flex-1">
+      <MapViewComponent
+        users={users}
+        currentLoc={currentLoc}
+        isActionSheetOpen={showActionsheet}
+        focusMode={[true, () => { }]}
+      >
+        {originCoordinates.latitude !== 0 && (
+          <MapboxGL.Camera
+            ref={camera}
+            centerCoordinate={[
+              originCoordinates.longitude,
+              originCoordinates.latitude,
+            ]}
+          />
+        )}
+
+        {/* Current location puck */}
+        {currentLoc.latitude !== 0 && (
+          <Box className="items-center justify-center">
+            <MapboxGL.LocationPuck
+              pulsing="default"
+              puckBearingEnabled
+              puckBearing="course"
+              key="current-location"
+              visible
+            />
+          </Box>
+        )}
+
+        {/* Origin marker with 2.5D effect */}
+        {originCoordinates.latitude !== 0 && (
+          <MapboxGL.MarkerView
+            id="origin-marker"
+            coordinate={[originCoordinates.longitude, originCoordinates.latitude]}
+          >
+            <Box className="items-center justify-center">
+              <OriginMarker size={32} />
+            </Box>
+          </MapboxGL.MarkerView>
+        )}
+
+        {/* Destination marker with 2.5D effect */}
+        {destinationCoordinates.latitude !== 0 && (
+          <MapboxGL.MarkerView
+            id="destination-marker"
+            coordinate={[destinationCoordinates.longitude, destinationCoordinates.latitude]}
+          >
+            <Box className="items-center justify-center">
+              <DestinationMarker size={32} />
+            </Box>
+          </MapboxGL.MarkerView>
+        )}
+
+        {/* Station markers */}
+        {renderStationMarkers(stations, currentLoc, SERVICE_STATION_RADIUS)}
+
+        {/* Route line */}
+        {routeCoordinates.length > 0 && (
+          <MapboxGL.ShapeSource
+            id="routeSource"
+            shape={{
+              type: "Feature",
+              geometry: { type: "LineString", coordinates: routeCoordinates },
+              properties: {},
+            }}
+          >
+            <MapboxGL.LineLayer
+              id="routeLine"
+              style={{
+                lineColor: "#3B82F6",
+                lineWidth: 4,
+                lineCap: "round",
+                lineJoin: "round"
+              }}
+            />
+            {/* Add a glow effect for 3D look */}
+            <MapboxGL.LineLayer
+              id="routeGlow"
+              style={{
+                lineColor: "#93C5FD",
+                lineWidth: 8,
+                lineBlur: 2,
+                lineCap: "round",
+                lineJoin: "round",
+                lineOpacity: 0.4
+              }}
+            />
+          </MapboxGL.ShapeSource>
+        )}
+      </MapViewComponent>
+    </Box>
+
+    {/* Action Sheets */}
+    {showActionsheet && directionsInfo && (
+      <TripDetailsActionSheet
+        isOpen={showActionsheet}
+        onClose={() => setShowActionsheet(false)}
+        onPayment={paymentMethod === "Tiền mặt" ? handleFindDriver : handlePayment}
+        onCancelSearch={handleCancelSearch}
+        fare={fare}
+        fareLoading={fareLoading}
+        paymentLoading={paymentLoading}
+        isSearching={isSearching}
+        directionsInfo={directionsInfo}
+        paymentMethodState={[paymentMethod, setPaymentMethod]}
+        selectVehicleState={[selectedVehicleId, setSelectedVehicleId]}
+        confirmDisabled={!isLocationValid()}
+      />
+    )}
+
+    {showTracking && requestDetailId && acceptedReqDetId && acceptedReqDetStatus !== "Pending" && (
+      <TrackingActionSheet
+        isOpen={showTracking}
+        onClose={() => setShowTracking(false)}
+        requestdetailid={requestDetailId}
+        eta={directionsInfo?.distance?.text}
+        distance={directionsInfo?.duration?.text}
+        driverId={acceptedDriverId}
+        setAcceptedReqDetStatus={setAcceptedReqDetStatus}
+      />
+    )}
+
+    {/* Action sheet toggle buttons */}
+
+    {/* <ActionSheetToggle
+    onPress={() => setShowTracking(true)}
+    visible={!!(!showActionsheet && directionsInfo)}   /> */}
+    {!showActionsheet && directionsInfo && (
+      <ActionSheetToggle
+        onPress={() => setShowActionsheet(true)}
+        visible={!showActionsheet && directionsInfo}
+      />
+
+    )}
+    {!showTracking && requestDetailId && acceptedReqDetId && acceptedReqDetStatus !== "Pending" && (
+      // <Pressable
+      //   onPress={() => setShowTracking(true)}
+      //   className="absolute bottom-20 right-2 w-10 h-10 bg-white rounded-full items-center justify-center shadow-sm"
+      // >
+      //   <ChevronUp size={24} color="#3B82F6" />
+      // </Pressable>
+      <ActionSheetToggle
+        onPress={() => setShowTracking(true)}
+        visible={!!(!showActionsheet && directionsInfo)} />
+    )}
+  </Box>
   );
 };
 
