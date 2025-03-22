@@ -1,25 +1,28 @@
+import AuthContext from "@/app/context/AuthContext";
+import LoadingScreen from "@/app/loading/loading";
+import { createRepairQuote, getRepairCostPreview, getRepairQuotesByRequestDetailId, getRepairRequestDetailForMechanic, updateRepairRequestStatus } from "@/app/services/beAPI";
+import { usePubNubService } from "@/app/services/pubnubService";
+import { decodedToken } from "@/app/utils/utils";
+import { GoBackButton } from "@/components/custom/GoBackButton";
+import { RepairStatusBadge } from "@/components/custom/MechanicStatusBadge";
+import RepairCostPreviewSelect from "@/components/custom/RepairCostPreviewSelect";
+import { CustomerInfo } from "@/components/custom/RepairCustomerInfo";
+import { VehicleInfoBox } from "@/components/custom/VehicleInfoBox";
+import { Box } from "@/components/ui/box";
+import { router, useLocalSearchParams } from "expo-router";
 import React, { useContext, useEffect, useState } from "react";
 import {
   Alert,
   Button,
   FlatList,
+  KeyboardAvoidingView,
   Platform,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
-  View,
+  TouchableOpacity
 } from "react-native";
-import { GoBackButton } from "@/components/custom/GoBackButton";
-import RepairCostPreviewSelect from "@/components/custom/RepairCostPreviewSelect";
-import { createRepairQuote, getRepairCostPreview, getRepairQuotesByRequestDetailId, getRepairRequestDetailForMechanic, updateRepairRequestStatus } from "@/app/services/beAPI";
-import { KeyboardAvoidingView } from "react-native";
-import { router, useLocalSearchParams } from "expo-router";
-import AuthContext from "@/app/context/AuthContext";
-import { decodedToken } from "@/app/utils/utils";
-import { usePubNubService } from "@/app/services/pubnubService";
-
 interface RepairRequestDetail {
   requestid: string,
   requesttype: string,
@@ -32,7 +35,11 @@ interface RepairRequestDetail {
   customerid: string,
   customername: string,
   customerphone: string,
-  customeravatar: string
+  customeravatar: string,
+  vehicleid: string,
+  licenseplate: string,
+  vehiclephoto: string,
+  vehiclecondition: string,
 }
 interface RepairCostPreview {
   id: string,
@@ -45,13 +52,13 @@ interface RepairCostPreview {
 interface RepairQuote {
   id?: string;
   index: number;
-  repairName?: string;
+  repairname?: string;
   detail: string;
   cost: number;
   requestdetailid: string;
   repaircostpreviewid: number;
-  createdDate?: string;
-  updatedDate?: string;
+  createddate?: string;
+  updateddate?: string;
   min?: number,
   max?: number
 }
@@ -66,7 +73,8 @@ export default function RepairDetailsScreen() {
   const [repairQuotes, setRepairQuotes] = useState<RepairQuote[]>([
     { index: 1, detail: "", cost: 0, requestdetailid: requestDetailId, repaircostpreviewid: 0 },
   ]);
-
+  const [isNew, setIsNew] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const fetchRepairRequestDetail = async () => {
     try {
       const results = await getRepairRequestDetailForMechanic(token, requestId);
@@ -93,38 +101,47 @@ export default function RepairDetailsScreen() {
           ...quote,
           index: idx + 1, // Ensure index starts from 1
         }));
-
+        setIsNew(false);
         setRepairQuotes(updatedResults);
       } else {
         // If no repair quotes exist, initialize a new one
         setRepairQuotes([{ index: 1, detail: "", cost: 0, requestdetailid: requestDetailId, repaircostpreviewid: 0 }]);
       }
-
+      setIsLoading(false)
       console.log("Fetched repair quotes:", results);
     } catch (error) {
       console.error("Error fetching repair quotes:", error);
     }
   };
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchRepairRequestDetail();
+    }, 7000);
+    return () => clearInterval(interval);
+  }, [requestDetailId]);
 
   useEffect(() => {
-    fetchRepairRequestDetail()
+    fetchRepairRequestDetail();
     fetchRepairCostPreview()
     fetchRepairQuotes()
   }, [])
 
   const addRepairItem = () => {
-    setRepairQuotes([
-      ...repairQuotes,
-      {
-        index: repairQuotes.length + 1,
-        repairName: "",
-        detail: "",
-        cost: 0,
-        requestdetailid: requestDetailId,
-        repaircostpreviewid: 0,
-      },
-    ]);
+    setRepairQuotes((prev) => {
+      const lastIndex = prev.length > 0 ? prev[prev.length - 1].index : 0; // Get the last item's index
+      return [
+        ...prev,
+        {
+          index: lastIndex + 1,
+          repairname: "",
+          detail: "",
+          cost: 0,
+          requestdetailid: requestDetailId,
+          repaircostpreviewid: 0,
+        },
+      ];
+    });
   };
 
   const removeRepairItem = (index: number) => {
@@ -132,12 +149,12 @@ export default function RepairDetailsScreen() {
   };
 
   const isAddDisabled = repairQuotes.some(
-    (item) => item.cost === 0 || !item.repairName
+    (item) => item.cost === 0 || !item.repairname
   );
   const isSubmitDisabled = repairQuotes.some(
     (item) => item.min !== undefined && item.max !== undefined &&
       (item.cost < item.min || item.cost > item.max)
-      || !item.repairName
+      || !item.repairname
   );
 
   const handleRepairSelection = (index: number, selectedRepair: RepairCostPreview) => {
@@ -146,7 +163,7 @@ export default function RepairDetailsScreen() {
         item.index === index
           ? {
             ...item,
-            repairName: selectedRepair.name,
+            repairname: selectedRepair.name,
             repaircostpreviewid: parseInt(selectedRepair.id),
             min: selectedRepair.min,
             max: selectedRepair.max,
@@ -187,12 +204,11 @@ export default function RepairDetailsScreen() {
   };
 
   const handleSendRepairQuote = async () => {
-    console.log(repairQuotes);
-
     try {
       await Promise.all(repairQuotes.map(sendRepairQuote));
       await updateRepairRequestStatus(requestDetailId, token, 'Waiting')
       Alert.alert("Thành công", "Báo giá đã được gửi!");
+      setIsNew(false)
       if (repairRequestDetail)
         createDirectChannel(repairRequestDetail.customerid, requestDetailId)
     } catch (error) {
@@ -200,6 +216,23 @@ export default function RepairDetailsScreen() {
       Alert.alert("Lỗi", "Đã có lỗi xảy ra khi gửi báo giá.");
     }
   };
+
+  const handleUpdateRepairStatus = async () => {
+    const requestStatus = repairRequestDetail?.requeststatus;
+    switch (requestStatus) {
+      case "Accepted":
+        await updateRepairRequestStatus(requestDetailId, token, 'Repairing')
+        console.log('Status updated to Repairing')
+        break;
+      case "Repairing":
+        await updateRepairRequestStatus(requestDetailId, token, 'Done')
+        console.log('Status updated to Done')
+        break;
+      default:
+        break;
+
+    }
+  }
 
   const toChatScreen = () => {
     router.push({
@@ -210,99 +243,113 @@ export default function RepairDetailsScreen() {
       }
     });
   }
+  const onCallPress = () => {
+  }
 
+  if (isLoading) return <LoadingScreen />
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={{ flex: 1 }}
     >
       <ScrollView style={{ flex: 1 }}>
-
-        <View style={styles.container}>
+        <Box style={styles.container}>
           <GoBackButton />
-          <Text style={styles.header}>Chi tiết sửa xe: {repairRequestDetail?.requestdetailid}</Text>
-          <Text>{repairRequestDetail?.customername}</Text>
-          <Text>{repairRequestDetail?.customerphone}</Text>
-
+          <Text style={styles.header}>Chi tiết sửa xe:</Text>
           {/* Customer Info */}
-          <View style={styles.infoBox}>
-            <View style={styles.avatar} />
-            <Text>Thông tin Cus</Text>
-          </View>
+          <CustomerInfo repairRequestDetail={repairRequestDetail}
+            onCallPress={onCallPress} toChatScreen={toChatScreen} />
+          {repairRequestDetail && <RepairStatusBadge status={repairRequestDetail?.requeststatus} />}
 
           {/* Vehicle Info */}
-          <View style={styles.infoBox}>
-            <View style={styles.squareIcon} />
-            <Text>Thông tin xe (biển số)</Text>
-          </View>
+          <VehicleInfoBox repairRequestDetail={repairRequestDetail} />
 
           {/* Repair Details */}
-          <View style={styles.repairSection}>
-            <Text>Bảng báo giá</Text>
+          <Box style={styles.repairSection}>
+            <Text style={{ fontWeight: "700" }}>Bảng báo giá:</Text>
             <FlatList
               scrollEnabled={false}
               data={repairQuotes}
               keyExtractor={(item) => item?.index.toString()}
               renderItem={({ item }) => (
-                <View style={styles.repairItemContainer}>
+                <Box style={styles.repairItemContainer}>
                   {/* First Row - Repair Type Selection */}
-                  <View style={styles.selectContainer}>
-                    <RepairCostPreviewSelect
-                      repairOptions={repairCostPreviews.filter(
-                        (repair) => !repairQuotes.some((quote) => quote.repairName === repair.name)
-                      )}
-                      selectedRepair={item.detail}
-                      onSelectRepair={(repair) => handleRepairSelection(item.index, repair)}
-                    />
-                  </View>
+                  <Box style={styles.selectContainer}>
+                    {isNew ?
+                      <RepairCostPreviewSelect
+                        repairOptions={repairCostPreviews.filter(
+                          (repair) => !repairQuotes.some((quote) => quote.repairname === repair.name)
+                        )}
+                        selectedRepair={item.detail}
+                        onSelectRepair={(repair) => handleRepairSelection(item.index, repair)}
+                      />
+                      :
+                      <Text className="justify-center align-middle">
+                        {item.repairname || "No repair name found"}
+                      </Text>
+                    }
+                  </Box>
 
                   {/* Second Row - Input & Remove Button */}
-                  <View style={styles.inputRow}>
-                    <TextInput
-                      style={[
-                        styles.input,
-                        item.min && item.max && (item.cost < item.min || item.cost > item.max)
-                          ? styles.invalidInput
-                          : null,
-                      ]}
-                      placeholder="Giá"
-                      keyboardType="numeric"
-                      value={item.cost === 0 ? "" : item.cost.toString()} // Show empty string when 0
-                      onChangeText={(text) => handlePriceChange(item.index, text)} // Pass raw text
-                    />
-
-                    <TouchableOpacity style={styles.removeButton} onPress={() => removeRepairItem(item.index)}>
-                      <Text style={styles.removeText}>X</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
+                  {isNew ?
+                    <Box style={styles.inputRow}>
+                      <TextInput
+                        style={[
+                          styles.input,
+                          item.min && item.max && (item.cost < item.min || item.cost > item.max)
+                            ? styles.invalidInput
+                            : null,
+                        ]}
+                        placeholder="Giá"
+                        keyboardType="numeric"
+                        value={item.cost === 0 ? "" : item.cost.toString()} // Show empty string when 0
+                        onChangeText={(text) => handlePriceChange(item.index, text)} // Pass raw text
+                      />
+                      {repairQuotes.length > 1 &&
+                        <TouchableOpacity style={styles.removeButton}
+                          onPress={() => removeRepairItem(item.index)}>
+                          <Text style={styles.removeText}>X</Text>
+                        </TouchableOpacity>
+                      }
+                    </Box>
+                    :
+                    <Text>{item.cost}</Text>
+                  }
+                </Box>
               )}
             />
 
-            <TouchableOpacity
-              style={[styles.addButton, (isAddDisabled) && styles.disabledButton]}
-              onPress={addRepairItem}
-              disabled={isAddDisabled}
-            >
-              <Text style={styles.addText}>+</Text>
-            </TouchableOpacity>
+            {isNew &&
+              <Box>
+                <TouchableOpacity
+                  style={[styles.addButton, (isAddDisabled) && styles.disabledButton]}
+                  onPress={addRepairItem}
+                  disabled={isAddDisabled}
+                >
+                  <Text style={styles.addText}>+</Text>
+                </TouchableOpacity>
 
-            {/* "Gửi báo giá" Button */}
-            <Button title="Gửi báo giá" disabled={isSubmitDisabled}
-              onPress={handleConfirmSend} />
-          </View>
+                {/* "Gửi báo giá" Button */}
+                {
+                  repairQuotes.length > 0 &&
+                  <Button title="Gửi báo giá" disabled={isSubmitDisabled}
+                    onPress={handleConfirmSend} />
+                }
+              </Box>
+            }
+          </Box>
 
           {/* Footer */}
-          <View style={styles.footer}>
-            <TouchableOpacity style={styles.chatButton}
-              onPress={toChatScreen}>
-              <Text>Chat</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.submitButton}>
-              <Text>Gửi cho user xem</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+          <Box style={styles.footer}>
+            {repairRequestDetail &&
+              <Button
+                title={repairRequestDetail?.requeststatus === 'Repairing' ? "Hoàn tất sửa chữa" : "Bắt đầu sửa xe"}
+                onPress={handleUpdateRepairStatus}
+                disabled={!['Accepted', 'Repairing'].includes(repairRequestDetail.requeststatus)}
+              />
+            }
+          </Box>
+        </Box>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -316,34 +363,15 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 10,
   },
-  infoBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 10,
-    borderWidth: 1,
-    marginVertical: 5,
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "gray",
-    marginRight: 10,
-  },
-  squareIcon: {
-    width: 40,
-    height: 40,
-    backgroundColor: "gray",
-    marginRight: 10,
-  },
   repairSection: {
     borderWidth: 1,
+    borderRadius: 15,
     padding: 10,
     marginVertical: 10,
   },
   repairListContainer: {
-    maxHeight: 300, // Set a fixed height so FlatList scrolls within this area
-    minHeight: 150, // Prevent it from collapsing when few items exist
+    maxHeight: 300,
+    minHeight: 150,
   },
   repairItemContainer: {
     padding: 10,
@@ -396,19 +424,15 @@ const styles = StyleSheet.create({
     fontSize: 18,
   },
   footer: {
-    flexDirection: "row",
+    flexDirection: "column",
+    alignItems: 'center',
     justifyContent: "space-between",
     marginTop: 20,
   },
   chatButton: {
-    padding: 10,
-    borderWidth: 1,
-    borderRadius: 5,
-  },
-  submitButton: {
+    alignSelf: 'flex-end',
     padding: 10,
     borderWidth: 1,
     borderRadius: 5,
   },
 });
-

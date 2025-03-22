@@ -126,7 +126,10 @@ const ChatViewComponent: React.FC<ChatViewComponentProps> = ({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}> Chat channel: {channel?.name}</Text>
+      <Text>
+        <Text style={styles.header}> Kênh chat riêng tư:</Text>
+        {channel?.name}
+      </Text>
       <FlatList data={messages}
         keyExtractor={(item) => item.timetoken.toString()}
         renderItem={renderChatItem} />
