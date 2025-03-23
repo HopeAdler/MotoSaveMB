@@ -226,7 +226,7 @@ export default function RepairDetailsScreen() {
         break;
       case "Repairing":
         await updateRepairRequestStatus(requestDetailId, token, 'Done')
-        console.log('Status updated to Done')
+        console.log('Status updated to Done & Changed the status of return request to Pending')
         break;
       default:
         break;

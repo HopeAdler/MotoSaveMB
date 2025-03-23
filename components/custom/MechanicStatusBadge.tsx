@@ -26,9 +26,9 @@ const getStatusStyleAndText = (status: string) => {
       }; // Thumbs up for accepted
     case 'repairing':
       return {
-        backgroundColor: '#f8d7da',
+        backgroundColor: '#a8d7da',
         color: '#721c24',
-        icon: 'tools',
+        icon: 'wrench',
         text: 'Đang tiến hành sửa chữa'
       }; // Tools icon for repairing
     case 'cancel':

@@ -35,6 +35,7 @@ type User = {
 interface RequestDetail {
   requestid: string,
   servicepackagename: string,
+  requesttype: string,
   customername: string;
   customerphone: string;
   pickuplocation: string;
@@ -98,22 +99,38 @@ const RequestMap: React.FC = () => {
 
   const changeRequestStatus = async () => {
     let newStatus = "";
-    switch (requestDetail?.requeststatus) {
-      case "Accepted":
-        newStatus = "Pickup";
-        break;
-      case "Pickup":
-        newStatus = "Processing";
-        break;
-      case "Processing":
-        newStatus = "Done";
-        break;
-      default:
-        break;
+    if (requestDetail?.requesttype === "Cứu hộ") {
+      switch (requestDetail?.requeststatus) {
+        case "Accepted":
+          newStatus = "Pickup";
+          break;
+        case "Pickup":
+          newStatus = "Processing";
+          break;
+        case "Processing":
+          newStatus = "Done";
+          break;
+        default:
+          break;
+      }
+    }
+    else if (requestDetail?.requesttype === "Trả xe") {
+      switch (requestDetail?.requeststatus) {
+        case "Accepted":
+          newStatus = "Processing";
+          break;
+        case "Processing":
+          newStatus = "Done";
+          break;
+        default:
+          break;
+      }
     }
     const result = await updateRequestStatus(requestdetailid, token, newStatus);
     fetchRequestDetail();
-    if (result && requestDetail?.requeststatus === "Processing" && requestDetail?.servicepackagename === "Cứu hộ đến trạm") {
+    if (result && requestDetail?.requeststatus === "Processing"
+      && requestDetail?.servicepackagename === "Cứu hộ đến trạm"
+      && requestDetail?.requesttype === "Cứu hộ") {
       createRepairRequest(requestDetail?.requestid, token)
     }
   };
@@ -134,14 +151,37 @@ const RequestMap: React.FC = () => {
   const changeButtonTitle = (): string => {
     switch (requestDetail?.requeststatus) {
       case "Accepted":
-        return "Đi đến điểm đón";
+        if (requestDetail?.requesttype === "Cứu hộ") {
+          return "Đi đến điểm đón";
+        }
+        if (requestDetail?.requesttype === "Trả xe") {
+          return "Bắt đầu trả xe";
+        }
+        break; // Prevents fall-through
+
       case "Pickup":
         return "Tiến hành chở khách";
+
       case "Processing":
-        return "Trả khách";
+        if (requestDetail?.requesttype === "Cứu hộ") {
+          return "Trả khách";
+        }
+        if (requestDetail?.requesttype === "Trả xe") {
+          return "Trả xe";
+        }
+        break; // Prevents fall-through
+
       default:
-        return "Bạn đã trả khách rồi";
+        if (requestDetail?.requesttype === "Cứu hộ") {
+          return "Trả khách hoàn tất";
+        }
+        if (requestDetail?.requesttype === "Trả xe") {
+          return "Trả xe hoàn tất";
+        }
     }
+
+    // Ensure a string is always returned
+    return "Trạng thái không xác định"; // Default fallback
   };
 
   const fetchRequestDetail = async () => {
