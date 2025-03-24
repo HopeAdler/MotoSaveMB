@@ -36,6 +36,7 @@ export interface RequestDetail {
   destination: string;
   totalprice: number;
   requeststatus: string;
+  driverid: string;
   drivername: string;
   driverphone: string;
   licenseplate: string;
@@ -43,6 +44,7 @@ export interface RequestDetail {
   vehicletype: string;
   vehiclestatus: string;
   requestid: string;
+  requestdetailid: string;
   servicepackagename: string;
 }
 
