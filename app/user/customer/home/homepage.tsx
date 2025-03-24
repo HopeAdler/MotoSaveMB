@@ -61,23 +61,27 @@ export default function CHomeScreen() {
   const { requestId } = useContext(RequestContext);
   console.log("Request Id: " + requestId);
   const [latestRequestDetail, setLatestRequestDetail] =
-  useState<LatestRequestDetail>();
-  console.log("Request Status: " + latestRequestDetail?.requeststatus)
+    useState<LatestRequestDetail>();
+  console.log("Request Status: " + latestRequestDetail?.requeststatus);
   const [isLoading, setIsLoading] = useState(false);
   const fetchRequestDetail = async () => {
+    setIsLoading(true)
     try {
       const response = await axios.get<LatestRequestDetail>(
         `https://motor-save-be.vercel.app/api/v1/requests/latestRequestDetail/${requestId}`,
         { headers: { Authorization: "Bearer " + token } }
       );
       setLatestRequestDetail(response.data);
+      setIsLoading(false);
     } catch (error) {
       console.error("Error fetching request details:", error);
     }
   };
 
   useEffect(() => {
-    fetchRequestDetail();
+    if (requestId) {
+      fetchRequestDetail();
+    }
   }, []);
 
   if (!user) {
@@ -91,18 +95,30 @@ export default function CHomeScreen() {
   }
 
   const handleNavigate = () => {
-    if (latestRequestDetail?.servicepackagename === "Cứu hộ thường" && latestRequestDetail?.requesttype === "Cứu hộ") {
-      router.navigate("/user/customer/home/normalRescue/normalRescueMap")
-    } else if (latestRequestDetail?.servicepackagename === "Cứu hộ nước ngập" && latestRequestDetail?.requesttype === "Cứu hộ") {
-      router.navigate("/user/customer/home/floodRescue/floodRescueMap")
-    } else if (latestRequestDetail?.servicepackagename === "Cứu hộ đến trạm" && latestRequestDetail?.requesttype === "Cứu hộ") {
-      router.navigate("/user/customer/home/emergencyRescue/emergencyRescueMap")
-    } else if (latestRequestDetail?.servicepackagename === "Cứu hộ đến trạm" && latestRequestDetail?.requesttype === "Sửa xe") {
-      router.navigate("/user/customer/home/emergencyRescue/repairRequest")
+    if (
+      latestRequestDetail?.servicepackagename === "Cứu hộ thường" &&
+      latestRequestDetail?.requesttype === "Cứu hộ"
+    ) {
+      router.navigate("/user/customer/home/normalRescue/normalRescueMap");
+    } else if (
+      latestRequestDetail?.servicepackagename === "Cứu hộ nước ngập" &&
+      latestRequestDetail?.requesttype === "Cứu hộ"
+    ) {
+      router.navigate("/user/customer/home/floodRescue/floodRescueMap");
+    } else if (
+      latestRequestDetail?.servicepackagename === "Cứu hộ đến trạm" &&
+      latestRequestDetail?.requesttype === "Cứu hộ"
+    ) {
+      router.navigate("/user/customer/home/emergencyRescue/emergencyRescueMap");
+    } else if (
+      latestRequestDetail?.servicepackagename === "Cứu hộ đến trạm" &&
+      latestRequestDetail?.requesttype === "Sửa xe"
+    ) {
+      router.navigate("/user/customer/home/emergencyRescue/repairRequest");
     } else {
-
+      router.navigate("/user/customer/home/emergencyRescue/returnVehicleRequest")
     }
-  }
+  };
 
   if (isLoading) return <LoadingScreen />;
 
@@ -216,20 +232,21 @@ export default function CHomeScreen() {
             </Pressable>
           </Box>
         </Box>
-        {latestRequestDetail?.requeststatus !== "Done" && latestRequestDetail?.requeststatus !== "Cancel" && (
-          <Box className="flex-row items-center my-5">
-            <Text className="text-base font-semibold text-gray-800">
-              Your recent request has not done yet
-            </Text>
-            <Button
-              variant="solid"
-              className="flex-1 mx-2 bg-blue-500"
-              onPress={handleNavigate}
-            >
-              <ButtonText className="text-white">Continue</ButtonText>
-            </Button>
-          </Box>
-        )}
+        {latestRequestDetail?.requeststatus !== "Done" &&
+          latestRequestDetail?.requeststatus !== "Cancel" && (
+            <Box className="flex-row items-center my-5">
+              <Text className="text-base font-semibold text-gray-800">
+                Your recent request has not done yet
+              </Text>
+              <Button
+                variant="solid"
+                className="flex-1 mx-2 bg-blue-500"
+                onPress={handleNavigate}
+              >
+                <ButtonText className="text-white">Continue</ButtonText>
+              </Button>
+            </Box>
+          )}
 
         <Pressable
           onPress={() => router.navigate("/user/customer/home/servicePackage")}

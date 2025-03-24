@@ -7,6 +7,7 @@ export default function EmergencyRescuelayout() {
       <Stack.Screen name="emergencyRescueMap" options={{ headerShown: false }} />
       <Stack.Screen name="repairRequest" options={{ headerShown: false }} />
       <Stack.Screen name="repairCostPreview" options={{ headerShown: false }} />
+      <Stack.Screen name="returnVehicleRequest" options={{ headerShown: false }} />
     </Stack>
   );
 }
