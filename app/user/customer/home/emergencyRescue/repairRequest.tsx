@@ -33,21 +33,28 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { Button, ButtonText } from "@/components/ui/button";
-import { geocodeAddress, getAutocomplete } from "@/app/services/goongAPI";
+import {
+  geocodeAddress,
+  getAutocomplete,
+  getDirections,
+} from "@/app/services/goongAPI";
 import { decodedToken, handlePhoneCall } from "@/app/utils/utils";
 import { PayZaloEventData, processPayment } from "@/app/utils/payment";
 import {
   acceptRepairQuote,
+  calculateFare,
   createReturnVehicleRequest,
   createTransaction,
   RescueRequestPayload,
 } from "@/app/services/beAPI";
+import { RequestContext } from "@/app/context/RequestContext";
 
 const RepairRequestScreen = () => {
   const { PayZaloBridge } = NativeModules;
-  const { requestid } = useLocalSearchParams<{
-    requestid: string;
-  }>();
+  const { requestId, setRequestId } = useContext(RequestContext);
+  // const { requestid } = useLocalSearchParams<{
+  //   requestid: string;
+  // }>();
   const [paymentLoading, setPaymentLoading] = useState<boolean>(false);
   const [paymentMethod, setPaymentMethod] = useState("Tiền mặt");
   const [fare, setFare] = useState<number | any>(0);
@@ -63,6 +70,7 @@ const RepairRequestScreen = () => {
     latitude: 0,
     longitude: 0,
   });
+  const [directionsInfo, setDirectionsInfo] = useState<any>(null);
 
   // Hàm xử lý khi fetch địa chỉ từ geocode
   const handleFetchLocation = async (address: string) => {
@@ -102,7 +110,7 @@ const RepairRequestScreen = () => {
   const fetchRequestDetail = async () => {
     try {
       const response = await axios.get<RepairRequestDetail>(
-        `https://motor-save-be.vercel.app/api/v1/requests/repair/detail/${requestid}`,
+        `https://motor-save-be.vercel.app/api/v1/requests/repair/detail/${requestId}`,
         { headers: { Authorization: "Bearer " + token } }
       );
       setRequestDetail(response.data);
@@ -154,6 +162,38 @@ const RepairRequestScreen = () => {
         return "bg-gray-200";
     }
   };
+  useEffect(() => {
+    if (destinationSelected) {
+      const originStr = `${requestDetail?.lat},${requestDetail?.long}`;
+      const destinationStr = `${destinationCoordinates.latitude},${destinationCoordinates.longitude}`;
+      getDirections(originStr, destinationStr)
+        .then((data) => {
+          if (data.routes && data.routes.length > 0) {
+            if (data.routes[0].legs && data.routes[0].legs.length > 0) {
+              setDirectionsInfo(data.routes[0].legs[0]);
+            }
+          } else {
+            console.log("No routes found:", data);
+          }
+        })
+        .catch((error) => console.error("Error fetching directions:", error));
+    }
+  }, [destinationCoordinates, destinationSelected]);
+
+  useEffect(() => {
+    if (directionsInfo) {
+      const distanceValue = directionsInfo.distance?.value || 0;
+      calculateFare(distanceValue)
+        .then((money) => {
+          setFare(money);
+          console.log("Set fare success");
+        })
+        .catch((error) => {
+          console.error("Error calculating fare:", error);
+        });
+    }
+  }, [directionsInfo]);
+
   const handleCashPayment = async () => {
     if (!token) return;
     setPaymentLoading(true);
@@ -164,21 +204,18 @@ const RepairRequestScreen = () => {
       deslat: destinationCoordinates.latitude,
       pickuplocation: requestDetail?.stationaddress,
       destination: destinationQuery,
-      totalprice: 0,
+      totalprice: fare || 0,
     };
     try {
       if (destinationQuery !== "") {
-      const result = await createReturnVehicleRequest(
-        payload,
-        token,
-        requestDetail?.requestid
-      );
-      console.log(result);
-    }
-      await acceptRepairQuote(
-        requestDetail?.requestdetailid,
-        token
-      );
+        const result = await createReturnVehicleRequest(
+          payload,
+          token,
+          requestDetail?.requestid
+        );
+        console.log(result);
+      }
+      await acceptRepairQuote(requestDetail?.requestdetailid, token);
     } catch (error) {
       console.error("Error during payment:", error);
     } finally {
@@ -198,7 +235,7 @@ const RepairRequestScreen = () => {
       deslat: destinationCoordinates.latitude,
       pickuplocation: requestDetail?.stationaddress,
       destination: destinationQuery,
-      totalprice: 0,
+      totalprice: fare || 0,
     };
     try {
       if (destinationQuery !== "") {
@@ -230,10 +267,7 @@ const RepairRequestScreen = () => {
                 token
               );
               console.log("Transaction created:", transactionResponse);
-              await acceptRepairQuote(
-                requestDetail?.requestdetailid,
-                token
-              );
+              await acceptRepairQuote(requestDetail?.requestdetailid, token);
             } catch (error) {
               console.error("Error creating transaction:", error);
             }
