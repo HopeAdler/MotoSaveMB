@@ -6,6 +6,7 @@ import { Box } from "@/components/ui/box";
 import axios from "axios";
 import { useRouter } from "expo-router";
 import React, { useContext, useEffect, useRef, useState } from "react";
+import { Pressable, Text, View } from "react-native";
 import { ActivityIndicator, FlatList } from "react-native";
 
 interface RequestItem {
@@ -28,6 +29,8 @@ export default function DRequestScreen() {
   const { publishAcceptRequest } = usePubNubService(); //
   const router = useRouter();
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [selectedRequestType, setSelectedRequestType] = useState<string>("Cứu hộ");
+  const [filteredRequests, setFilteredRequests] = useState<RequestItem[]>([]);
 
   // Fetch requests function
   const fetchRequests = async (isInitialFetch = false) => {
@@ -52,7 +55,20 @@ export default function DRequestScreen() {
     }
   };
 
-  // Fetch requests every 20 seconds
+  const handleRequestTypeChange = () => {
+    switch (selectedRequestType) {
+      case "Cứu hộ":
+        setSelectedRequestType("Trả xe")
+        break;
+      case "Trả xe":
+        setSelectedRequestType("Cứu hộ")
+        break;
+    }
+  }
+  useEffect(() => {
+    setFilteredRequests(requests.filter(r => r.requesttype === selectedRequestType))
+  }, [requests, selectedRequestType]);
+
   useEffect(() => {
     fetchRequests(true); // Initial fetch
 
@@ -69,8 +85,23 @@ export default function DRequestScreen() {
 
   return (
     <Box className="flex-1 bg-gray-100 p-4">
+      <Pressable
+        className="h-10 rounded-full flex flex-row items-center bg-gray-300 p-1"
+        onPress={() => handleRequestTypeChange()}
+      >
+        <View
+          className={`flex-1 h-full rounded-full flex items-center justify-center transition-all ${selectedRequestType === "Cứu hộ" ? 'bg-orange-500' : 'bg-transparent'}`}
+        >
+          <Text className={`text-lg font-bold ${selectedRequestType === "Cứu hộ" ? 'text-white' : 'text-gray-500'}`}>Cứu hộ</Text>
+        </View>
+        <View
+          className={`flex-1 h-full rounded-full flex items-center justify-center transition-all ${selectedRequestType === "Trả xe" ? 'bg-yellow-500' : 'bg-transparent'}`}
+        >
+          <Text className={`text-lg font-bold ${selectedRequestType === "Trả xe" ? 'text-white' : 'text-gray-500'}`}>Trả xe</Text>
+        </View>
+      </Pressable>
       <FlatList
-        data={requests}
+        data={filteredRequests}
         keyExtractor={(item) => `${item.requestdetailid}-${item.requeststatus}`}
         renderItem={({ item }) => renderItem({ item, token, router, pubnub, publishAcceptRequest })}
       />
