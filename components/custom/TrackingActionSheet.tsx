@@ -49,6 +49,7 @@ import { RequestDetail } from "@/app/context/formFields";
 // Import hàm cancelRequest từ beAPI
 import { cancelRequest } from "@/app/services/beAPI";
 import axios from "axios";
+import { RequestContext } from "@/app/context/RequestContext";
 
 const cancelReasons = [
   "Driver delayed",
@@ -81,6 +82,7 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
   const [requestDetail, setRequestDetail] = useState<RequestDetail | null>(
     null
   );
+  const {setRequestId} = useContext(RequestContext);
   const [loading, setLoading] = useState<boolean>(true);
 
   // State cho cancellation actionsheet và alert confirmation
@@ -96,6 +98,7 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
         { headers: { Authorization: "Bearer " + token } }
       );
       setRequestDetail(response.data);
+      setRequestId(response.data?.requestid)
       setAcceptedReqDetStatus(response.data?.requeststatus);
       console.log("Fetching request detail...");
     } catch (error) {
@@ -115,10 +118,11 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
       const timer = setTimeout(() => {
         onClose();
         if (requestDetail?.servicepackagename === "Cứu hộ đến trạm") {
-          router.push({
-            pathname: "/user/customer/home/emergencyRescue/repairRequest",
-            params: { requestid: requestDetail?.requestid },
-          });
+          // router.push({
+          //   pathname: "/user/customer/home/emergencyRescue/repairRequest",
+          //   params: { requestid: requestDetail?.requestid },
+          // });
+          router.navigate("/user/customer/home/emergencyRescue/repairRequest")
         } else {
           router.push({
             pathname: "/user/customer/home/feedback",

@@ -6,6 +6,7 @@ import { VStack } from "@/components/ui/vstack";
 import { Router } from "expo-router";
 import moment from "moment";
 import { Alert, View } from "react-native";
+import RequestStatus from "./RequestItemStatusComponent";
 
 interface RequestItem {
   requestid: string;
@@ -34,9 +35,7 @@ export const renderItem = ({
 }) => (
   <Box className="bg-white p-4 mb-2 rounded-lg shadow relative">
     <Text className="text-violet-500 text-lg font-bold">{item.servicepackagename} - {item.requesttype}</Text>
-    <View className="absolute top-2 right-2 bg-blue-500 px-2 py-1 rounded-full">
-      <Text className="text-white text-xs font-bold">{item.requeststatus}</Text>
-    </View>
+    <RequestStatus requestStatus={item?.requeststatus} />
     <VStack space="sm">
       <Text className="text-lg font-bold">{item.customername}</Text>
       <Text className="text-gray-600">📞 {item.customerphone}</Text>
