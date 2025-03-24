@@ -79,7 +79,7 @@ export default function CHomeScreen() {
   };
 
   useEffect(() => {
-    if (requestId) {
+    if (requestId != null) {
       fetchRequestDetail();
     }
   }, []);
