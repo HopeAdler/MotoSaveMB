@@ -1,5 +1,6 @@
 import { AuthContext } from "@/app/context/AuthContext";
-import { getPendingRepairRequests } from "@/app/services/beAPI";
+import LoadingScreen from "@/app/loading/loading";
+import { fetchStationOfAStaff, getPendingRepairRequests } from "@/app/services/beAPI";
 import { renderRepairRequestItem } from "@/components/custom/RepairRequestItem";
 import { Box } from "@/components/ui/box";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,13 @@ interface ServiceCardProps {
   icon: LucideIcon;
   title: string;
   color: string;
+}
+interface Station {
+  stationid: string,
+  stationname: string,
+  stationaddress: string,
+  stationlong: number,
+  stationlat: number
 }
 
 interface StationProps {
@@ -72,16 +80,15 @@ export default function MHomeScreen() {
     dispatch?.({ type: "LOGOUT" });
     router.replace("/auth/login");
   };
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [pendingRepairRequests, setPendingRepairRequests] = useState<RepairRequest[]>([]);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
-
+  const [myStation, setMyStation] = useState<Station | null>();
   const fetchPendingRepairRequest = async (isInitialFetch = false) => {
     try {
       if (isInitialFetch) setLoading(true); // Only show loading on first fetch
 
       const results = await getPendingRepairRequests(token);
-
+      setLoading(false);
       // Prevent unnecessary state updates
       setPendingRepairRequests((prevRepairRequests) => {
         const isDataChanged = JSON.stringify(prevRepairRequests) !== JSON.stringify(results);
@@ -94,13 +101,25 @@ export default function MHomeScreen() {
       if (isInitialFetch) setLoading(false);
     }
   };
+  const fetchMyStationn = async () => {
+    try {
+      const result = await fetchStationOfAStaff(token);
+      setLoading(false);
+      // Prevent unnecessary state updates
+      setMyStation(result);
+    } catch (error) {
+      console.error("Error fetching station:", error);
+    }
+  };
 
   useEffect(() => {
     const interval = setInterval(() => {
-      fetchPendingRepairRequest(); // Fetch every 5 seconds
+      setLoading(true)
+      fetchMyStationn()
+      fetchPendingRepairRequest();
     }, 5000);
 
-    return () => clearInterval(interval); 
+    return () => clearInterval(interval);
   }, []);
 
   return (
@@ -123,17 +142,23 @@ export default function MHomeScreen() {
         <Box className="p-4">
           <Box className="mb-3 h-2/5 flex flex-auto">
             <Text className="text-lg font-bold mb-4">Hàng chờ yêu cầu ({pendingRepairRequests?.length})</Text>
-            {pendingRepairRequests && pendingRepairRequests.length > 0 ? (
-              <FlatList
-                data={pendingRepairRequests}
-                keyExtractor={(item) => `${item.requestdetailid}-${item.requeststatus}`}
-                renderItem={({ item }) =>
-                  renderRepairRequestItem({ token, item, router })
-              }
-              />
-            ) : (
-              <Text>Hiện chưa có yêu cầu sửa xe nào</Text>
-            )}
+            {loading ?
+              <LoadingScreen />
+              :
+              <>
+                {pendingRepairRequests && pendingRepairRequests.length > 0 ? (
+                  <FlatList
+                    data={pendingRepairRequests}
+                    keyExtractor={(item) => `${item.requestdetailid}-${item.requeststatus}`}
+                    renderItem={({ item }) =>
+                      renderRepairRequestItem({ token, item, router })
+                    }
+                  />
+                ) : (
+                  <Text>Hiện chưa có yêu cầu sửa xe nào</Text>
+                )}
+              </>
+            }
           </Box>
 
           <Box className="mb-3 h-1/4 flex flex-auto">
@@ -147,11 +172,11 @@ export default function MHomeScreen() {
           <Box className="mb-3 h-1/4 flex flex-auto">
             <Text className="text-lg font-bold mb-4">Trạm của tôi</Text>
             <Box className="bg-white rounded-lg shadow-sm">
-              <StationInfo name="Trạm 1" location="Số X, đường Y, phố Z" />
+              <StationInfo name={myStation?.stationname || ""} location={myStation?.stationaddress || ""} />
               <Button
                 variant="solid"
                 className="bg-red-500 mb-4 m-8"
-              // onPress={() => router.navigate("/user/customer/servicePackage")}
+                onPress={() => router.navigate("/user/mechanic/requests/request")}
               >
                 <Text className="text-lg font-bold text-white">
                   Chuyển qua danh sách yêu cầu

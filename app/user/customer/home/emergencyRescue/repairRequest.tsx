@@ -14,7 +14,13 @@ import {
 import axios from "axios";
 import AuthContext from "@/app/context/AuthContext";
 import { RepairQuote, RepairRequestDetail } from "@/app/context/formFields";
-import { FlatList, Pressable, ScrollView } from "react-native";
+import {
+  FlatList,
+  NativeEventEmitter,
+  NativeModules,
+  Pressable,
+  ScrollView,
+} from "react-native";
 import { Input, InputField } from "@/components/ui/input";
 import {
   Select,
@@ -27,14 +33,25 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { Button, ButtonText } from "@/components/ui/button";
-import { getAutocomplete } from "@/app/services/goongAPI";
+import { geocodeAddress, getAutocomplete } from "@/app/services/goongAPI";
 import { decodedToken, handlePhoneCall } from "@/app/utils/utils";
+import { PayZaloEventData, processPayment } from "@/app/utils/payment";
+import {
+  acceptRepairQuote,
+  createReturnVehicleRequest,
+  createTransaction,
+  RescueRequestPayload,
+} from "@/app/services/beAPI";
 
 const RepairRequestScreen = () => {
+  const { PayZaloBridge } = NativeModules;
   const { requestid } = useLocalSearchParams<{
     requestid: string;
   }>();
+  const [paymentLoading, setPaymentLoading] = useState<boolean>(false);
   const [paymentMethod, setPaymentMethod] = useState("Tiền mặt");
+  const [fare, setFare] = useState<number | any>(0);
+  const [zpTransId, setZpTransId] = useState<string | null>(null);
   const [destinationQuery, setDestinationQuery] = useState("");
   const [destinationResults, setDestinationResults] = useState<any[]>([]);
   const [destinationSelected, setDestinationSelected] = useState(false);
@@ -42,6 +59,22 @@ const RepairRequestScreen = () => {
     latitude: 0,
     longitude: 0,
   });
+  const [destinationCoordinates, setDestinationCoordinates] = useState({
+    latitude: 0,
+    longitude: 0,
+  });
+
+  // Hàm xử lý khi fetch địa chỉ từ geocode
+  const handleFetchLocation = async (address: string) => {
+    const result = await geocodeAddress(address);
+    if (result) {
+      const { lat, lng } = result;
+      setDestinationCoordinates({ latitude: lat, longitude: lng });
+      setDestinationResults([]);
+      setDestinationSelected(true);
+    }
+  };
+
   const handleDestinationChange = (text: string) => {
     setDestinationQuery(text);
     setDestinationSelected(false);
@@ -83,6 +116,7 @@ const RepairRequestScreen = () => {
         `https://motor-save-be.vercel.app/api/v1/repairquotes/requestdetail/${requestDetail?.requestdetailid}`
       );
       setRepairQuotes(response.data);
+      setFare(requestDetail?.totalprice);
     } catch (error) {
       console.error("Error fetching repair quotes:", error);
     }
@@ -94,7 +128,10 @@ const RepairRequestScreen = () => {
   }, []);
 
   useEffect(() => {
-    if (requestDetail?.requeststatus !== "Pending" && requestDetail?.requeststatus !== "Inspecting" ) {
+    if (
+      requestDetail?.requeststatus !== "Pending" &&
+      requestDetail?.requeststatus !== "Inspecting"
+    ) {
       fetchRepairQuote();
     }
   }, [requestDetail?.requeststatus]);
@@ -115,6 +152,101 @@ const RepairRequestScreen = () => {
         return "bg-gray-500";
       default:
         return "bg-gray-200";
+    }
+  };
+  const handleCashPayment = async () => {
+    if (!token) return;
+    setPaymentLoading(true);
+    const payload: RescueRequestPayload = {
+      pickuplong: requestDetail?.long,
+      pickuplat: requestDetail?.lat,
+      deslng: destinationCoordinates.longitude,
+      deslat: destinationCoordinates.latitude,
+      pickuplocation: requestDetail?.stationaddress,
+      destination: destinationQuery,
+      totalprice: 0,
+    };
+    try {
+      if (destinationQuery !== "") {
+      const result = await createReturnVehicleRequest(
+        payload,
+        token,
+        requestDetail?.requestid
+      );
+      console.log(result);
+    }
+      await acceptRepairQuote(
+        requestDetail?.requestdetailid,
+        token
+      );
+    } catch (error) {
+      console.error("Error during payment:", error);
+    } finally {
+      setPaymentLoading(false);
+    }
+  };
+
+  const handleZaloPayment = async () => {
+    const callbackUrl =
+      "myapp://user/customer/home/emergencyRescue/repairRequest";
+    if (!token) return;
+    setPaymentLoading(true);
+    const payload: RescueRequestPayload = {
+      pickuplong: requestDetail?.long,
+      pickuplat: requestDetail?.lat,
+      deslng: destinationCoordinates.longitude,
+      deslat: destinationCoordinates.latitude,
+      pickuplocation: requestDetail?.stationaddress,
+      destination: destinationQuery,
+      totalprice: 0,
+    };
+    try {
+      if (destinationQuery !== "") {
+        const result = await createReturnVehicleRequest(
+          payload,
+          token,
+          requestDetail?.requestid
+        );
+        console.log(result);
+      }
+      processPayment(fare, callbackUrl);
+      const payZaloEmitter = new NativeEventEmitter(PayZaloBridge);
+      const subscription = payZaloEmitter.addListener(
+        "EventPayZalo",
+        async (data: PayZaloEventData) => {
+          if (data.returnCode === "1") {
+            // router.navigate("/user/customer/home/normalRescue/rescueMap");
+            console.log("Payment successful:", data);
+            setZpTransId(data.transactionId || null);
+            try {
+              const transactionResponse = await createTransaction(
+                {
+                  requestdetailid: requestDetail?.requestdetailid,
+                  zptransid: data.transactionId || "",
+                  totalamount: fare,
+                  paymentmethod: "ZaloPay",
+                  paymentstatus: "Success",
+                },
+                token
+              );
+              console.log("Transaction created:", transactionResponse);
+              await acceptRepairQuote(
+                requestDetail?.requestdetailid,
+                token
+              );
+            } catch (error) {
+              console.error("Error creating transaction:", error);
+            }
+          } else {
+            alert("Payment failed! Return code: " + data.returnCode);
+          }
+          subscription.remove();
+        }
+      );
+    } catch (error) {
+      console.error("Error during payment:", error);
+    } finally {
+      setPaymentLoading(false);
     }
   };
 
@@ -204,7 +336,9 @@ const RepairRequestScreen = () => {
             <Box className="ml-3">
               <Text className="text-sm text-gray-500">Mechanic Name</Text>
               <Text className="text-base text-gray-900">
-                {requestDetail?.mechanicname}
+                {requestDetail?.requeststatus !== "Pending"
+                  ? requestDetail?.mechanicname
+                  : "Not Yet"}
               </Text>
             </Box>
           </Box>
@@ -214,7 +348,9 @@ const RepairRequestScreen = () => {
             <Box className="ml-3">
               <Text className="text-sm text-gray-500">Phone Number</Text>
               <Text className="text-base text-gray-900">
-                {requestDetail?.mechanicphone}
+                {requestDetail?.requeststatus !== "Pending"
+                  ? requestDetail?.mechanicphone
+                  : "Not Yet"}
               </Text>
             </Box>
           </Box>
@@ -253,116 +389,126 @@ const RepairRequestScreen = () => {
           {renderProgressSteps()}
         </Box>
         {/* Repair Quote List */}
-        {requestDetail?.requeststatus !== "Pending" && requestDetail?.requeststatus !== "Inspecting" && (
-          <Box className="flex-1 bg-white rounded-2xl shadow-sm p-4 mb-4">
-            <Text className="text-lg font-bold text-gray-900 mb-4 text-center">
-              Repair Quote
-            </Text>
-
-            <FlatList
-              data={repairQuotes}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => (
-                <Box className="flex-row justify-between items-center py-3 border-b border-gray-500">
-                  <Box>
-                    <Text className="text-base font-medium text-gray-900">
-                      {item.repairname}
-                    </Text>
-                    {/* <Text className="text-sm text-gray-500">{item.detail}</Text> */}
-                  </Box>
-                  <Text className="text-base font-semibold text-gray-900">
-                    {item.cost.toLocaleString()} VND
-                  </Text>
-                </Box>
-              )}
-            />
-
-            {/* Total Price */}
-            <Box className="flex-row justify-between items-center my-4 pt-3">
-              <Text className="text-base font-semibold text-gray-900">
-                Total Price
+        {requestDetail?.requeststatus !== "Pending" &&
+          requestDetail?.requeststatus !== "Inspecting" && (
+            <Box className="flex-1 bg-white rounded-2xl shadow-sm p-4 mb-4">
+              <Text className="text-lg font-bold text-gray-900 mb-4 text-center">
+                Repair Quote
               </Text>
-              <Text className="text-lg font-bold text-red-500">
-                {requestDetail?.totalprice} VND
-              </Text>
-            </Box>
 
-            {/* Return vehicle location */}
-            <Box className="mt-2">
-              <Text className="text-base font-semibold text-gray-900 mb-2">
-                Return vehicle location (Optional)
-              </Text>
-              <Input variant="outline" size="md" className="bg-white">
-                <InputField
-                  placeholder="Search destination"
-                  value={destinationQuery}
-                  onChangeText={handleDestinationChange}
-                />
-              </Input>
-            </Box>
-            {destinationResults.length > 0 && (
               <FlatList
-                data={destinationResults}
-                keyExtractor={(_item, index) => index.toString()}
-                className="bg-white rounded max-h-40"
+                data={repairQuotes}
+                keyExtractor={(item) => item.id}
                 renderItem={({ item }) => (
-                  <Pressable
-                    onPress={() => {
-                      setDestinationQuery(item.description);
-                    }}
-                    className="p-2"
-                  >
-                    <Text className="text-black">{item.description}</Text>
-                  </Pressable>
+                  <Box className="flex-row justify-between items-center py-3 border-b border-gray-500">
+                    <Box>
+                      <Text className="text-base font-medium text-gray-900">
+                        {item.repairname}
+                      </Text>
+                      {/* <Text className="text-sm text-gray-500">{item.detail}</Text> */}
+                    </Box>
+                    <Text className="text-base font-semibold text-gray-900">
+                      {item.cost.toLocaleString()} VND
+                    </Text>
+                  </Box>
                 )}
               />
-            )}
-            {/* Payment method */}
-            <Box className="mt-4">
-              <Text className="text-base font-semibold text-gray-900 mb-2">
-                Payment Method
-              </Text>
-              <Select
-                selectedValue={paymentMethod}
-                onValueChange={(value: any) => setPaymentMethod(value)}
-              >
-                <SelectTrigger className="border border-gray-200 rounded-xl p-5 flex-row items-center justify-between bg-gray-50 h-13">
-                  <SelectInput
-                    placeholder="Select payment method"
-                    className="text-lg flex-1"
+
+              {/* Total Price */}
+              <Box className="flex-row justify-between items-center my-4 pt-3">
+                <Text className="text-base font-semibold text-gray-900">
+                  Total Price
+                </Text>
+                <Text className="text-lg font-bold text-red-500">
+                  {requestDetail?.totalprice} VND
+                </Text>
+              </Box>
+
+              {/* Return vehicle location */}
+              <Box className="mt-2">
+                <Text className="text-base font-semibold text-gray-900 mb-2">
+                  Return vehicle location (Optional)
+                </Text>
+                <Input variant="outline" size="md" className="bg-white">
+                  <InputField
+                    placeholder="Search destination"
+                    value={destinationQuery}
+                    onChangeText={handleDestinationChange}
                   />
-                  <SelectIcon as={ChevronDownIcon} />
-                </SelectTrigger>
-                <SelectPortal>
-                  <SelectBackdrop />
-                  <SelectContent>
-                    <SelectItem label="Tiền mặt" value="Tiền mặt" />
-                    <SelectItem label="Zalopay" value="Zalopay" />
-                  </SelectContent>
-                </SelectPortal>
-              </Select>
-            </Box>
+                </Input>
+              </Box>
+              {destinationResults.length > 0 && !destinationSelected && (
+                <FlatList
+                  data={destinationResults}
+                  keyExtractor={(_item, index) => index.toString()}
+                  className="bg-white rounded max-h-40"
+                  renderItem={({ item }) => (
+                    <Pressable
+                      onPress={() => {
+                        setDestinationQuery(item.description);
+                        handleFetchLocation(item.description);
+                      }}
+                      className="p-2"
+                    >
+                      <Text className="text-black">{item.description}</Text>
+                    </Pressable>
+                  )}
+                />
+              )}
+              {/* Payment method */}
+              <Box className="mt-4">
+                <Text className="text-base font-semibold text-gray-900 mb-2">
+                  Payment Method
+                </Text>
+                <Select
+                  selectedValue={paymentMethod}
+                  onValueChange={(value: any) => setPaymentMethod(value)}
+                >
+                  <SelectTrigger className="border border-gray-200 rounded-xl p-5 flex-row items-center justify-between bg-gray-50 h-13">
+                    <SelectInput
+                      placeholder="Select payment method"
+                      className="text-lg flex-1"
+                    />
+                    <SelectIcon as={ChevronDownIcon} />
+                  </SelectTrigger>
+                  <SelectPortal>
+                    <SelectBackdrop />
+                    <SelectContent>
+                      <SelectItem label="Tiền mặt" value="Tiền mặt" />
+                      <SelectItem label="Zalopay" value="Zalopay" />
+                    </SelectContent>
+                  </SelectPortal>
+                </Select>
+              </Box>
 
-            {/* Action Buttons */}
-            <Box className="flex-row justify-between mt-6">
-              <Button
-                variant="outline"
-                className="flex-1 mx-2 border-red-500"
-                onPress={() => console.log("Cancel Pressed")}
-              >
-                <ButtonText className="text-red-500">Cancel</ButtonText>
-              </Button>
+              {/* Action Buttons */}
+              {requestDetail?.requeststatus === "Waiting" && (
+                <Box className="flex-row justify-between mt-6">
+                  <Button
+                    variant="outline"
+                    className="flex-1 mx-2 border-red-500"
+                    onPress={() => console.log("Cancel Pressed")}
+                  >
+                    <ButtonText className="text-red-500">Cancel</ButtonText>
+                  </Button>
 
-              <Button
-                variant="solid"
-                className="flex-1 mx-2 bg-blue-500"
-                onPress={() => console.log("Confirm Pressed")}
-              >
-                <ButtonText className="text-white">Confirm</ButtonText>
-              </Button>
+                  <Button
+                    variant="solid"
+                    className="flex-1 mx-2 bg-blue-500"
+                    onPress={
+                      paymentMethod === "Tiền mặt"
+                        ? handleCashPayment
+                        : handleZaloPayment
+                    }
+                  >
+                    <ButtonText className="text-white">
+                      {paymentLoading ? "Processing..." : "Confirm"}
+                    </ButtonText>
+                  </Button>
+                </Box>
+              )}
             </Box>
-          </Box>
-        )}
+          )}
         {/* Phone and chat button */}
         {requestDetail?.requeststatus !== "Pending" && (
           <>
