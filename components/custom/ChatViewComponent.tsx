@@ -106,16 +106,21 @@ const ChatViewComponent: React.FC<ChatViewComponentProps> = ({
     const isCurrentUser = item.userId === currentUserId;
 
     return (
-      <View style={[styles.messageContainer, isCurrentUser ? styles.messageContainerRight : styles.messageContainerLeft]}>
-        <View style={styles.userInfo}>
+      <View className={`my-2 ${isCurrentUser ? "items-end" : "items-start"}`}>
+        <View className="flex-row items-center mb-1">
           {!isCurrentUser && messageUser && (
-            <Image source={{ uri: `${messageUser.custom?.avatar || null}` }} style={styles.avatar} />
+            <Image
+              source={{ uri: `${messageUser.custom?.avatar || null}` }}
+              className="w-10 h-10 rounded-full border-2 border-green-400 mr-2"
+            />
           )}
-          <View style={[styles.messageWrapper, isCurrentUser ? styles.messageWrapperRight : styles.messageWrapperLeft]}>
-            {!isCurrentUser && <Text style={styles.username}>{messageUser?.name}</Text>}
-            <View style={[styles.messageContent, isCurrentUser ? styles.messageContentRight : styles.messageContentLeft]}>
-              <Text style={styles.messageText}>{item.content.text}</Text>
-              <Text style={styles.messageTime}>{TimetokenUtils.timetokenToDate(item.timetoken).toLocaleTimeString()}</Text>
+          <View className={`max-w-[75%] ${isCurrentUser ? "self-end" : "self-start"}`}>
+            {!isCurrentUser && <Text className="text-xs text-gray-600 mb-1">{messageUser?.name}</Text>}
+            <View className={`p-3 rounded-lg ${isCurrentUser ? "bg-blue-500" : "bg-yellow-400"}`}>
+              <Text className="text-white text-sm">{item.content.text}</Text>
+              <Text className="text-[10px] text-gray-300 mt-1">
+                {TimetokenUtils.timetokenToDate(item.timetoken).toLocaleTimeString()}
+              </Text>
             </View>
           </View>
         </View>
@@ -123,54 +128,36 @@ const ChatViewComponent: React.FC<ChatViewComponentProps> = ({
     );
   };
 
-
   return (
-    <View style={styles.container}>
-      <Text>
-        <Text style={styles.header}> Kênh chat riêng tư:</Text>
-        {channel?.name}
-      </Text>
-      <FlatList data={messages}
+    <View className="flex-1 px-5 bg-gray-100">
+      {/* Header */}
+      {/* <Text className="text-xl font-bold my-4">Kênh chat riêng tư: {channel?.name}</Text> */}
+
+      {/* Messages List */}
+      <FlatList
+        data={messages}
         keyExtractor={(item) => item.timetoken.toString()}
-        renderItem={renderChatItem} />
-      <View style={styles.inputContainer}>
-        <TextInput style={styles.input} value={text} onChangeText={setText} placeholder="Type a message" />
-        <TouchableOpacity onPress={sendMessage} style={styles.sendButton}>
-          <Text style={styles.sendButtonText}>Send</Text>
+        renderItem={renderChatItem}
+        className="flex-1"
+      />
+
+      {/* Chat Input */}
+      <View className="flex-row items-center p-3 bg-white rounded-xl shadow-md">
+        <TextInput
+          className="flex-1 bg-gray-100 p-3 rounded-lg"
+          value={text}
+          onChangeText={setText}
+          placeholder="Type a message..."
+        />
+        <TouchableOpacity
+          onPress={sendMessage}
+          className="ml-3 p-3 bg-red-500 rounded-lg shadow-md"
+        >
+          <Text className="text-white font-bold">Send</Text>
         </TouchableOpacity>
       </View>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: "#f0f3f7" },
-  header: { fontSize: 20, fontWeight: "bold", marginBottom: 10 },
-  messageContainer: { marginVertical: 8 },
-  messageContainerLeft: { alignItems: "flex-start" },
-  messageContainerRight: { alignItems: "flex-end" },
-  userInfo: { flexDirection: "row", alignItems: "center", marginBottom: 4 },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 25,
-    marginRight: 6,
-    borderWidth: 2,
-    borderColor: "lightgreen"
-  },
-  username: { fontSize: 12, color: "#666", marginBottom: 2 }, // Smaller username above the message
-  messageWrapper: { maxWidth: "75%" },
-  messageWrapperLeft: { alignSelf: "flex-start" },
-  messageWrapperRight: { alignSelf: "flex-end" },
-  messageContent: { borderRadius: 10, padding: 10 },
-  messageContentLeft: { backgroundColor: "#FAC05B", alignSelf: "flex-start" },
-  messageContentRight: { backgroundColor: "#0078FF", alignSelf: "flex-end" },
-  messageText: { fontSize: 14, color: "#fff" },
-  messageTime: { fontSize: 10, color: "#ccc", marginTop: 2 },
-  inputContainer: { flexDirection: "row", alignItems: "center", padding: 10 },
-  input: { flex: 1, backgroundColor: "#fff", borderRadius: 10, padding: 10 },
-  sendButton: { marginLeft: 10, padding: 10, backgroundColor: "#de2440", borderRadius: 10 },
-  sendButtonText: { color: "#fff" },
-});
 
 export default ChatViewComponent;

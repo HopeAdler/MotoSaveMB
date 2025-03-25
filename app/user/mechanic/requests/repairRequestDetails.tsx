@@ -2,7 +2,7 @@ import AuthContext from "@/app/context/AuthContext";
 import LoadingScreen from "@/app/loading/loading";
 import { createRepairQuote, getRepairCostPreview, getRepairQuotesByRequestDetailId, getRepairRequestDetailForMechanic, updateRepairRequestStatus } from "@/app/services/beAPI";
 import { usePubNubService } from "@/app/services/pubnubService";
-import { decodedToken, formatMoney } from "@/app/utils/utils";
+import { decodedToken, formatMoney, handlePhoneCall } from "@/app/utils/utils";
 import { GoBackButton } from "@/components/custom/GoBackButton";
 import { RepairStatusBadge } from "@/components/custom/MechanicStatusBadge";
 import RepairCostPreviewSelect from "@/components/custom/RepairCostPreviewSelect";
@@ -243,8 +243,8 @@ export default function RepairDetailsScreen() {
     });
   }
   const onCallPress = () => {
+    handlePhoneCall(repairRequestDetail?.customerphone);
   }
-
   if (isLoading) return <LoadingScreen />
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} className="flex-1">
