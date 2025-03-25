@@ -12,6 +12,7 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { ChevronDownIcon } from "@/components/ui/icon";
+import { formatMoney } from "@/app/utils/utils";
 
 interface RepairCostPreview {
   id: string,
@@ -61,7 +62,7 @@ const RepairCostPreviewSelect: React.FC<RepairSelectProps> = ({
             <SelectDragIndicator />
           </SelectDragIndicatorWrapper>
           {repairOptions.map((repair) => (
-            <SelectItem key={repair.name} label={`${repair.name} (${repair.min}-${repair.max})`} value={repair.name} />
+            <SelectItem key={repair.name} label={`${repair.name} (${formatMoney(repair.min)} ~ ${formatMoney(repair.max)})`} value={repair.name} />
           ))}
         </SelectContent>
       </SelectPortal>

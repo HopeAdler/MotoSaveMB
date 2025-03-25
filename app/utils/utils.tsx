@@ -151,6 +151,10 @@ export const formatDate = (dateString: string) => {
   });
 };
 
+export const formatMoney = (amount: number) => {
+  return amount.toLocaleString("vi-VN").replace(/,/g, ".") + "VNĐ";
+}
+
 export const groupActivitiesByDate = (activities: ActivityItem[]) => {
   return activities.reduce((groups, activity) => {
     const date = new Date(activity.createddate).toLocaleDateString('en-GB');
@@ -185,6 +189,7 @@ const utils = {
   decodePolyline,
   handlePhoneCall,
   formatDate,
+  formatMoney,
   groupActivitiesByDate,
 };
 
