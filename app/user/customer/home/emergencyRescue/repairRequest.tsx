@@ -7,6 +7,7 @@ import {
   Car,
   CheckCircle2,
   ChevronDownIcon,
+  ChevronLeft,
   MessageSquare,
   Phone,
   User,
@@ -141,6 +142,17 @@ const RepairRequestScreen = () => {
       requestDetail?.requeststatus !== "Inspecting"
     ) {
       fetchRepairQuote();
+    }
+  }, [requestDetail?.requeststatus]);
+
+  useEffect(() => {
+    if (requestDetail?.requeststatus === "Done") {
+      const timer = setTimeout(() => {
+        router.navigate(
+          "/user/customer/home/emergencyRescue/returnVehicleRequest"
+        );
+      }, 3000);
+      return () => clearTimeout(timer);
     }
   }, [requestDetail?.requeststatus]);
 
@@ -360,7 +372,18 @@ const RepairRequestScreen = () => {
       contentContainerStyle={{ flexGrow: 1 }}
       keyboardShouldPersistTaps="handled"
     >
-      <Box className="flex-1 px-4 py-6">
+      <Box className="flex-1 px-4 py-3">
+        <Box className="flex-row items-center mb-2">
+          <Pressable
+            onPress={() => router.navigate("/user/customer/home/homepage")}
+            className="w-10 h-10 bg-gray-50 rounded-full items-center justify-center"
+          >
+            <ChevronLeft size={24} color="#374151" />
+          </Pressable>
+          <Text bold size="xl" className="flex-1 text-center mr-10">
+            Return Vehicle Request
+          </Text>
+        </Box>
         <Box className="bg-white rounded-2xl shadow-sm p-4 mb-4">
           <Text className="text-lg font-bold text-gray-900 mb-4 text-center">
             Mechanic Information

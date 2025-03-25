@@ -6,7 +6,6 @@ import { VStack } from "@/components/ui/vstack";
 import { Router } from "expo-router";
 import moment from "moment";
 import { Alert } from "react-native";
-import { View } from "react-native";
 import RequestStatus from "./RequestItemStatusComponent";
 
 interface RepairRequestItem {

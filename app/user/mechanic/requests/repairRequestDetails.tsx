@@ -2,23 +2,22 @@ import AuthContext from "@/app/context/AuthContext";
 import LoadingScreen from "@/app/loading/loading";
 import { createRepairQuote, getRepairCostPreview, getRepairQuotesByRequestDetailId, getRepairRequestDetailForMechanic, updateRepairRequestStatus } from "@/app/services/beAPI";
 import { usePubNubService } from "@/app/services/pubnubService";
-import { decodedToken } from "@/app/utils/utils";
+import { decodedToken, formatMoney, handlePhoneCall } from "@/app/utils/utils";
 import { GoBackButton } from "@/components/custom/GoBackButton";
 import { RepairStatusBadge } from "@/components/custom/MechanicStatusBadge";
 import RepairCostPreviewSelect from "@/components/custom/RepairCostPreviewSelect";
 import { CustomerInfo } from "@/components/custom/RepairCustomerInfo";
 import { VehicleInfoBox } from "@/components/custom/VehicleInfoBox";
 import { Box } from "@/components/ui/box";
+import { Button, ButtonSpinner, ButtonText } from "@/components/ui/button";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useContext, useEffect, useState } from "react";
 import {
   Alert,
-  Button,
   FlatList,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity
@@ -244,195 +243,111 @@ export default function RepairDetailsScreen() {
     });
   }
   const onCallPress = () => {
+    handlePhoneCall(repairRequestDetail?.customerphone);
   }
-
   if (isLoading) return <LoadingScreen />
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={{ flex: 1 }}
-    >
-      <ScrollView style={{ flex: 1 }}>
-        <Box style={styles.container}>
+    <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} className="flex-1">
+      <ScrollView className="flex-1">
+        <Box className="flex-1 p-5">
           <GoBackButton />
-          <Text style={styles.header}>Chi tiết sửa xe:</Text>
-          {/* Customer Info */}
-          <CustomerInfo repairRequestDetail={repairRequestDetail}
-            onCallPress={onCallPress} toChatScreen={toChatScreen} />
+          <Text className="text-lg font-bold text-center mb-2">Chi tiết sửa xe:</Text>
+          <CustomerInfo repairRequestDetail={repairRequestDetail} onCallPress={onCallPress} toChatScreen={toChatScreen} />
           {repairRequestDetail && <RepairStatusBadge status={repairRequestDetail?.requeststatus} />}
 
-          {/* Vehicle Info */}
           <VehicleInfoBox repairRequestDetail={repairRequestDetail} />
 
-          {/* Repair Details */}
-          <Box style={styles.repairSection}>
-            <Text style={{ fontWeight: "700" }}>Bảng báo giá:</Text>
+          <Box className="border border-gray-300 rounded-lg p-3 my-3">
+            <Text className="font-bold">Bảng báo giá:</Text>
             <FlatList
               scrollEnabled={false}
               data={repairQuotes}
               keyExtractor={(item) => item?.index.toString()}
-              renderItem={({ item }) => (
-                <Box style={styles.repairItemContainer}>
-                  {/* First Row - Repair Type Selection */}
-                  <Box style={styles.selectContainer}>
-                    {isNew ?
-                      <RepairCostPreviewSelect
-                        repairOptions={repairCostPreviews.filter(
-                          (repair) => !repairQuotes.some((quote) => quote.repairname === repair.name)
-                        )}
-                        selectedRepair={item.detail}
-                        onSelectRepair={(repair) => handleRepairSelection(item.index, repair)}
-                      />
-                      :
-                      <Text className="justify-center align-middle">
-                        {item.repairname || "No repair name found"}
-                      </Text>
-                    }
-                  </Box>
-
-                  {/* Second Row - Input & Remove Button */}
-                  {isNew ?
-                    <Box style={styles.inputRow}>
-                      <TextInput
-                        style={[
-                          styles.input,
-                          item.min && item.max && (item.cost < item.min || item.cost > item.max)
-                            ? styles.invalidInput
-                            : null,
-                        ]}
-                        placeholder="Giá"
-                        keyboardType="numeric"
-                        value={item.cost === 0 ? "" : item.cost.toString()} // Show empty string when 0
-                        onChangeText={(text) => handlePriceChange(item.index, text)} // Pass raw text
-                      />
-                      {repairQuotes.length > 1 &&
-                        <TouchableOpacity style={styles.removeButton}
-                          onPress={() => removeRepairItem(item.index)}>
-                          <Text style={styles.removeText}>X</Text>
-                        </TouchableOpacity>
-                      }
+              renderItem={({ item, index }) => {
+                return (
+                  <Box className="p-4 border border-gray-300 rounded-xl my-2 bg-white shadow-md">
+                    <Box className="mb-2">
+                      {isNew ? (
+                        <RepairCostPreviewSelect
+                          repairOptions={repairCostPreviews.filter(
+                            (repair) => !repairQuotes.some((quote) => quote.repairname === repair.name)
+                          )}
+                          selectedRepair={item.detail}
+                          onSelectRepair={(repair) => handleRepairSelection(item.index, repair)}
+                        />
+                      ) : (
+                        <Text className="text-base font-semibold text-gray-800">{item.repairname || "No repair name found"}</Text>
+                      )}
                     </Box>
-                    :
-                    <Text>{item.cost}</Text>
-                  }
-                </Box>
-              )}
+
+                    {isNew ? (
+                      <Box className="flex-row items-center">
+                        <TextInput
+                          className={`flex-1 border p-3 rounded-md text-base mr-3 transition-all duration-200 ${item.min && item.max && (item.cost < item.min || item.cost > item.max) ? 'border-red-500 border-2' : 'border-gray-300'
+                            }`}
+                          placeholder="Nhập giá"
+                          keyboardType="numeric"
+                          value={item.cost === 0 ? "" : item.cost.toString()}
+                          onChangeText={(text) => handlePriceChange(item.index, text)}
+                        />
+                        {repairQuotes.length > 1 && (
+                          <TouchableOpacity className="bg-red-500 px-4 py-2 rounded-full shadow-md active:opacity-75" onPress={() => removeRepairItem(item.index)}>
+                            <Text className="text-white font-bold">X</Text>
+                          </TouchableOpacity>
+                        )}
+                      </Box>
+                    ) : (
+                      <Text className="text-lg font-semibold text-green-600">{formatMoney(item.cost)}</Text>
+                    )}
+                  </Box>
+                );
+              }}
             />
 
-            {isNew &&
-              <Box>
-                <TouchableOpacity
-                  style={[styles.addButton, (isAddDisabled) && styles.disabledButton]}
-                  onPress={addRepairItem}
-                  disabled={isAddDisabled}
-                >
-                  <Text style={styles.addText}>+</Text>
+            {isNew && (
+              <Box className="items-center">
+                <TouchableOpacity className={`rounded-full py-3 px-5 m-5 
+                  ${isAddDisabled ? 'bg-gray-400 opacity-50' :
+                    'bg-green-300'}`} onPress={addRepairItem} disabled={isAddDisabled}>
+                  <Text className="text-xl">+</Text>
                 </TouchableOpacity>
 
-                {/* "Gửi báo giá" Button */}
-                {
-                  repairQuotes.length > 0 &&
-                  <Button title="Gửi báo giá" disabled={isSubmitDisabled}
-                    onPress={handleConfirmSend} />
-                }
+                {repairQuotes.length > 0 && (
+                  <Button size="lg"
+                    onPress={handleConfirmSend}
+                    isDisabled={isSubmitDisabled} // ✅ Gluestack uses "isDisabled" instead of "disabled"
+                    className={isSubmitDisabled ? "bg-gray-400 opacity-50" : "bg-blue-500"}
+                  >
+                    <ButtonText className="font-extrabold text-sm text-white">
+                      Gửi báo giá
+                    </ButtonText>
+                  </Button>
+                )}
               </Box>
-            }
+            )}
           </Box>
 
-          {/* Footer */}
-          <Box style={styles.footer}>
-            {repairRequestDetail &&
-              <Button
-                title={repairRequestDetail?.requeststatus === 'Repairing' ? "Hoàn tất sửa chữa" : "Bắt đầu sửa xe"}
-                onPress={handleUpdateRepairStatus}
-                disabled={!['Accepted', 'Repairing'].includes(repairRequestDetail.requeststatus)}
-              />
-            }
+          <Box className="items-center mt-5">
+            {repairRequestDetail
+              && repairRequestDetail?.requeststatus != "Inspecting"
+              && repairRequestDetail?.requeststatus != "Done"
+              && (
+                <Button size="lg"
+                  onPress={handleUpdateRepairStatus}
+                  isDisabled={!['Accepted', 'Repairing'].includes(repairRequestDetail.requeststatus)}
+                  className={`rounded-lg font-extrabold ${['Accepted', 'Repairing'].includes(repairRequestDetail.requeststatus)
+                    ? 'bg-green-500'
+                    : 'bg-gray-400 opacity-50'
+                    }`}
+                >
+                  <ButtonText className="text-white text-sm">
+                    {repairRequestDetail?.requeststatus === 'Repairing' ? "Hoàn tất sửa chữa" : "Bắt đầu sửa xe"}
+                  </ButtonText>
+                </Button>
+              )}
           </Box>
         </Box>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20 },
-  header: {
-    fontSize: 18,
-    fontWeight: "bold",
-    textAlign: "center",
-    marginBottom: 10,
-  },
-  repairSection: {
-    borderWidth: 1,
-    borderRadius: 15,
-    padding: 10,
-    marginVertical: 10,
-  },
-  repairListContainer: {
-    maxHeight: 300,
-    minHeight: 150,
-  },
-  repairItemContainer: {
-    padding: 10,
-    borderWidth: 1,
-    borderRadius: 10,
-    marginVertical: 10,
-    backgroundColor: "#f9f9f9",
-  },
-  selectContainer: {
-    marginBottom: 10, // Adds space between rows
-  },
-  inputRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  input: {
-    flex: 1,
-    borderWidth: 1,
-    padding: 10,
-    borderRadius: 8,
-    marginRight: 10,
-  },
-  invalidInput: {
-    borderColor: "red",
-    borderWidth: 2,
-  },
-  removeButton: {
-    backgroundColor: "red",
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    borderRadius: 8,
-  },
-  removeText: {
-    color: "white",
-    fontWeight: "bold",
-  },
-  addButton: {
-    alignSelf: "center",
-    padding: 10,
-    backgroundColor: "lightgreen",
-    borderRadius: 20,
-    marginTop: 10,
-  },
-  disabledButton: {
-    backgroundColor: "gray",
-    opacity: 0.5,
-  },
-  addText: {
-    fontSize: 18,
-  },
-  footer: {
-    flexDirection: "column",
-    alignItems: 'center',
-    justifyContent: "space-between",
-    marginTop: 20,
-  },
-  chatButton: {
-    alignSelf: 'flex-end',
-    padding: 10,
-    borderWidth: 1,
-    borderRadius: 5,
-  },
-});
