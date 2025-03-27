@@ -17,6 +17,7 @@ import { Avatar } from "react-native-elements";
 import LoadingScreen from "../../loading/loading";
 import { usePubNub } from "@/app/context/PubNubContext";
 import { usePubNubService } from "@/app/services/pubnubService";
+import { getPendingReturnRequest } from "@/app/services/beAPI";
 
 interface ServiceCardProps {
   icon: LucideIcon;
@@ -75,40 +76,49 @@ export default function DHomeScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const { jsonPendingReqDetailIds } = useLocalSearchParams<any>();
   const [pendingReqDetailIds, setPendingReqDetailIds] = useState(new Map<string, string>());
-  const [requestDetails, setRequestDetails] = useState<RequestItem[]>([]);
+  const [pendingRescueRequests, setPendingRescueRequests] = useState<RequestItem[]>([]);
+  const [pendingReturnRequests, setPendingReturnRequests] = useState<RequestItem[]>([]);
   const router = useRouter();
   // const testedIds = ['8f3e93cb-e458-494b-acc5-5e3dd601e709', '67b026f6-e114-4f32-9f61-fae96778a74e', 'e7a09360-6011-40f2-96d1-fac7d49e0093'];
-  useEffect(() => {
-    if (pendingReqDetailIds.size === 0) return; // No requests, skip API calls
+  const fetchPendingRescueRequests = async () => {
+    try {
+      const requests = await Promise.all(
+        Array.from(pendingReqDetailIds.values()).map(async (id) => {
+          console.log(id)
+          const response = await axios.get(
+            `https://motor-save-be.vercel.app/api/v1/requests/driver/${id}`,
+            { headers: { Authorization: "Bearer " + token } }
+          );
+          return response.data;
+        })
+      );
 
-    const fetchAllRequests = async () => {
-      try {
-        const requests = await Promise.all(
-          Array.from(pendingReqDetailIds.values()).map(async (id) => {
-            console.log(id)
-            const response = await axios.get(
-              `https://motor-save-be.vercel.app/api/v1/requests/driver/${id}`,
-              { headers: { Authorization: "Bearer " + token } }
-            );
-            return response.data;
-          })
-        );
-
-        // Filter out items where requeststatus is 'Accepted'
-        const filteredRequests = requests.filter((item) => (item.requeststatus === "Pending"));
-        // console.log('Refetching..')
-        setRequestDetails(filteredRequests); // ⬅️ Overwrite state with filtered data
-      } catch (error) {
-        console.error("Error fetching requests:", error);
-      }
+      // Filter out items where requeststatus is 'Accepted'
+      const filteredRequests = requests.filter((item) => (item.requeststatus === "Pending"));
+      // console.log('Refetching..')
+      setPendingRescueRequests(filteredRequests); // ⬅️ Overwrite state with filtered data
+    } catch (error) {
+      console.error("Error fetching requests:", error);
+    }
+  };
+  const fetchPendingReturnRequest = async () => {
+    try {
+      const results = await getPendingReturnRequest(token);
+      setPendingReturnRequests((prevReturnRequests) => {
+        const isDataChanged = JSON.stringify(prevReturnRequests) !== JSON.stringify(results);
+        return isDataChanged ? results : prevReturnRequests;
+      });
+    } catch (error) {
+      console.error("Error fetching requests:", error);
     };
+  }
 
-    fetchAllRequests(); // Fetch initially
-
+  useEffect(() => {
     const interval = setInterval(() => {
-      fetchAllRequests(); // Fetch every 5 seconds
+      fetchPendingReturnRequest(); // Fetch initially
+      if (pendingReqDetailIds.size === 0) return; // No requests, skip API calls
+      fetchPendingRescueRequests(); // Fetch every 5 seconds
     }, 5000);
-
     return () => clearInterval(interval); // Cleanup interval on unmount
   }, [pendingReqDetailIds, token]); // Dependencies to refetch when changed
 
@@ -152,17 +162,31 @@ export default function DHomeScreen() {
       <View className="flex-1">
         <Box className="p-4">
           <Box className="mb-3 h-2/5 flex flex-auto">
-            <Text className="text-lg font-bold mb-4">Hàng chờ yêu cầu ({requestDetails?.length})</Text>
-            {requestDetails && requestDetails.length > 0 ? (
+            <Text className="text-lg font-bold mb-4">Hàng chờ yêu cầu cứu hộ ({pendingRescueRequests?.length})</Text>
+            {pendingRescueRequests && pendingRescueRequests.length > 0 ? (
               <FlatList
-                data={requestDetails}
+                data={pendingRescueRequests}
                 keyExtractor={(item) => `${item.requestdetailid}-${item.requeststatus}`}
                 renderItem={({ item }) =>
                   renderItem({ item, token, router, pubnub, publishAcceptRequest })
                 }
               />
             ) : (
-              <Text>Hiện chưa có yêu cầu nào</Text>
+              <Text>Hiện chưa có yêu cầu cứu hộ nào</Text>
+            )}
+          </Box>
+          <Box className="mb-3 h-2/5 flex flex-auto">
+            <Text className="text-lg font-bold mb-4">Hàng chờ yêu cầu trả xe ({pendingReturnRequests?.length})</Text>
+            {pendingReturnRequests && pendingReturnRequests.length > 0 ? (
+              <FlatList
+                data={pendingReturnRequests}
+                keyExtractor={(item) => `${item.requestdetailid}-${item.requeststatus}`}
+                renderItem={({ item }) =>
+                  renderItem({ item, token, router, pubnub, publishAcceptRequest })
+                }
+              />
+            ) : (
+              <Text>Hiện chưa có yêu cầu trả xe nào</Text>
             )}
           </Box>
 

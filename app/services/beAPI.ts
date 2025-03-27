@@ -309,6 +309,18 @@ export async function getPendingRepairRequests(token: string): Promise<any> {
   }
 }
 
+export async function getPendingReturnRequest(token: string): Promise<any> {
+  try {
+    const response = await axios.get(
+      "https://motor-save-be.vercel.app/api/v1/requests/driver/return/pending",
+      { headers: { Authorization: "Bearer " + token } }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching requests:", error);
+  }
+}
+
 export async function getRepairRequestsByMechanic(token: string): Promise<any> {
   try {
     const response = await axios.get(

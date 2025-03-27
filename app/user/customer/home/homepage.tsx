@@ -4,11 +4,20 @@ import { Box } from "@/components/ui/box";
 import { Text } from "@/components/ui/text";
 import { ScrollView, Pressable } from "react-native";
 import {
-  Car, Ambulance, Wrench, Battery, Fuel, 
-  Search, Bell
+  Car,
+  Ambulance,
+  Wrench,
+  Battery,
+  Fuel,
+  Search,
+  Bell,
 } from "lucide-react-native";
 import { router } from "expo-router";
 import LoadingScreen from "../../../loading/loading";
+import { RequestContext } from "@/app/context/RequestContext";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
+import { Button, ButtonText } from "@/components/ui/button";
 
 interface ServiceCardProps {
   icon: React.ElementType;
@@ -17,14 +26,26 @@ interface ServiceCardProps {
   onPress: () => void;
 }
 
-const ServiceCard: React.FC<ServiceCardProps> = ({ icon: Icon, title, color, onPress }) => (
-  <Pressable 
-    onPress={onPress}
-    className="mr-3"
-  >
+interface LatestRequestDetail {
+  requestdetailid: string;
+  requeststatus: string;
+  createddate: string;
+  updateddate: string;
+  requestid: string;
+  servicepackagename: string;
+  requesttype: string;
+}
+
+const ServiceCard: React.FC<ServiceCardProps> = ({
+  icon: Icon,
+  title,
+  color,
+  onPress,
+}) => (
+  <Pressable onPress={onPress} className="mr-3">
     <Box className="w-[150px] bg-white/90 backdrop-blur-sm rounded-3xl p-4 border border-gray-100/30 shadow-sm">
-      <Box 
-        className="w-12 h-12 rounded-2xl items-center justify-center mb-3" 
+      <Box
+        className="w-12 h-12 rounded-2xl items-center justify-center mb-3"
         style={{ backgroundColor: `${color}15` }}
       >
         <Icon color={color} size={22} />
@@ -36,14 +57,32 @@ const ServiceCard: React.FC<ServiceCardProps> = ({ icon: Icon, title, color, onP
 );
 
 export default function CHomeScreen() {
-  const { user, dispatch } = useContext(AuthContext);
+  const { user, token } = useContext(AuthContext);
+  const { requestId } = useContext(RequestContext);
+  console.log("Request Id: " + requestId);
+  const [latestRequestDetail, setLatestRequestDetail] =
+    useState<LatestRequestDetail>();
+  console.log("Request Status: " + latestRequestDetail?.requeststatus);
   const [isLoading, setIsLoading] = useState(false);
-
+  const fetchRequestDetail = async () => {
+    setIsLoading(true)
+    try {
+      const response = await axios.get<LatestRequestDetail>(
+        `https://motor-save-be.vercel.app/api/v1/requests/latestRequestDetail/${requestId}`,
+        { headers: { Authorization: "Bearer " + token } }
+      );
+      setLatestRequestDetail(response.data);
+      setIsLoading(false);
+    } catch (error) {
+      console.error("Error fetching request details:", error);
+    }
+  };
 
   useEffect(() => {
+    if (requestId != null) {
+      fetchRequestDetail();
+    }
   }, []);
-
-
 
   if (!user) {
     router.replace("/auth/login");
@@ -54,6 +93,32 @@ export default function CHomeScreen() {
     router.replace("/error/403");
     return null;
   }
+
+  const handleNavigate = () => {
+    if (
+      latestRequestDetail?.servicepackagename === "Cứu hộ thường" &&
+      latestRequestDetail?.requesttype === "Cứu hộ"
+    ) {
+      router.navigate("/user/customer/home/normalRescue/normalRescueMap");
+    } else if (
+      latestRequestDetail?.servicepackagename === "Cứu hộ nước ngập" &&
+      latestRequestDetail?.requesttype === "Cứu hộ"
+    ) {
+      router.navigate("/user/customer/home/floodRescue/floodRescueMap");
+    } else if (
+      latestRequestDetail?.servicepackagename === "Cứu hộ đến trạm" &&
+      latestRequestDetail?.requesttype === "Cứu hộ"
+    ) {
+      router.navigate("/user/customer/home/emergencyRescue/emergencyRescueMap");
+    } else if (
+      latestRequestDetail?.servicepackagename === "Cứu hộ đến trạm" &&
+      latestRequestDetail?.requesttype === "Sửa xe"
+    ) {
+      router.navigate("/user/customer/home/emergencyRescue/repairRequest");
+    } else {
+      router.navigate("/user/customer/home/emergencyRescue/returnVehicleRequest")
+    }
+  };
 
   if (isLoading) return <LoadingScreen />;
 
@@ -70,7 +135,9 @@ export default function CHomeScreen() {
               </Box>
               <Box>
                 <Text className="text-blue-100/80 text-sm">Welcome back</Text>
-                <Text className="text-white text-lg font-bold">{user?.username}</Text>
+                <Text className="text-white text-lg font-bold">
+                  {user?.username}
+                </Text>
               </Box>
             </Box>
             <Pressable className="w-12 h-12 bg-white/10 backdrop-blur-lg rounded-2xl items-center justify-center border border-white/10">
@@ -81,57 +148,105 @@ export default function CHomeScreen() {
           <Box className="mt-4">
             <Pressable className="bg-white/10 backdrop-blur-lg rounded-2xl flex-row items-center px-5 py-4 border border-white/10">
               <Search size={22} color="#fff" className="opacity-70 mr-3" />
-              <Text className="text-white/90 text-base font-medium">Find nearby rescue</Text>
+              <Text className="text-white/90 text-base font-medium">
+                Find nearby rescue
+              </Text>
             </Pressable>
           </Box>
         </Box>
       </Box>
 
-      <ScrollView className="flex-1 -mt-16 px-5" showsVerticalScrollIndicator={false}>
+      <ScrollView
+        className="flex-1 -mt-16 px-5"
+        showsVerticalScrollIndicator={false}
+      >
         <Box className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-6">
-          <Text className="text-lg font-semibold text-gray-800 mb-4">Emergency Services</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="gap-3">
-            <ServiceCard 
+          <Text className="text-lg font-semibold text-gray-800 mb-4">
+            Emergency Services
+          </Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            className="gap-3"
+          >
+            <ServiceCard
               icon={Car}
               title="Normal Rescue"
               color="#2563eb"
-              onPress={() => router.navigate("/user/customer/home/normalRescue/normalRescueMap")}
+              onPress={() =>
+                router.navigate(
+                  "/user/customer/home/normalRescue/normalRescueMap"
+                )
+              }
             />
             <ServiceCard
-              icon={Ambulance} 
+              icon={Ambulance}
               title="Emergency"
               color="#dc2626"
-              onPress={() => router.navigate("/user/customer/home/emergencyRescue/emergencyRescueMap")}
+              onPress={() =>
+                router.navigate(
+                  "/user/customer/home/emergencyRescue/emergencyRescueMap"
+                )
+              }
             />
             <ServiceCard
               icon={Wrench}
               title="Flood Rescue"
               color="#059669"
-              onPress={() => router.navigate("/user/customer/home/floodRescue/floodRescueMap")}
+              onPress={() =>
+                router.navigate(
+                  "/user/customer/home/floodRescue/floodRescueMap"
+                )
+              }
             />
           </ScrollView>
         </Box>
 
         <Box className="mb-5">
-          <Text className="text-lg font-semibold text-gray-800 mb-4">Quick Services</Text>
+          <Text className="text-lg font-semibold text-gray-800 mb-4">
+            Quick Services
+          </Text>
           <Box className="flex-row space-x-3">
             <Pressable className="flex-1 bg-white/80 backdrop-blur-sm p-4 rounded-3xl border border-gray-100/50">
               <Box className="w-12 h-12 bg-violet-50 rounded-2xl items-center justify-center mb-3">
                 <Battery color="#7c3aed" size={22} />
               </Box>
-              <Text className="text-base font-semibold text-gray-800">Battery Jump</Text>
-              <Text className="text-xs text-gray-500 mt-0.5">Quick assistance</Text>
+              <Text className="text-base font-semibold text-gray-800">
+                Battery Jump
+              </Text>
+              <Text className="text-xs text-gray-500 mt-0.5">
+                Quick assistance
+              </Text>
             </Pressable>
 
             <Pressable className="flex-1 bg-white/80 backdrop-blur-sm p-4 rounded-3xl border border-gray-100/50">
               <Box className="w-12 h-12 bg-amber-50 rounded-2xl items-center justify-center mb-3">
                 <Fuel color="#d97706" size={22} />
               </Box>
-              <Text className="text-base font-semibold text-gray-800">Fuel Delivery</Text>
-              <Text className="text-xs text-gray-500 mt-0.5">Emergency fuel</Text>
+              <Text className="text-base font-semibold text-gray-800">
+                Fuel Delivery
+              </Text>
+              <Text className="text-xs text-gray-500 mt-0.5">
+                Emergency fuel
+              </Text>
             </Pressable>
           </Box>
         </Box>
+        {latestRequestDetail?.requeststatus !== "Done" &&
+          latestRequestDetail?.requeststatus !== "Cancel" && (
+            <Box className="flex-row items-center my-5">
+              <Text className="text-base font-semibold text-gray-800">
+                Your recent request has not done yet
+              </Text>
+              <Button
+                variant="solid"
+                className="flex-1 mx-2 bg-blue-500"
+                onPress={handleNavigate}
+              >
+                <ButtonText className="text-white">Continue</ButtonText>
+              </Button>
+            </Box>
+          )}
 
         <Pressable
           onPress={() => router.navigate("/user/customer/home/servicePackage")}
@@ -141,7 +256,9 @@ export default function CHomeScreen() {
             <Box className="w-12 h-12 bg-white/10 rounded-2xl items-center justify-center mr-3">
               <Text className="text-xl font-bold text-white">SOS</Text>
             </Box>
-            <Text className="text-lg font-semibold text-white">Emergency Assistance</Text>
+            <Text className="text-lg font-semibold text-white">
+              Emergency Assistance
+            </Text>
           </Box>
         </Pressable>
       </ScrollView>
