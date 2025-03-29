@@ -1,10 +1,9 @@
-import { router, useLocalSearchParams } from "expo-router";
-import React, { useContext, useEffect, useState } from "react";
+import { router } from "expo-router";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import { Box } from "@/components/ui/box";
 import { Text } from "@/components/ui/text";
 import {
   AlertCircle,
-  Car,
   CheckCircle2,
   ChevronDownIcon,
   ChevronLeft,
@@ -12,24 +11,17 @@ import {
   MapPin,
   MessageSquare,
   Phone,
-  User,
 } from "lucide-react-native";
 import axios from "axios";
 import AuthContext from "@/app/context/AuthContext";
-import {
-  RepairQuote,
-  RepairRequestDetail,
-  RequestDetail,
-} from "@/app/context/formFields";
+import { RequestDetail } from "@/app/context/formFields";
 import {
   ActivityIndicator,
-  FlatList,
   NativeEventEmitter,
   NativeModules,
   Pressable,
   ScrollView,
 } from "react-native";
-import { Input, InputField } from "@/components/ui/input";
 import {
   Select,
   SelectTrigger,
@@ -41,20 +33,9 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { Button, ButtonText } from "@/components/ui/button";
-import {
-  geocodeAddress,
-  getAutocomplete,
-  getDirections,
-} from "@/app/services/goongAPI";
 import { decodedToken, handlePhoneCall } from "@/app/utils/utils";
 import { PayZaloEventData, processPayment } from "@/app/utils/payment";
-import {
-  acceptRepairQuote,
-  calculateFare,
-  createReturnVehicleRequest,
-  createTransaction,
-  RescueRequestPayload,
-} from "@/app/services/beAPI";
+import { createPayment, createTransaction } from "@/app/services/beAPI";
 import { RequestContext } from "@/app/context/RequestContext";
 import { Avatar } from "react-native-elements";
 
@@ -63,6 +44,7 @@ const ReturnVehicleRequestScreen = () => {
   const { requestId } = useContext(RequestContext);
   const [paymentLoading, setPaymentLoading] = useState<boolean>(false);
   const [paymentMethod, setPaymentMethod] = useState("Tiền mặt");
+  const [transactionSuccess, setTransactionSuccess] = useState<boolean>(false);
   const [fare, setFare] = useState<number | any>(0);
   const [zpTransId, setZpTransId] = useState<string | null>(null);
   const { token } = useContext(AuthContext);
@@ -92,8 +74,28 @@ const ReturnVehicleRequestScreen = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // const cashPayment = async () => {
+  //   try {
+  //     const payment = await createPayment(
+  //       {
+  //         requestdetailid: requestDetail?.requestdetailid,
+  //         totalamount: fare,
+  //         paymentmethod: "Tiền mặt",
+  //         paymentstatus: "Unpaid",
+  //       },
+  //       token
+  //     );
+  //     console.log(payment);
+  //   } catch (error) {
+  //     console.error("Payment error:", error);
+  //   }
+  // };
+
   useEffect(() => {
     if (requestDetail?.requeststatus === "Done") {
+      // if (paymentMethod === "Tiền mặt") {
+      //   cashPayment();
+      // }
       const timer = setTimeout(() => {
         router.push({
           pathname: "/user/customer/home/feedback",
@@ -144,6 +146,7 @@ const ReturnVehicleRequestScreen = () => {
                 },
                 token
               );
+              setTransactionSuccess(true);
               console.log("Transaction created:", transactionResponse);
             } catch (error) {
               console.error("Error creating transaction:", error);
@@ -352,7 +355,7 @@ const ReturnVehicleRequestScreen = () => {
               </SelectPortal>
             </Select>
           </Box>
-          {paymentMethod === "Zalopay" && (
+          {paymentMethod === "Zalopay" && transactionSuccess === false && (
             <Button
               variant="solid"
               size="lg"

@@ -231,6 +231,7 @@ export default function RepairDetailsScreen() {
         break;
 
     }
+    fetchRepairRequestDetail();
   }
 
   const toChatScreen = () => {

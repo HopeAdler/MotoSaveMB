@@ -1,6 +1,6 @@
 import { AuthContext } from "@/app/context/AuthContext";
 import { useCameraZoom } from "@/app/hooks/useCameraZoom";
-import { calculateFare, createRescueRequest, createTransaction, RescueRequestPayload, updateRequestStatus, } from "@/app/services/beAPI";
+import { calculateFare, createPayment, createRescueRequest, createTransaction, RescueRequestPayload, updateRequestStatus, } from "@/app/services/beAPI";
 import { geocodeAddress, getAutocomplete, getDirections, getReverseGeocode, } from "@/app/services/goongAPI";
 import { decodePolyline } from "@/app/utils/utils";
 import { Box } from "@/components/ui/box";
@@ -303,6 +303,17 @@ const RescueMapScreen = () => {
     try {
       const result = await createRescueRequest(payload, token);
       console.log(result);
+      const reqId = result.requestdetailid;
+      const payment = await createPayment(
+        {
+          requestdetailid: reqId,
+          totalamount: fare,
+          paymentmethod: "Tiền mặt",
+          paymentstatus: "Unpaid",
+        },
+        token
+      );
+      console.log(payment)
       setShowActionsheet(true);
       // setShowCountdownSheet(true);
       setRequestDetailId(result.requestdetailid);

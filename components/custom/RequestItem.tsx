@@ -1,12 +1,14 @@
 import { acceptRequest } from "@/app/services/beAPI";
 import { Box } from "@/components/ui/box";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonText } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
+import { HStack } from "@/components/ui/hstack";
 import { VStack } from "@/components/ui/vstack";
+import { StatusBadge } from "@/components/custom/StatusBadge";
 import { Router } from "expo-router";
 import moment from "moment";
 import { Alert, View } from "react-native";
-import RequestStatus from "./RequestItemStatusComponent";
+import { MapPin } from "lucide-react-native";
 
 interface RequestItem {
   requestid: string;
@@ -14,10 +16,18 @@ interface RequestItem {
   requestdetailid: string;
   requesttype: string;
   customername: string;
-  customerphone: string;
   pickuplocation: string;
   requeststatus: string;
   createddate: string;
+}
+
+interface RequestItemProps {
+  item: RequestItem;
+  token: string;
+  router: Router;
+  pubnub: any;
+  publishAcceptRequest: (requestDetailId: string) => Promise<void>;
+  variant?: "default" | "large" | "banner" | "small";
 }
 
 export const renderItem = ({
@@ -26,26 +36,50 @@ export const renderItem = ({
   router,
   pubnub,
   publishAcceptRequest,
-}: {
-  item: RequestItem;
-  token: string;
-  router: Router;
-  pubnub: any; // Replace with proper PubNub type if using TypeScript
-  publishAcceptRequest: (requestDetailId: string) => Promise<void>;
-}) => (
-  <Box className="bg-white p-4 mb-2 rounded-lg shadow relative">
-    <Text className="text-violet-500 text-lg font-bold">{item.servicepackagename} - {item.requesttype}</Text>
-    <RequestStatus requestStatus={item?.requeststatus} />
-    <VStack space="sm">
-      <Text className="text-lg font-bold">{item.customername}</Text>
-      <Text className="text-gray-600">📞 {item.customerphone}</Text>
-      <Text className="text-gray-700">📍 {item.pickuplocation}</Text>
-      <Text className="text-gray-500">
-        🕒 {moment(item.createddate).format("DD/MM/YYYY HH:mm")}
-      </Text>
+  variant = "small",
+}: RequestItemProps) => (
+  <Box className="bg-gradient-to-r from-blue-50 to-white p-5 rounded-xl mb-4 shadow-md border border-gray-200 h-64">
+    <HStack className="justify-between items-start mb-5">
+      <VStack className="flex-1 space-y-1">
+        <Text className="text-lg font-semibold text-blue-800">
+          {item.servicepackagename}
+        </Text>
+        <HStack className="justify-between items-center">
+          <Text className="text-sm font-medium text-gray-500">
+            {item.requesttype}
+          </Text>
+        </HStack>
+      </VStack>
+      <VStack className="items-end space-y-1">
+        <Box className="bg-blue-500 px-3 py-1 rounded-full mb-1">
+          <Text className="text-white text-sm font-semibold">
+            {moment(item.createddate).format("HH:mm")}
+          </Text>
+        </Box>
+        <StatusBadge status={item.requeststatus} variant={variant} />
+      </VStack>
+    </HStack>
+
+    <VStack space="xs" className="mb-4">
+      <HStack className="items-center space-x-2">
+        <Text className="text-sm text-gray-700 font-medium">
+          👤 {item.customername}
+        </Text>
+      </HStack>
+
+      <HStack className="items-start space-x-2">
+        <MapPin size={18} color="#2563EB" />
+        <Text className="text-sm text-gray-700 flex-1 leading-5">
+          {item.pickuplocation}
+        </Text>
+      </HStack>
+    </VStack>
+
+    <View className="mt-auto">
       {item.requeststatus === "Pending" ? (
         <Button
-          className="bg-blue-500 p-2 rounded mt-2"
+          variant="outline"
+          className="bg-blue-500 hover:bg-blue-600 rounded-md h-12"
           onPress={async () => {
             if (!pubnub) {
               Alert.alert("Error", "PubNub is not initialized");
@@ -54,21 +88,32 @@ export const renderItem = ({
             try {
               await acceptRequest(item.requestdetailid, token);
               try {
-                await publishAcceptRequest(item.requestdetailid);
-                Alert.alert("Success", "Request accepted and notification sent!");
+                if (item.requesttype !== "Trả xe") {
+                  await publishAcceptRequest(item.requestdetailid);
+                }
+                Alert.alert(
+                  "Success",
+                  "Request accepted and notification sent!"
+                );
               } catch (pubnubError) {
-                Alert.alert("Warning", "Request accepted, but notification failed");
+                Alert.alert(
+                  "Warning",
+                  "Request accepted, but notification failed"
+                );
               }
             } catch (apiError) {
               Alert.alert("Error", "Failed to accept request");
             }
           }}
         >
-          <Text className="text-white text-center">Accept</Text>
+          <ButtonText className="text-white text-base font-semibold">
+            Accept
+          </ButtonText>
         </Button>
       ) : (
         <Button
-          className="bg-green-500 p-2 rounded mt-2"
+          variant="outline"
+          className="border-gray-300 rounded-md h-12 hover:border-gray-400"
           onPress={() =>
             router.push({
               pathname: "/user/driver/requests/requestMap",
@@ -76,9 +121,13 @@ export const renderItem = ({
             })
           }
         >
-          <Text className="text-white text-center">Details</Text>
+          <HStack className="items-center space-x-2 h-full justify-center">
+            <Text className="text-blue-500 text-base font-semibold">
+              View Details
+            </Text>
+          </HStack>
         </Button>
       )}
-    </VStack>
+    </View>
   </Box>
 );

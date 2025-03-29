@@ -14,22 +14,29 @@ export const getStatusColor = (status: string) => {
 
 interface StatusBadgeProps {
   status: string;
-  variant?: 'default' | 'large' | 'banner';
+  variant?: "default" | "large" | "banner" | "small";
 }
 
-export const StatusBadge = ({ status, variant = 'default' }: StatusBadgeProps) => {
+export const StatusBadge = ({ status, variant = "default" }: StatusBadgeProps) => {
   const baseStyles = getStatusColor(status);
-  const sizeStyles = variant === 'large' 
-    ? 'px-4 py-2 text-base' 
-    : variant === 'banner'
-    ? 'w-full py-2 text-base'
-    : 'px-3 py-1 text-sm';
+  const sizeStyles =
+    variant === "large"
+      ? "px-4 py-2"
+      : variant === "banner"
+      ? "w-full py-2"
+      : variant === "small"
+      ? "px-2 py-0.5"
+      : "px-3 py-1";
+  const textSize =
+    variant === "large" || variant === "banner"
+      ? "text-base"
+      : variant === "small"
+      ? "text-xs"
+      : "text-sm";
 
   return (
     <Box className={`rounded-full ${baseStyles} ${sizeStyles}`}>
-      <Text className="font-medium text-center">
-        {status}
-      </Text>
+      <Text className={`font-medium text-center ${textSize}`}>{status}</Text>
     </Box>
   );
 };

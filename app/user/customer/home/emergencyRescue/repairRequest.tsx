@@ -44,6 +44,7 @@ import { PayZaloEventData, processPayment } from "@/app/utils/payment";
 import {
   acceptRepairQuote,
   calculateFare,
+  createPayment,
   createReturnVehicleRequest,
   createTransaction,
   RescueRequestPayload,
@@ -209,6 +210,16 @@ const RepairRequestScreen = () => {
   const handleCashPayment = async () => {
     if (!token) return;
     setPaymentLoading(true);
+    const payment = await createPayment(
+      {
+        requestdetailid: requestDetail?.requestdetailid,
+        totalamount: fare,
+        paymentmethod: "Tiền mặt",
+        paymentstatus: "Unpaid",
+      },
+      token
+    );
+    console.log(payment);
     const payload: RescueRequestPayload = {
       pickuplong: requestDetail?.long,
       pickuplat: requestDetail?.lat,
@@ -381,7 +392,7 @@ const RepairRequestScreen = () => {
             <ChevronLeft size={24} color="#374151" />
           </Pressable>
           <Text bold size="xl" className="flex-1 text-center mr-10">
-            Return Vehicle Request
+            Repair Vehicle Request
           </Text>
         </Box>
         <Box className="bg-white rounded-2xl shadow-sm p-4 mb-4">

@@ -5,25 +5,22 @@ import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
 import axios from "axios";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import {
-  GalleryThumbnails,
-  LucideIcon,
-  MapPin,
-  Truck
-} from "lucide-react-native";
+import { Truck, MapPin, Clock, AlertCircle, LogOut } from "lucide-react-native";
 import React, { useContext, useEffect, useState } from "react";
-import { FlatList, Pressable, View } from "react-native";
+import { FlatList, Pressable, View, ScrollView } from "react-native";
 import { Avatar } from "react-native-elements";
 import LoadingScreen from "../../loading/loading";
 import { usePubNub } from "@/app/context/PubNubContext";
 import { usePubNubService } from "@/app/services/pubnubService";
 import { getPendingReturnRequest } from "@/app/services/beAPI";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { B } from "@expo/html-elements";
 
-interface ServiceCardProps {
-  icon: LucideIcon;
-  title: string;
-  color: string;
-}
+// interface ServiceCardProps {
+//   icon: LucideIcon;
+//   title: string;
+//   color: string;
+// }
 
 interface LocationProps {
   name: string;
@@ -42,29 +39,18 @@ interface RequestItem {
   createddate: string;
 }
 
-const ServiceCard: React.FC<ServiceCardProps> = ({
-  icon: Icon,
-  title,
-  color,
+const ServiceCard = ({ icon: Icon, title, color }: {
+  icon: React.ComponentType<any>;
+  title: string;
+  color: string;
 }) => (
-  <Pressable>
-    <Box className="w-24 h-24 mx-2 bg-white rounded-lg shadow-sm">
-      <Box className="p-4 flex items-center justify-center">
-        <Icon color={color} size={32} />
-        <Text className="text-xs text-center font-medium mt-2">{title}</Text>
+  <Pressable className="mr-4">
+    <Box className="w-36 bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+      <Box className="w-10 h-10 rounded-lg bg-blue-50 items-center justify-center mb-2">
+        <Icon color={color} size={24} />
       </Box>
-    </Box>
-  </Pressable>
-);
-
-const RecentLocation: React.FC<LocationProps> = ({ name, distance }) => (
-  <Pressable>
-    <Box className="flex flex-row items-center p-3 border-b border-gray-100">
-      <MapPin className="text-gray-400 mr-3" size={20} />
-      <Box className="flex-1">
-        <Text className="font-medium">{name}</Text>
-        <Text className="text-xs text-gray-500">{distance} away</Text>
-      </Box>
+      <Text className="text-sm font-semibold text-gray-800">{title}</Text>
+      <Text className="text-xs text-gray-500 mt-1">Xem chi tiết</Text>
     </Box>
   </Pressable>
 );
@@ -94,9 +80,10 @@ export default function DHomeScreen() {
       );
 
       // Filter out items where requeststatus is 'Accepted'
-      const filteredRequests = requests.filter((item) => (item.requeststatus === "Pending"));
-      // console.log('Refetching..')
-      setPendingRescueRequests(filteredRequests); // ⬅️ Overwrite state with filtered data
+      const filteredRequests = requests
+        .filter((item) => (item.requeststatus === "Pending"))
+        .sort((a, b) => new Date(b.createddate).getTime() - new Date(a.createddate).getTime());
+      setPendingRescueRequests(filteredRequests.slice(0, 2)); // ⬅️ Overwrite state with filtered data
     } catch (error) {
       console.error("Error fetching requests:", error);
     }
@@ -144,79 +131,150 @@ export default function DHomeScreen() {
   };
 
   return (
-    <Box className="flex-1 bg-gray-50">
-      <Box className="bg-blue-600 p-4 flex flex-row items-center justify-between">
-        <Avatar
-          size={64}
-          rounded
-          source={{ uri: "https://randomuser.me/api/portraits/men/36.jpg" }}
-        />
-        <Box className="flex w-3/4">
-          <Text className="text-white text-lg font-bold">Xin chào lái xe: {user.username}</Text>
-          <Button variant="outline" onPress={handleLogout}>
-            <Text className="text-white">Đăng xuất</Text>
+    <SafeAreaView className="flex-1 bg-gray-100">
+      <Box className="bg-blue-600 px-6 pt-4 pb-6 shadow-lg">
+        <Box className="flex-row items-center justify-between">
+          <Box className="flex-row items-center">
+            <Avatar
+              size={52}
+              rounded
+              source={{ uri: "https://randomuser.me/api/portraits/men/36.jpg" }}
+              containerStyle={{ borderWidth: 2, borderColor: 'white' }}
+            />
+            <Box className="ml-4">
+              <Text className="text-white text-lg font-bold">Xin chào, {user?.username}</Text>
+              <Text className="text-blue-100 text-sm">Trạng thái: Sẵn sàng</Text>
+            </Box>
+          </Box>
+          <Button 
+            variant="outline" 
+            onPress={handleLogout}
+            className="p-2"
+          >
+            <LogOut color="white" size={24} />
           </Button>
         </Box>
       </Box>
 
-      <View className="flex-1">
-        <Box className="p-4">
-          <Box className="mb-3 h-2/5 flex flex-auto">
-            <Text className="text-lg font-bold mb-4">Hàng chờ yêu cầu cứu hộ ({pendingRescueRequests?.length})</Text>
-            {pendingRescueRequests && pendingRescueRequests.length > 0 ? (
-              <FlatList
-                data={pendingRescueRequests}
-                keyExtractor={(item) => `${item.requestdetailid}-${item.requeststatus}`}
-                renderItem={({ item }) =>
-                  renderItem({ item, token, router, pubnub, publishAcceptRequest })
-                }
-              />
-            ) : (
-              <Text>Hiện chưa có yêu cầu cứu hộ nào</Text>
-            )}
+      <FlatList 
+      className="flex-1 px-4"
+      data={[]}
+      showsVerticalScrollIndicator={false}
+      keyExtractor={() => "main-scroll"}
+      ListHeaderComponent={
+        <>
+        {/* Rescue Requests Section */}
+        <Box className="bg-white rounded-2xl p-4 mt-4 shadow-sm">
+          <Box className="flex-row justify-between items-center mb-3">
+            <Text className="text-lg font-bold text-gray-800">
+              Yêu cầu cứu hộ
+              <Text className="text-blue-600"> ({pendingRescueRequests?.length})</Text>
+            </Text>
+            <Clock color="#4b5563" size={18} />
           </Box>
-          <Box className="mb-3 h-2/5 flex flex-auto">
-            <Text className="text-lg font-bold mb-4">Hàng chờ yêu cầu trả xe ({pendingReturnRequests?.length})</Text>
-            {pendingReturnRequests && pendingReturnRequests.length > 0 ? (
-              <FlatList
-                data={pendingReturnRequests}
-                keyExtractor={(item) => `${item.requestdetailid}-${item.requeststatus}`}
-                renderItem={({ item }) =>
-                  renderItem({ item, token, router, pubnub, publishAcceptRequest })
-                }
-              />
-            ) : (
-              <Text>Hiện chưa có yêu cầu trả xe nào</Text>
-            )}
-          </Box>
-
-          <Box className="mb-3 h-1/4 flex flex-auto">
-            <Text className="text-lg font-bold mb-4">Nghiệp vụ liên quan</Text>
-            <Box className="flex flex-row flex-wrap">
-              <ServiceCard icon={Truck} title="Xe cứu hộ" color="#8b5cf6" />
-              <ServiceCard icon={GalleryThumbnails} title="Xe gửi tại trạm" color="#ff0000" />
+          
+          {pendingRescueRequests?.length > 0 ? (
+            <FlatList
+              pagingEnabled={true}
+              data={pendingRescueRequests}
+              showsHorizontalScrollIndicator={false}
+              keyExtractor={(item) => `${item.requestdetailid}-${item.requeststatus}`}
+              renderItem={({ item }) => renderItem({ 
+                item, 
+                token, 
+                router, 
+                pubnub, 
+                publishAcceptRequest 
+              })}
+            />
+          ) : (
+            <Box className="bg-blue-50 rounded-lg p-4 items-center">
+              <AlertCircle color="#3b82f6" size={32} />
+              <Text className="text-gray-600 mt-2 text-center">
+                Hiện không có yêu cầu cứu hộ nào đang chờ
+              </Text>
             </Box>
-          </Box>
-
-          <Box className="mb-3 h-1/4 flex flex-auto">
-            <Text className="text-lg font-bold mb-4">Yêu cầu đang thực hiện</Text>
-            <Box className="bg-white rounded-lg shadow-sm">
-              <RecentLocation name="Home" distance="0.5 km" />
-              <RecentLocation name="Trạm của tôi" distance="2.3 km" />
-              <Button
-                variant="solid"
-                className="bg-red-500 mb-4 m-8"
-              // onPress={() => router.navigate("/user/customer/servicePackage")}
-              >
-                <Text className="text-lg font-bold text-white">
-                  Trở lại trang yêu cầu
-                </Text>
-              </Button>
-            </Box>
-          </Box>
+          )}
         </Box>
-      </View>
-    </Box >
+
+        {/* Return Requests Section */}
+        <Box className="bg-white rounded-2xl p-4 mt-4 shadow-sm">
+          <Box className="flex-row justify-between items-center mb-3">
+            <Text className="text-lg font-bold text-gray-800">
+              Yêu cầu trả xe
+              <Text className="text-green-600"> ({pendingReturnRequests?.length})</Text>
+            </Text>
+            <MapPin color="#4b5563" size={18} />
+          </Box>
+
+          {pendingReturnRequests?.length > 0 ? (
+            <FlatList
+              data={pendingReturnRequests}
+              showsHorizontalScrollIndicator={false}
+              keyExtractor={(item) => `${item.requestdetailid}-${item.requeststatus}`}
+              renderItem={({ item }) => renderItem({ 
+                item, 
+                token, 
+                router, 
+                pubnub, 
+                publishAcceptRequest 
+              })}
+              ItemSeparatorComponent={() => <View className="w-4" />}
+            />
+          ) : (
+            <Box className="bg-green-50 rounded-lg p-4 items-center">
+              <Truck color="#10b981" size={32} />
+              <Text className="text-gray-600 mt-2 text-center">
+                Tất cả xe đã được trả đúng hẹn
+              </Text>
+            </Box>
+          )}
+        </Box>
+
+        {/* Quick Actions Section */}
+        <Box className="bg-white rounded-2xl p-4 mt-4 shadow-sm">
+          <Text className="text-lg font-bold text-gray-800 mb-4">
+            Thao tác nhanh
+          </Text>
+          <View className="flex-row justify-between">
+            <ServiceCard 
+              icon={Truck} 
+              title="Quản lý xe" 
+              color="#3b82f6" 
+            />
+            <ServiceCard 
+              icon={MapPin} 
+              title="Vị trí hiện tại" 
+              color="#10b981" 
+            />
+          </View>
+        </Box>
+
+        {/* Statistics Section */}
+        <Box className="bg-white rounded-2xl p-4 mt-4 mb-6 shadow-sm">
+          <Text className="text-lg font-bold text-gray-800 mb-4">
+            Thống kê hôm nay
+          </Text>
+          <View className="flex-row justify-around">
+            <Box className="items-center">
+              <Text className="text-2xl font-bold text-blue-600">5</Text>
+              <Text className="text-gray-600 text-sm">Yêu cầu</Text>
+            </Box>
+            <Box className="items-center">
+              <Text className="text-2xl font-bold text-green-600">4.8</Text>
+              <Text className="text-gray-600 text-sm">Đánh giá</Text>
+            </Box>
+            <Box className="items-center">
+              <Text className="text-2xl font-bold text-purple-600">98%</Text>
+              <Text className="text-gray-600 text-sm">Hài lòng</Text>
+            </Box>
+          </View>
+        </Box>
+        </>
+      }
+      renderItem={() => null}
+      />
+    </SafeAreaView>
   );
 }
 
