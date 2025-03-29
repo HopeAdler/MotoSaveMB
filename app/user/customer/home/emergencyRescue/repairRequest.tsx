@@ -44,6 +44,7 @@ import { PayZaloEventData, processPayment } from "@/app/utils/payment";
 import {
   acceptRepairQuote,
   calculateFare,
+  createPayment,
   createReturnVehicleRequest,
   createTransaction,
   RescueRequestPayload,
@@ -209,6 +210,16 @@ const RepairRequestScreen = () => {
   const handleCashPayment = async () => {
     if (!token) return;
     setPaymentLoading(true);
+    const payment = await createPayment(
+      {
+        requestdetailid: requestDetail?.requestdetailid,
+        totalamount: fare,
+        paymentmethod: "Tiền mặt",
+        paymentstatus: "Unpaid",
+      },
+      token
+    );
+    console.log(payment);
     const payload: RescueRequestPayload = {
       pickuplong: requestDetail?.long,
       pickuplat: requestDetail?.lat,

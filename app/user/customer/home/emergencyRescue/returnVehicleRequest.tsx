@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import { Box } from "@/components/ui/box";
 import { Text } from "@/components/ui/text";
 import {
@@ -14,9 +14,7 @@ import {
 } from "lucide-react-native";
 import axios from "axios";
 import AuthContext from "@/app/context/AuthContext";
-import {
-  RequestDetail,
-} from "@/app/context/formFields";
+import { RequestDetail } from "@/app/context/formFields";
 import {
   ActivityIndicator,
   NativeEventEmitter,
@@ -37,9 +35,7 @@ import {
 import { Button, ButtonText } from "@/components/ui/button";
 import { decodedToken, handlePhoneCall } from "@/app/utils/utils";
 import { PayZaloEventData, processPayment } from "@/app/utils/payment";
-import {
-  createTransaction,
-} from "@/app/services/beAPI";
+import { createPayment, createTransaction } from "@/app/services/beAPI";
 import { RequestContext } from "@/app/context/RequestContext";
 import { Avatar } from "react-native-elements";
 
@@ -78,8 +74,28 @@ const ReturnVehicleRequestScreen = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // const cashPayment = async () => {
+  //   try {
+  //     const payment = await createPayment(
+  //       {
+  //         requestdetailid: requestDetail?.requestdetailid,
+  //         totalamount: fare,
+  //         paymentmethod: "Tiền mặt",
+  //         paymentstatus: "Unpaid",
+  //       },
+  //       token
+  //     );
+  //     console.log(payment);
+  //   } catch (error) {
+  //     console.error("Payment error:", error);
+  //   }
+  // };
+
   useEffect(() => {
     if (requestDetail?.requeststatus === "Done") {
+      // if (paymentMethod === "Tiền mặt") {
+      //   cashPayment();
+      // }
       const timer = setTimeout(() => {
         router.push({
           pathname: "/user/customer/home/feedback",

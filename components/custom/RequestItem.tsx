@@ -27,7 +27,7 @@ interface RequestItemProps {
   router: Router;
   pubnub: any;
   publishAcceptRequest: (requestDetailId: string) => Promise<void>;
-  variant?: "default" | "large" | "banner" | "small"; 
+  variant?: "default" | "large" | "banner" | "small";
 }
 
 export const renderItem = ({
@@ -62,7 +62,9 @@ export const renderItem = ({
 
     <VStack space="xs" className="mb-4">
       <HStack className="items-center space-x-2">
-        <Text className="text-sm text-gray-700 font-medium">👤 {item.customername}</Text>
+        <Text className="text-sm text-gray-700 font-medium">
+          👤 {item.customername}
+        </Text>
       </HStack>
 
       <HStack className="items-start space-x-2">
@@ -86,10 +88,18 @@ export const renderItem = ({
             try {
               await acceptRequest(item.requestdetailid, token);
               try {
-                await publishAcceptRequest(item.requestdetailid);
-                Alert.alert("Success", "Request accepted and notification sent!");
+                if (item.requesttype !== "Trả xe") {
+                  await publishAcceptRequest(item.requestdetailid);
+                }
+                Alert.alert(
+                  "Success",
+                  "Request accepted and notification sent!"
+                );
               } catch (pubnubError) {
-                Alert.alert("Warning", "Request accepted, but notification failed");
+                Alert.alert(
+                  "Warning",
+                  "Request accepted, but notification failed"
+                );
               }
             } catch (apiError) {
               Alert.alert("Error", "Failed to accept request");
@@ -112,7 +122,9 @@ export const renderItem = ({
           }
         >
           <HStack className="items-center space-x-2 h-full justify-center">
-            <Text className="text-blue-500 text-base font-semibold">View Details</Text>
+            <Text className="text-blue-500 text-base font-semibold">
+              View Details
+            </Text>
           </HStack>
         </Button>
       )}
