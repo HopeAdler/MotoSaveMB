@@ -103,7 +103,7 @@ export default function DRequestScreen() {
       <FlatList
         data={filteredRequests}
         keyExtractor={(item) => `${item.requestdetailid}-${item.requeststatus}`}
-        renderItem={({ item }) => renderItem({ item, token, router, pubnub, publishAcceptRequest })}
+        renderItem={({ item }) => renderItem({ item, token, router, pubnub, publishAcceptRequest, variant: "default" })}
       />
     </Box>
   );
