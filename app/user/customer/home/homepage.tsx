@@ -65,7 +65,7 @@ export default function CHomeScreen() {
   console.log("Request Status: " + latestRequestDetail?.requeststatus);
   const [isLoading, setIsLoading] = useState(false);
   const fetchRequestDetail = async () => {
-    setIsLoading(true)
+    setIsLoading(true);
     try {
       const response = await axios.get<LatestRequestDetail>(
         `https://motor-save-be.vercel.app/api/v1/requests/latestRequestDetail/${requestId}`,
@@ -79,7 +79,7 @@ export default function CHomeScreen() {
   };
 
   useEffect(() => {
-    if (requestId != null) {
+    if (requestId !== null) {
       fetchRequestDetail();
     }
   }, []);
@@ -116,7 +116,9 @@ export default function CHomeScreen() {
     ) {
       router.navigate("/user/customer/home/emergencyRescue/repairRequest");
     } else {
-      router.navigate("/user/customer/home/emergencyRescue/returnVehicleRequest")
+      router.navigate(
+        "/user/customer/home/emergencyRescue/returnVehicleRequest"
+      );
     }
   };
 
@@ -232,19 +234,16 @@ export default function CHomeScreen() {
             </Pressable>
           </Box>
         </Box>
-        {latestRequestDetail?.requeststatus !== "Done" &&
+        {requestId !== null &&
+          latestRequestDetail?.requeststatus !== "Done" &&
           latestRequestDetail?.requeststatus !== "Cancel" && (
-            <Box className="flex-row items-center my-5">
-              <Text className="text-base font-semibold text-gray-800">
-                Your recent request has not done yet
-              </Text>
-              <Button
-                variant="solid"
-                className="flex-1 mx-2 bg-blue-500"
+            <Box className="flex-row justify-center my-5">
+              <Text
+                className="text-xl text-blue-600 font-semibold"
                 onPress={handleNavigate}
               >
-                <ButtonText className="text-white">Continue</ButtonText>
-              </Button>
+                Your recent has not done yet. Continue?
+              </Text>
             </Box>
           )}
 
