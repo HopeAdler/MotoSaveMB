@@ -391,7 +391,7 @@ const RequestMap: React.FC = () => {
                 💰 Phương thức thanh toán: {requestDetail?.paymentmethod}
               </Text>
               <Text className="text-green-600 font-semibold">
-                💰 Tổng tiền: {requestDetail?.paymentstatus}
+                💰 Trạng thái thanh toán: {requestDetail?.paymentstatus}
               </Text>
               <View
                 className="flex flex-row justify-around"
