@@ -41,6 +41,8 @@ interface RequestDetail {
   pickuplocation: string;
   destination: string;
   totalprice: number;
+  paymentmethod: string;
+  paymentstatus: string;
   pickuplong: number;
   pickuplat: number;
   deslng: number;
@@ -384,6 +386,12 @@ const RequestMap: React.FC = () => {
               }
               <Text className="text-green-600 font-semibold">
                 💰 Tổng tiền: {requestDetail?.totalprice.toLocaleString()} VND
+              </Text>
+              <Text className="text-green-600 font-semibold">
+                💰 Phương thức thanh toán: {requestDetail?.paymentmethod}
+              </Text>
+              <Text className="text-green-600 font-semibold">
+                💰 Tổng tiền: {requestDetail?.paymentstatus}
               </Text>
               <View
                 className="flex flex-row justify-around"
