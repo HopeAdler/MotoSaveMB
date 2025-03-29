@@ -61,17 +61,9 @@ import { User } from "../../../../context/formFields";
 import StationSelect, { Station } from "@/components/custom/StationSelect";
 import beAPI from "@/app/services/beAPI";
 import { Filter } from "react-native-svg";
-import {
-  OriginMarker,
-  DestinationMarker,
-  renderStationMarkers,
-} from "@/components/custom/CustomMapMarker";
-import {
-  BackButton,
-  SearchInput,
-  SearchResults,
-  ActionSheetToggle,
-} from "../../../../../components/custom/MapUIComponents";
+import { OriginMarker, DestinationMarker, renderStationMarkers } from "@/components/custom/CustomMapMarker";
+import { BackButton, SearchInput, SearchResults, ActionSheetToggle } from "../../../../../components/custom/MapUIComponents";
+import VehicleAlertDialog from "../../../../../components/custom/VehicleAlertDialog";
 
 const { EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN } = process.env;
 MapboxGL.setAccessToken(`${EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN}`);
@@ -129,6 +121,7 @@ const EmergencyRescueMapScreen = () => {
   const { createDirectChannel } = usePubNubService();
   const [acceptedDriverId, setAcceptedDriverId] = useState<string | null>(null);
   const isSearchingRef = useRef(isSearching);
+  const [showVehicleAlert, setShowVehicleAlert] = useState(false);
   useEffect(() => {
     isSearchingRef.current = isSearching;
   }, [isSearching]);
@@ -526,6 +519,7 @@ const EmergencyRescueMapScreen = () => {
       setTimeout(() => {
         // Kiểm tra lại ngay trong callback nếu việc tìm kiếm đã bị hủy
         if (!isSearchingRef.current) {
+          setSelectedVehicleId("");
           console.log("Search has been canceled (in callback). Exiting.");
           // handleCancelSearch();
           return;
@@ -549,15 +543,14 @@ const EmergencyRescueMapScreen = () => {
       console.log(`Không tìm thấy driver mới trong bán kính ${radius} mét.`);
       const newRadius = radius + 2000;
       // Kiểm tra lại trạng thái trước khi gọi đệ quy
-      if (
-        acceptedRequestRef.current.id === reqId &&
-        acceptedRequestRef.current.status !== "Pending"
-      ) {
+      if (acceptedRequestRef.current.id === reqId && acceptedRequestRef.current.status !== "Pending") {
+        setSelectedVehicleId("");
         console.log("Driver đã chấp nhận, dừng tìm kiếm.");
         return;
       }
       // Trước khi đệ quy, kiểm tra ngay trạng thái tìm kiếm
       if (!isSearchingRef.current) {
+        setSelectedVehicleId("");
         console.log("Search has been canceled. Exiting.");
         // handleCancelSearch();
         try {
@@ -588,6 +581,10 @@ const EmergencyRescueMapScreen = () => {
 
   // Bắt đầu tìm tài xế
   const handleFindDriver = async () => {
+    if ( !selectedVehicleId) {
+      setShowVehicleAlert(true);
+      return;
+    }
     const reqId = await handleCreateRequest();
     if (!reqId) return;
     setRequestDetailId(reqId);
@@ -598,6 +595,7 @@ const EmergencyRescueMapScreen = () => {
 
   // Hủy yêu cầu
   const handleCancel = async () => {
+    setSelectedVehicleId("");
     if (!requestDetailId) return;
     try {
       await updateRequestStatus(requestDetailId, token, "Cancel");
@@ -618,6 +616,7 @@ const EmergencyRescueMapScreen = () => {
 
   // Hủy tìm kiếm
   const handleCancelSearch = async (reqId?: string) => {
+    setSelectedVehicleId("");
     isSearchingRef.current = false;
     setIsSearching(false);
     setShowActionsheet(true);
@@ -725,9 +724,7 @@ const EmergencyRescueMapScreen = () => {
     <Box className="flex-1">
       {/* Header & Back button */}
       <Box className="absolute top-4 left-4 z-20">
-        <BackButton
-          onPress={() => router.navigate("/user/customer/home/servicePackage")}
-        />
+        <BackButton onPress={() => router.navigate("/user/customer/home/servicePackage")} />
       </Box>
 
       {/* Input container with enhanced styling */}
@@ -770,7 +767,7 @@ const EmergencyRescueMapScreen = () => {
           users={users}
           currentLoc={currentLoc}
           isActionSheetOpen={showActionsheet}
-          focusMode={[true, () => {}]}
+          focusMode={[true, () => { }]}
         >
           {originCoordinates.latitude !== 0 && (
             <MapboxGL.Camera
@@ -799,10 +796,7 @@ const EmergencyRescueMapScreen = () => {
           {originCoordinates.latitude !== 0 && (
             <MapboxGL.MarkerView
               id="origin-marker"
-              coordinate={[
-                originCoordinates.longitude,
-                originCoordinates.latitude,
-              ]}
+              coordinate={[originCoordinates.longitude, originCoordinates.latitude]}
             >
               <Box className="items-center justify-center">
                 <OriginMarker size={32} />
@@ -814,10 +808,7 @@ const EmergencyRescueMapScreen = () => {
           {destinationCoordinates.latitude !== 0 && (
             <MapboxGL.MarkerView
               id="destination-marker"
-              coordinate={[
-                destinationCoordinates.longitude,
-                destinationCoordinates.latitude,
-              ]}
+              coordinate={[destinationCoordinates.longitude, destinationCoordinates.latitude]}
             >
               <Box className="items-center justify-center">
                 <DestinationMarker size={32} />
@@ -844,7 +835,7 @@ const EmergencyRescueMapScreen = () => {
                   lineColor: "#3B82F6",
                   lineWidth: 4,
                   lineCap: "round",
-                  lineJoin: "round",
+                  lineJoin: "round"
                 }}
               />
               {/* Add a glow effect for 3D look */}
@@ -856,7 +847,7 @@ const EmergencyRescueMapScreen = () => {
                   lineBlur: 2,
                   lineCap: "round",
                   lineJoin: "round",
-                  lineOpacity: 0.4,
+                  lineOpacity: 0.4
                 }}
               />
             </MapboxGL.ShapeSource>
@@ -869,9 +860,7 @@ const EmergencyRescueMapScreen = () => {
         <TripDetailsActionSheet
           isOpen={showActionsheet}
           onClose={() => setShowActionsheet(false)}
-          onPayment={
-            paymentMethod === "Tiền mặt" ? handleFindDriver : handlePayment
-          }
+          onPayment={paymentMethod === "Tiền mặt" ? handleFindDriver : handlePayment}
           onCancelSearch={handleCancelSearch}
           fare={fare}
           fareLoading={fareLoading}
@@ -881,23 +870,20 @@ const EmergencyRescueMapScreen = () => {
           paymentMethodState={[paymentMethod, setPaymentMethod]}
           selectVehicleState={[selectedVehicleId, setSelectedVehicleId]}
           confirmDisabled={!isLocationValid()}
-        />
+          rescueType="emergency" />
       )}
 
-      {showTracking &&
-        requestDetailId &&
-        acceptedReqDetId &&
-        acceptedReqDetStatus !== "Pending" && (
-          <TrackingActionSheet
-            isOpen={showTracking}
-            onClose={() => setShowTracking(false)}
-            requestdetailid={requestDetailId}
-            eta={directionsInfo?.distance?.text}
-            distance={directionsInfo?.duration?.text}
-            driverId={acceptedDriverId}
-            setAcceptedReqDetStatus={setAcceptedReqDetStatus}
-          />
-        )}
+      {showTracking && requestDetailId && acceptedReqDetId && acceptedReqDetStatus !== "Pending" && (
+        <TrackingActionSheet
+          isOpen={showTracking}
+          onClose={() => setShowTracking(false)}
+          requestdetailid={requestDetailId}
+          eta={directionsInfo?.distance?.text}
+          distance={directionsInfo?.duration?.text}
+          driverId={acceptedDriverId}
+          setAcceptedReqDetStatus={setAcceptedReqDetStatus}
+        />
+      )}
 
       {/* Action sheet toggle buttons */}
 
@@ -909,22 +895,23 @@ const EmergencyRescueMapScreen = () => {
           onPress={() => setShowActionsheet(true)}
           visible={!showActionsheet && directionsInfo}
         />
+
       )}
-      {!showTracking &&
-        requestDetailId &&
-        acceptedReqDetId &&
-        acceptedReqDetStatus !== "Pending" && (
-          // <Pressable
-          //   onPress={() => setShowTracking(true)}
-          //   className="absolute bottom-20 right-2 w-10 h-10 bg-white rounded-full items-center justify-center shadow-sm"
-          // >
-          //   <ChevronUp size={24} color="#3B82F6" />
-          // </Pressable>
-          <ActionSheetToggle
-            onPress={() => setShowTracking(true)}
-            visible={!!(!showActionsheet && directionsInfo)}
-          />
-        )}
+      {!showTracking && requestDetailId && acceptedReqDetId && acceptedReqDetStatus !== "Pending" && (
+        // <Pressable
+        //   onPress={() => setShowTracking(true)}
+        //   className="absolute bottom-20 right-2 w-10 h-10 bg-white rounded-full items-center justify-center shadow-sm"
+        // >
+        //   <ChevronUp size={24} color="#3B82F6" />
+        // </Pressable>
+        <ActionSheetToggle
+          onPress={() => setShowTracking(true)}
+          visible={!!(!showActionsheet && directionsInfo)} />
+      )}
+        <VehicleAlertDialog
+        isOpen={showVehicleAlert}
+        onClose={() => setShowVehicleAlert(false)}
+      />
     </Box>
   );
 };

@@ -6,6 +6,7 @@ import { Input, InputField, InputIcon } from "@/components/ui/input";
 import { Pressable } from "@/components/ui/pressable";
 import { ChevronLeft, ChevronUp, Search, MapPin, X } from "lucide-react-native";
 import { FlatList } from "react-native";
+import { isDate } from "moment";
 
 // Back button component
 export const BackButton = ({ onPress }: { onPress: () => void }) => (
@@ -24,19 +25,22 @@ interface SearchInputProps {
   placeholder: string;
   onClear?: () => void;
   showClearButton?: boolean;
+  isDisabled?: boolean;
 }
 
-export const SearchInput = ({ 
-  value, 
-  onChangeText, 
+export const SearchInput = ({
+  value,
+  onChangeText,
   placeholder,
   onClear,
-  showClearButton = true
+  showClearButton = true,
+  isDisabled
 }: SearchInputProps) => (
-  <Input 
-    variant="outline" 
-    size="md" 
+  <Input
+    variant="outline"
+    size="md"
     className="bg-white rounded-xl shadow-sm border-0"
+    isDisabled={isDisabled}
   >
     <InputIcon>
       <Search size={18} color="#6B7280" />
@@ -63,7 +67,7 @@ interface SearchResultsProps {
 
 export const SearchResults = ({ data, onSelectItem, visible }: SearchResultsProps) => {
   if (!visible || data.length === 0) return null;
-  
+
   return (
     <Box className="bg-white rounded-lg shadow-md max-h-40 mt-1 z-50">
       <FlatList
@@ -92,7 +96,7 @@ interface ActionButtonProps {
 
 export const FloatingActionButton = ({ onPress, visible, icon }: ActionButtonProps) => {
   if (!visible) return null;
-  
+
   return (
     <Pressable
       onPress={onPress}
@@ -106,7 +110,7 @@ export const FloatingActionButton = ({ onPress, visible, icon }: ActionButtonPro
 // Renders the toggle button for actionsheets
 export const ActionSheetToggle = ({ onPress, visible }: { onPress: () => void, visible: boolean }) => {
   if (!visible) return null;
-  
+
   return (
     <Pressable
       onPress={onPress}

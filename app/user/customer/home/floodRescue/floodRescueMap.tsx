@@ -60,6 +60,8 @@ const { EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN } = process.env;
 MapboxGL.setAccessToken(`${EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN}`);
 import { User } from "../../../../context/formFields";
 import { GoBackButton } from "@/components/custom/GoBackButton";
+import { OriginMarker } from "../../../../../components/custom/CustomMapMarker";
+import { BackButton, SearchInput, SearchResults, ActionSheetToggle } from "../../../../../components/custom/MapUIComponents";
 const INITIAL_RADIUS = 5000; // 5 km
 const MAX_RADIUS = 20000; // 15 km
 // Các hằng số cảnh báo khoảng cách (đơn vị mét)
@@ -186,9 +188,7 @@ const FloodRescueMapScreen = () => {
             return;
           }
         }
-        // setDestinationCoordinates({ latitude: lat, longitude: lng });
-        // setDestinationResults([]);
-        // setDestinationSelected(true);
+
       }
       camera.current?.flyTo([lng, lat, 1000]);
     }
@@ -198,10 +198,7 @@ const FloodRescueMapScreen = () => {
     setOriginQuery(text);
     setOriginSelected(false);
   };
-  // const handleDestinationChange = (text: string) => {
-  //   setDestinationQuery(text);
-  //   setDestinationSelected(false);
-  // };
+
   useEffect(() => {
     const timeout = setTimeout(() => {
       if (originQuery.trim()) {
@@ -218,66 +215,7 @@ const FloodRescueMapScreen = () => {
     return () => clearTimeout(timeout);
   }, [originQuery, originCoordinates]);
 
-  //   useEffect(() => {
-  //     const timeout = setTimeout(() => {
-  //       if (destinationQuery.trim()) {
-  //         getAutocomplete(
-  //           destinationQuery,
-  //           originCoordinates.latitude && originCoordinates.longitude
-  //             ? `${originCoordinates.latitude},${originCoordinates.longitude}`
-  //             : ""
-  //         ).then(setDestinationResults);
-  //       } else {
-  //         setDestinationResults([]);
-  //       }
-  //     }, 500);
-  //     return () => clearTimeout(timeout);
-  //   }, [destinationQuery, originCoordinates]);
 
-  // Lấy đường đi và tính toán cước
-  //   useEffect(() => {
-  //     if (
-  //       originSelected &&
-  //       destinationSelected &&
-  //       originCoordinates.latitude &&
-  //       destinationCoordinates.latitude
-  //     ) {
-  //       const originStr = `${originCoordinates.latitude},${originCoordinates.longitude}`;
-  //       const destinationStr = `${destinationCoordinates.latitude},${destinationCoordinates.longitude}`;
-  //       console.log("Calculating direction..");
-  //       getDirections(originStr, destinationStr)
-  //         .then((data) => {
-  //           if (data.routes && data.routes.length > 0) {
-  //             const encodedPolyline = data.routes[0].overview_polyline.points;
-  //             const decoded = decodePolyline(encodedPolyline);
-  //             setRouteCoordinates(decoded);
-  //             if (data.routes[0].legs && data.routes[0].legs.length > 0) {
-  //               setDirectionsInfo(data.routes[0].legs[0]);
-  //             }
-  //           } else {
-  //             console.log("No routes found:", data);
-  //           }
-  //         })
-  //         .catch((error) => console.error("Error fetching directions:", error));
-  //     }
-  //   }, [originCoordinates, destinationCoordinates, originSelected, destinationSelected]);
-
-  //   useEffect(() => {
-  //     if (directionsInfo && !showActionsheet) {
-  //       const distanceValue = directionsInfo.distance?.value || 0;
-  //       setFareLoading(true);
-  //       calculateFare(distanceValue)
-  //         .then((money) => {
-  //           setFare(money);
-  //           setShowActionsheet(true);
-  //           setFareLoading(false);
-  //         })
-  //         .catch((error) => {
-  //           console.error("Error calculating fare:", error);
-  //           setFareLoading(false);
-  //         });
-  //     }
-  //   }, [directionsInfo]);
 
   // Hàm kiểm tra hợp lệ vị trí (cho nút confirm)
   const isLocationValid = () => {
@@ -509,11 +447,7 @@ const FloodRescueMapScreen = () => {
           if (radius <= MAX_RADIUS) {
             sendRideRequestToDrivers(radius + 2000, reqId);
           }
-          // else {
-          //   Alert.alert("No drivers available", "No drivers available nearby. Please try again later.");
-          //   handleCancelSearch();
-          //   return
-          // }
+
         }
       }, 20000);
     } else {
@@ -546,23 +480,9 @@ const FloodRescueMapScreen = () => {
         sendRideRequestToDrivers(newRadius, reqId);
       }, 5000);
     }
-    //    else {
-    //     Alert.alert("No drivers available", "No drivers available in search radius");
-    //     // if (handleCancelSearch) {
-    //       handleCancelSearch();
-    //     // }
-    //     return
-    //   }
-    // }
+
   };
-  // const handleFindDriver = async () => {
-  //   const reqId = await handleCreateRequest();
-  //   // Đặt trạng thái tìm kiếm ngay lập tức
-  //   isSearchingRef.current = true;
-  //   setIsSearching(true);
-  //   setDriverAccepted(false);
-  //   sendRideRequestToDrivers(INITIAL_RADIUS, reqId);
-  // };
+
   const handleFindDriver = async () => {
     const reqId = await handleCreateRequest();
     if (!reqId) {
@@ -585,43 +505,6 @@ const FloodRescueMapScreen = () => {
     sendRideRequestToDrivers(INITIAL_RADIUS, reqId);
   };
 
-  // const handleCancel = async () => {
-  //   if (!requestDetailId) return;
-  //   try {
-  //     const result = await updateRequestStatus(requestDetailId, token, "Cancel");
-  //     console.log(result.message);
-  //     // Alert.alert("Request canceled");
-  //     if (paymentMethod === "Zalopay") {
-  //       await refundTransaction(zpTransId, "User canceled request", fare);
-  //       const payZaloBridgeEmitter = new NativeEventEmitter(PayZaloBridge);
-  //       const subscription = payZaloBridgeEmitter.addListener("EventPayZalo", async (data: PayZaloEventData) => {
-  //         subscription.remove();
-  //       });
-  //     }
-  //     // setShowCountdownSheet(false);
-  //   } catch (error) {
-  //     console.error("Error canceling request:", error);
-  //   }
-  // };
-
-  // const handleCancelSearch = async () => {
-  //   console.log("handleCancelSearch được gọi");
-  //   // Ngay lập tức đặt trạng thái tìm kiếm về false
-  //   isSearchingRef.current = false;
-  //   setIsSearching(false);
-  //   // Cập nhật UI
-  //   setShowActionsheet(true);
-  //   setShowTracking(false);
-  //   // Đồng thời gọi hàm cancel để cập nhật trạng thái hệ thống
-  //   // await handleCancel();
-  //   try {
-  //     // Đồng thời gọi hàm cancel để cập nhật trạng thái hệ thống
-  //     await handleCancel();
-  //     console.log("Request đã được hủy thành công");
-  // } catch (error) {
-  //     console.error("Lỗi khi hủy request:", error);
-  // }
-  // };
   const handleCancel = async () => {
     console.log("handleCancel được gọi với requestDetailId:", requestDetailId);
 
@@ -847,67 +730,43 @@ const FloodRescueMapScreen = () => {
   }, [currentLoc, acceptedReqDetStatus]);
   return (
     <Box className="flex-1">
-      <GoBackButton />
-
-      <Box className="absolute top-0 left-0 w-full z-10 p-4 pt-16">
-        <Input variant="outline" size="md" className="bg-white">
-          <InputField
-            placeholder="Search origin"
-            value={originQuery}
-            onChangeText={handleOriginChange}
-          />
-        </Input>
-        {originResults.length > 0 && !originSelected && (
-          <FlatList
-            data={originResults}
-            keyExtractor={(_item, index) => index.toString()}
-            className="bg-white rounded max-h-40"
-            renderItem={({ item }) => (
-              <Pressable
-                onPress={() => {
-                  setOriginQuery(item.description);
-                  handleFetchLocation(item.description, true);
-                }}
-                className="p-2"
-              >
-                <Text className="text-black">{item.description}</Text>
-              </Pressable>
-            )}
-          />
-        )}
-        {/* <Box className="mt-2">
-          <Input variant="outline" size="md" className="bg-white" isDisabled={!originSelected}>
-            <InputField placeholder="Search destination" value={destinationQuery} onChangeText={handleDestinationChange} />
-          </Input>
-        </Box>
-        {destinationResults.length > 0 && !destinationSelected && (
-          <FlatList
-            data={destinationResults}
-            keyExtractor={(_item, index) => index.toString()}
-            className="bg-white rounded max-h-40"
-            renderItem={({ item }) => (
-              <Pressable onPress={() => { setDestinationQuery(item.description); handleFetchLocation(item.description, false); }} className="p-2">
-                <Text className="text-black">{item.description}</Text>
-              </Pressable>
-            )}
-          />
-        )} */}
+      {/* Back button */}
+      {/* <BackButton onPress={() => router.back()} /> */}
+      <Box className="absolute top-4 left-4 z-20">
+        <BackButton onPress={() => router.back()} />
       </Box>
 
+
+      {/* Header: Search input & results */}
+      <Box className="absolute top-0 left-0 w-full z-10 p-4 pt-16">
+        <SearchInput
+          value={originQuery}
+          onChangeText={handleOriginChange}
+          placeholder="Search origin"
+          onClear={() => setOriginQuery("")}
+        />
+        <SearchResults
+          data={originResults}
+          onSelectItem={(item) => {
+            setOriginQuery(item.description);
+            handleFetchLocation(item.description, true);
+          }}
+          visible={originResults.length > 0 && !originSelected}
+        />
+      </Box>
+
+      {/* Map view */}
       <Box className="flex-1">
         <MapViewComponent
           users={users}
           currentLoc={currentLoc}
           isActionSheetOpen={showActionsheet}
-          focusMode={[true, () => {}]}
+          focusMode={[true, () => { }]}
         >
           {originCoordinates.latitude !== 0 && (
             <MapboxGL.Camera
               ref={camera}
-              centerCoordinate={[
-                originCoordinates.longitude,
-                originCoordinates.latitude,
-              ]}
+              centerCoordinate={[originCoordinates.longitude, originCoordinates.latitude]}
             />
           )}
           {currentLoc.latitude !== 0 && (
@@ -915,36 +774,19 @@ const FloodRescueMapScreen = () => {
               id="current-location"
               coordinate={[currentLoc.longitude, currentLoc.latitude]}
             >
-              <Box
-                style={{
-                  width: 28,
-                  height: 28,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <LocateFixed color="#0080FF" size={28} />
+              <Box className="w-7 h-7 items-center justify-center">
+                <Text style={{ color: "#0080FF" }}>◎</Text>
               </Box>
             </MapboxGL.PointAnnotation>
           )}
           {originCoordinates.latitude !== 0 && (
-            <MapboxGL.PointAnnotation
+            <MapboxGL.MarkerView
               id="origin-marker"
-              coordinate={[
-                originCoordinates.longitude,
-                originCoordinates.latitude,
-              ]}
+              coordinate={[originCoordinates.longitude, originCoordinates.latitude]}
             >
-              <MapboxGL.Callout title="Origin" />
-            </MapboxGL.PointAnnotation>
+              <OriginMarker size={32} />
+            </MapboxGL.MarkerView>
           )}
-          {/* {destinationCoordinates.latitude !== 0 && (
-            <MapboxGL.PointAnnotation id="destination-marker" coordinate={[destinationCoordinates.longitude, destinationCoordinates.latitude]}>
-              <Box className="w-40 h-40 items-center relative z-10 -bottom-1 border-red-400 border-2">
-                <CircleChevronDown color="#0080FF" size={30} />
-              </Box>
-            </MapboxGL.PointAnnotation>
-          )} */}
           {routeCoordinates.length > 0 && (
             <MapboxGL.ShapeSource
               id="routeSource"
@@ -963,6 +805,7 @@ const FloodRescueMapScreen = () => {
         </MapViewComponent>
       </Box>
 
+      {/* Trip details action sheet */}
       {showActionsheet && (
         <TripDetailsActionSheet
           isOpen={showActionsheet}
@@ -979,49 +822,39 @@ const FloodRescueMapScreen = () => {
           paymentMethodState={[paymentMethod, setPaymentMethod]}
           selectVehicleState={[selectedVehicleId, setSelectedVehicleId]}
           confirmDisabled={!isLocationValid()}
+          rescueType="flood"
         />
       )}
-      {showTracking &&
-        requestDetailId &&
-        acceptedReqDetId &&
-        acceptedReqDetStatus !== "Pending" && (
-          <TrackingActionSheet
-            isOpen={showTracking}
-            onClose={() => setShowTracking(false)}
-            requestdetailid={requestDetailId}
-            eta={directionsInfo?.duration?.text}
-            distance={directionsInfo?.distance?.text}
-            driverId={acceptedDriverId}
-            setAcceptedReqDetStatus={setAcceptedReqDetStatus}
-          />
-        )}
 
-      {/* <View className="absolute top-[15%] flex flex-col items-end w-full px-[5%] z-20">
-        <Text>Số người online: {users.size}</Text>
-      </View> */}
-
-      {!showActionsheet && (
-        <Pressable
-          onPress={() => setShowActionsheet(true)}
-          className="absolute bottom-20 right-2 w-10 h-10 bg-white rounded-full items-center justify-center shadow-sm"
-        >
-          <ChevronUp size={24} color="#3B82F6" />
-        </Pressable>
+      {/* Tracking action sheet */}
+      {showTracking && requestDetailId && acceptedReqDetId && acceptedReqDetStatus !== "Pending" && (
+        <TrackingActionSheet
+          isOpen={showTracking}
+          onClose={() => setShowTracking(false)}
+          requestdetailid={requestDetailId}
+          eta={directionsInfo?.duration?.text}
+          distance={directionsInfo?.distance?.text}
+          driverId={acceptedDriverId}
+          setAcceptedReqDetStatus={setAcceptedReqDetStatus}
+        />
       )}
 
-      {!showTracking &&
-        requestDetailId &&
-        acceptedReqDetId &&
-        acceptedReqDetStatus !== "Pending" && (
-          <Pressable
-            onPress={() => setShowTracking(true)}
-            className="absolute bottom-20 right-2 w-10 h-10 bg-white rounded-full items-center justify-center shadow-sm"
-          >
-            <ChevronUp size={24} color="#3B82F6" />
-          </Pressable>
-        )}
+      {/* Action sheet toggle buttons */}
+      {!showActionsheet && (
+        <ActionSheetToggle
+          onPress={() => setShowActionsheet(true)}
+          visible={!showActionsheet}
+        />
+      )}
+      {!showTracking && requestDetailId && acceptedReqDetId && acceptedReqDetStatus !== "Pending" && (
+        <ActionSheetToggle
+          onPress={() => setShowTracking(true)}
+          visible={true}
+        />
+      )}
     </Box>
   );
+
 };
 
 export default FloodRescueMapScreen;
