@@ -381,7 +381,7 @@ const RepairRequestScreen = () => {
             <ChevronLeft size={24} color="#374151" />
           </Pressable>
           <Text bold size="xl" className="flex-1 text-center mr-10">
-            Return Vehicle Request
+            Repair Vehicle Request
           </Text>
         </Box>
         <Box className="bg-white rounded-2xl shadow-sm p-4 mb-4">
