@@ -315,9 +315,9 @@ export default function EditProfile() {
   };
 
   return (
-    <Box className="flex-1 bg-gray-50">
+    <Box className="flex-1 bg-[#f1f5f9]">
       <ScrollView>
-        <Box className="bg-blue-600 px-4 pt-6 pb-20 rounded-b-[40px] shadow-lg">
+        <Box className="bg-[#1a3148] px-4 pt-6 pb-20 rounded-b-[32px]">
           <Box className="flex-row items-center justify-between mb-6">
             <Pressable onPress={() => router.back()} className="p-2 -ml-2">
               <ChevronLeft size={24} color="white" />
@@ -325,14 +325,14 @@ export default function EditProfile() {
 
             {isFormChanged && (
               <Pressable onPress={handleSubmit} className="p-2">
-                <Text className="text-white font-medium text-lg">Save</Text>
+                <Text className="text-[#fab753] font-medium text-lg">Save</Text>
               </Pressable>
             )}
           </Box>
 
           <Box className="items-center">
             <Box className="relative w-28 h-28">
-              <Box className="w-28 h-28 bg-white rounded-full items-center justify-center mb-4 shadow-xl border-4 border-white overflow-hidden">
+              <Box className="w-28 h-28 bg-white/10 rounded-2xl items-center justify-center mb-4 shadow-lg border border-white/20 overflow-hidden">
                 {selectedImage ? (
                   <Image
                     source={{ uri: selectedImage.uri }}
@@ -346,13 +346,13 @@ export default function EditProfile() {
                     resizeMode="cover"
                   />
                 ) : (
-                  <User size={48} color="#3B82F6" />
+                  <User size={48} color="#fab753" />
                 )}
               </Box>
 
               <Pressable
                 onPress={pickImage}
-                className="absolute bottom-0 right-0 w-9 h-9 bg-blue-500 rounded-full items-center justify-center shadow-lg border-2 border-white"
+                className="absolute bottom-0 right-0 w-9 h-9 bg-[#fab753] rounded-xl items-center justify-center shadow-lg border-2 border-white"
               >
                 <Camera size={18} color="white" />
               </Pressable>
@@ -361,18 +361,17 @@ export default function EditProfile() {
         </Box>
 
         <Box className="px-4 -mt-12">
-          <Box className="bg-white rounded-3xl shadow-lg p-5">
+          <Box className="bg-white rounded-2xl shadow-sm p-5">
             <Box className="space-y-4">
+              {/* Form Fields */}
               <Box>
-                <Text className="text-sm font-medium text-gray-600 mb-1.5">
+                <Text className="text-sm font-medium text-[#1a3148] mb-1.5">
                   Full Name
                 </Text>
-                <Input className="bg-gray-50 rounded-xl border-0 shadow-sm">
+                <Input className="bg-[#f8fafc] rounded-xl border-0 shadow-sm">
                   <InputField
                     value={form.fullname}
-                    onChangeText={(text: string) =>
-                      updateForm({ fullname: text })
-                    }
+                    onChangeText={(text: string) => updateForm({ fullname: text })}
                     className="h-12 px-3 text-base"
                     placeholder="Enter your full name"
                   />
@@ -380,10 +379,10 @@ export default function EditProfile() {
               </Box>
 
               <Box>
-                <Text className="text-sm font-medium text-gray-600 mb-1.5">
+                <Text className="text-sm font-medium text-[#1a3148] mb-1.5">
                   Email Address
                 </Text>
-                <Input className="bg-gray-50 rounded-xl border-0 shadow-sm">
+                <Input className="bg-[#f8fafc] rounded-xl border-0 shadow-sm">
                   <InputField
                     value={form.email || ''}
                     onChangeText={(text: string) => updateForm({ email: text || null })}
@@ -396,36 +395,32 @@ export default function EditProfile() {
               </Box>
 
               <Box>
-                <Text className="text-sm font-medium text-gray-600 mb-1.5">
+                <Text className="text-sm font-medium text-[#1a3148] mb-1.5">
                   Gender
                 </Text>
                 <Pressable
                   onPress={() => setShowGenderSheet(true)}
-                  className="bg-gray-50 rounded-xl border-0 shadow-sm h-12 px-3 flex-row items-center justify-between"
+                  className="bg-[#f8fafc] rounded-xl border-0 shadow-sm h-12 px-3 flex-row items-center justify-between"
                 >
-                  <Text
-                    className={`text-base ${form.gender ? "text-gray-900" : "text-gray-400"}`}
-                  >
+                  <Text className={`text-base ${form.gender ? "text-[#1a3148]" : "text-gray-400"}`}>
                     {form.gender || "Select your gender (optional)"}
                   </Text>
-                  <ChevronDown size={20} color="#9CA3AF" />
+                  <ChevronDown size={20} color="#1a3148" />
                 </Pressable>
               </Box>
 
               <Box>
-                <Text className="text-sm font-medium text-gray-600 mb-1.5">
+                <Text className="text-sm font-medium text-[#1a3148] mb-1.5">
                   Date of Birth
                 </Text>
                 <Pressable
                   onPress={() => setShowDatePicker(true)}
-                  className="bg-gray-50 rounded-xl border-0 shadow-sm h-12 px-3 flex-row items-center justify-between"
+                  className="bg-[#f8fafc] rounded-xl border-0 shadow-sm h-12 px-3 flex-row items-center justify-between"
                 >
-                  <Text
-                    className={`text-base ${form.dob ? "text-gray-900" : "text-gray-400"}`}
-                  >
+                  <Text className={`text-base ${form.dob ? "text-[#1a3148]" : "text-gray-400"}`}>
                     {form.dob || "Select your date of birth (optional)"}
                   </Text>
-                  <CalendarDaysIcon size={20} color="#9CA3AF" />
+                  <CalendarDaysIcon size={20} color="#1a3148" />
                 </Pressable>
                 
                 {showDatePicker && (
@@ -441,10 +436,10 @@ export default function EditProfile() {
               </Box>
 
               <Box>
-                <Text className="text-sm font-medium text-gray-600 mb-1.5">
+                <Text className="text-sm font-medium text-[#1a3148] mb-1.5">
                   Address
                 </Text>
-                <Input className="bg-gray-50 rounded-xl border-0 shadow-sm">
+                <Input className="bg-[#f8fafc] rounded-xl border-0 shadow-sm">
                   <InputField
                     value={form.address || ''}
                     onChangeText={(text: string) => updateForm({ address: text || null })}
@@ -455,15 +450,13 @@ export default function EditProfile() {
               </Box>
 
               <Box>
-                <Text className="text-sm font-medium text-gray-600 mb-1.5">
+                <Text className="text-sm font-medium text-[#1a3148] mb-1.5">
                   License Plate
                 </Text>
-                <Input className="bg-gray-50 rounded-xl border-0 shadow-sm">
+                <Input className="bg-[#f8fafc] rounded-xl border-0 shadow-sm">
                   <InputField
                     value={form.licenseplate || ''}
-                    onChangeText={(text: string) =>
-                      updateForm({ licenseplate: text || null })
-                    }
+                    onChangeText={(text: string) => updateForm({ licenseplate: text || null })}
                     className="h-12 px-3 text-base"
                     placeholder="Enter license plate number (optional)"
                   />
@@ -479,15 +472,9 @@ export default function EditProfile() {
             onPress={handleLogout}
             disabled={isLoggingOut}
             variant="solid"
-            className={`rounded-xl py-2 ${
-              isLoggingOut ? 'bg-gray-100' : 'bg-white active:bg-gray-50'
-            }`}
+            className={`rounded-xl py-2 ${isLoggingOut ? 'bg-gray-100' : 'bg-white active:bg-gray-50'}`}
           >
-            <ButtonText 
-              className={`font-medium text-base ${
-                isLoggingOut ? 'text-gray-400' : 'text-red-600'
-              }`}
-            >
+            <ButtonText className={`font-medium text-base ${isLoggingOut ? 'text-gray-400' : 'text-red-600'}`}>
               {isLoggingOut ? 'Logging out...' : 'Log Out'}
             </ButtonText>
           </Button>
@@ -496,10 +483,11 @@ export default function EditProfile() {
 
       {isLoading && (
         <Box className="absolute inset-0 bg-black/50 items-center justify-center">
-          <ActivityIndicator size="large" color="#3B82F6" />
+          <ActivityIndicator size="large" color="#fab753" />
         </Box>
       )}
 
+      {/* Gender Selection Sheet */}
       <Actionsheet
         isOpen={showGenderSheet}
         onClose={() => setShowGenderSheet(false)}
@@ -512,12 +500,11 @@ export default function EditProfile() {
           </ActionsheetDragIndicatorWrapper>
 
           <Box className="mb-6">
-            <Text className="text-xl font-semibold mb-2">
+            <Text className="text-xl font-semibold text-[#1a3148] mb-2">
               What's your gender?
             </Text>
             <Text className="text-base text-gray-500">
-              This will help us personalise your experience and enhance safety
-              features.
+              This will help us personalise your experience and enhance safety features.
             </Text>
           </Box>
 
@@ -546,8 +533,7 @@ export default function EditProfile() {
           </Box>
 
           <Text className="text-sm text-gray-500 mt-4">
-            The provided value may be compared with information that we have of
-            you in our records, from time to time.
+            The provided value may be compared with information that we have of you in our records, from time to time.
           </Text>
         </ActionsheetContent>
       </Actionsheet>
