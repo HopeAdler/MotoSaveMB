@@ -4,12 +4,12 @@ import { Button, ButtonText } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
 import MapboxGL from "@rnmapbox/maps";
 import axios from "axios";
-import { router, useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useContext, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Alert, TouchableOpacity, View } from "react-native";
 import Icon from "react-native-vector-icons/Feather";
 // Import the ActionSheet components from gluestack-ui
-import { createRepairRequest, updatePaymentStatus, updateRequestStatus } from "@/app/services/beAPI";
+import { createRepairRequest, getUnpaidPaymentsByRequestId, updatePaymentStatus, updateRequestStatus } from "@/app/services/beAPI";
 import { getDirections } from "@/app/services/goongAPI";
 import { decodedToken, decodePolyline } from "@/app/utils/utils";
 import MapViewComponent from "@/components/custom/MapViewComponent";
@@ -50,6 +50,16 @@ interface RequestDetail {
   requeststatus: string;
 }
 
+interface UnpaidPayments {
+  paymentid: string,
+  paymentmethod: string,
+  paymentstatus: string,
+  totalamount: number,
+  requestdetailid: string,
+  name: string,
+  requestid: string
+}
+
 interface DirectionsLeg {
   distance: { text: string };
   duration: { text: string };
@@ -78,6 +88,7 @@ const RequestMap: React.FC = () => {
     jsonCurLoc = '{"latitude":0,"longitude":0}',
     jsonUsers = "{}"
   } = useLocalSearchParams<any>();
+  const router = useRouter();
 
   // Parse users from JSON and reconstruct the Map
   const [users, setUsers] = useState<Map<string, User>>(new Map(Object.entries(JSON.parse(jsonUsers))));
@@ -93,6 +104,9 @@ const RequestMap: React.FC = () => {
   const [directionsInfo, setDirectionsInfo] = useState<DirectionsLeg | null>(null);
   // State to control the open/close state of the ActionSheet.
   const [isActionSheetOpen, setIsActionSheetOpen] = useState<boolean>(true);
+
+  const [unpaidPayments, setUnpaidPayments] = useState<UnpaidPayments[]>([]);
+
 
   const camera = useRef<MapboxGL.Camera>(null);
 
@@ -137,41 +151,6 @@ const RequestMap: React.FC = () => {
     }
   };
 
-  const renderPaymentStatus = (paymentstatus: string | undefined) => {
-    let paymentStatusText = "";
-    let bgColor = "";
-
-    switch (paymentstatus) {
-      case "Unpaid":
-        paymentStatusText = "Chưa thanh toán";
-        bgColor = "bg-red-100 text-red-600"; // Light red background for unpaid
-        break;
-      case "Success":
-        paymentStatusText = "Đã thanh toán";
-        bgColor = "bg-green-100 text-green-600"; // Light green background for success
-        break;
-      default:
-        paymentStatusText = "UNKNOWN";
-        bgColor = "bg-gray-100 text-gray-600"; // Gray background for unknown
-        break;
-    }
-
-    return (
-      <Text className={`p-5 rounded-md font-semibold ${bgColor}`}>
-        {paymentStatusText}
-      </Text>
-    );
-  };
-
-
-  const changePaymentStatus = async (newStatus: string) => {
-    const payload = {
-      requestDetailId: requestdetailid,
-      newStatus
-    }
-    const result = await updatePaymentStatus(payload, token)
-    if (result) fetchRequestDetail();
-  }
   const changeButtonColor = (): string => {
     switch (requestDetail?.requeststatus) {
       case "Accepted":
@@ -242,11 +221,33 @@ const RequestMap: React.FC = () => {
       setLoading(false);
     }
   };
+  const fetchUnpaidPayments = async () => {
+    const requestId = requestDetail?.requestid;
+    if (requestId)
+      try {
+        const results = await getUnpaidPaymentsByRequestId(requestId, token);
+        setUnpaidPayments(results);
+      } catch (error: any) {
+        console.error("Error fetching payments:", error);
+      } finally {
+        setLoading(false);
+      }
+  };
+
   useEffect(() => {
+    // Immediately fetch on mount or when dependencies change
     fetchRequestDetail();
+    fetchUnpaidPayments();
+
+    // Set up an interval to re-fetch every 5 seconds
+    const interval = setInterval(() => {
+      fetchRequestDetail();
+      fetchUnpaidPayments();
+    }, 5000);
+
+    // Clear the interval on cleanup
+    return () => clearInterval(interval);
   }, [requestdetailid, token]);
-
-
 
   const fetchRoute = () => {
     const currentLocStr = `${currentLoc.latitude},${currentLoc.longitude}`;
@@ -343,6 +344,19 @@ const RequestMap: React.FC = () => {
       }
     });
   }
+
+  useEffect(() => {
+    if (requestDetail?.requeststatus === 'Done' && unpaidPayments.length > 0) {
+      setIsActionSheetOpen(false);
+      router.push({
+        pathname: "/user/driver/requests/payments",
+        params: {
+          requestId: requestDetail.requestid,
+          unpaidPayments: JSON.stringify(unpaidPayments)
+        },
+      });
+    }
+  }, [requestDetail?.requeststatus]);
   return (
     <Box className="flex-1">
       <GoBackButton />
@@ -425,9 +439,6 @@ const RequestMap: React.FC = () => {
               <Text className="text-green-600 font-semibold">
                 💰 Phương thức thanh toán: {requestDetail?.paymentmethod}
               </Text>
-              <Text className="text-green-600 font-semibold">
-                💰 Trạng thái thanh toán: {renderPaymentStatus(requestDetail?.paymentstatus)}
-              </Text>
               <View
                 className="m-5 flex flex-col justify-between items-center"
               >
@@ -441,33 +452,6 @@ const RequestMap: React.FC = () => {
                     {changeButtonTitle()}
                   </Text>
                 </Button>
-                {(requestDetail?.paymentstatus === 'Unpaid'
-                  && requestDetail?.paymentmethod === 'Tiền mặt')
-                  &&
-                  <Button
-                    className="bg-orange-500 mt-5 w-auto p-2 rounded"
-                    size="lg"
-                    disabled={requestDetail?.requeststatus !== 'Done'}
-                    onPress={() => {
-                      Alert.alert(
-                        "Xác nhận đã thanh toán",
-                        "Khách hàng đã trả đủ tiền mặt cho bạn?",
-                        [
-                          {
-                            text: "Hủy",
-                            style: "cancel",
-                          },
-                          {
-                            text: "Xác nhận",
-                            onPress: () => changePaymentStatus("Success"),
-                          },
-                        ]
-                      );
-                    }}
-                  >
-                    <Text className="text-white text-center">Xác nhận thanh toán</Text>
-                  </Button>
-                }
               </View>
             </View>
           )}

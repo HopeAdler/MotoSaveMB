@@ -115,10 +115,14 @@ export const renderItem = ({
           variant="outline"
           className="border-gray-300 rounded-md h-12 hover:border-gray-400"
           onPress={() =>
+          {
+
+            console.log(item.requestdetailid.toString())
             router.push({
               pathname: "/user/driver/requests/requestMap",
               params: { requestdetailid: item.requestdetailid.toString() },
             })
+          }
           }
         >
           <HStack className="items-center space-x-2 h-full justify-center">
