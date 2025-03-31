@@ -1,6 +1,6 @@
 import AuthContext from "@/app/context/AuthContext";
 import LoadingScreen from "@/app/loading/loading";
-import { createRepairQuote, getRepairCostPreview, getRepairQuotesByRequestDetailId, getRepairRequestDetailForMechanic, updateRepairRequestStatus } from "@/app/services/beAPI";
+import { createRepairQuote, getRepairCostPreview, getRepairQuotesByRequestDetailId, getRepairRequestDetailForMechanic, updatePaymentStatus, updateRepairRequestStatus } from "@/app/services/beAPI";
 import { usePubNubService } from "@/app/services/pubnubService";
 import { decodedToken, formatMoney, handlePhoneCall } from "@/app/utils/utils";
 import { GoBackButton } from "@/components/custom/GoBackButton";
@@ -39,6 +39,8 @@ interface RepairRequestDetail {
   licenseplate: string,
   vehiclephoto: string,
   vehiclecondition: string,
+  paymentmethod: string,
+  paymentstatus: string,
 }
 interface RepairCostPreview {
   id: string,
@@ -246,6 +248,44 @@ export default function RepairDetailsScreen() {
   const onCallPress = () => {
     handlePhoneCall(repairRequestDetail?.customerphone);
   }
+
+  const renderPaymentStatus = (paymentstatus: string | undefined) => {
+    let paymentStatusText = "";
+    let bgColor = "";
+
+    switch (paymentstatus) {
+      case "Unpaid":
+        paymentStatusText = "Chưa thanh toán";
+        bgColor = "bg-red-100 text-red-600"; // Light red background for unpaid
+        break;
+      case "Success":
+        paymentStatusText = "Đã thanh toán";
+        bgColor = "bg-green-100 text-green-600"; // Light green background for success
+        break;
+      default:
+        paymentStatusText = "UNKNOWN";
+        bgColor = "bg-gray-100 text-gray-600"; // Gray background for unknown
+        break;
+    }
+    return (
+      <Text className={`p-5 rounded-md font-semibold ${bgColor}`}>
+        {paymentStatusText}
+      </Text>
+    );
+  };
+
+  const changePaymentStatus = async (newStatus: string) => {
+    if (repairRequestDetail) {
+
+      const payload = {
+        requestDetailId: repairRequestDetail?.requestdetailid,
+        newStatus
+      }
+      const result = await updatePaymentStatus(payload, token)
+      if (result) fetchRepairRequestDetail();
+    }
+  }
+
   if (isLoading) return <LoadingScreen />
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} className="flex-1">
@@ -326,12 +366,26 @@ export default function RepairDetailsScreen() {
                 )}
               </Box>
             )}
+            {repairRequestDetail?.paymentmethod &&
+              (
+                <>
+                  <Text className="text-green-600 font-semibold">
+                    💰 Tổng tiền: {repairRequestDetail?.totalprice?.toLocaleString()} VND
+                  </Text>
+                  <Text className="text-green-600 font-semibold">
+                    💰 Phương thức thanh toán: {repairRequestDetail?.paymentmethod}
+                  </Text>
+                  <Text className="text-green-600 font-semibold">
+                    💰 Trạng thái thanh toán: {renderPaymentStatus(repairRequestDetail?.paymentstatus)}
+                  </Text>
+                </>
+              )}
           </Box>
 
           <Box className="items-center mt-5">
             {repairRequestDetail
-              && repairRequestDetail?.requeststatus != "Inspecting"
-              && repairRequestDetail?.requeststatus != "Done"
+              && repairRequestDetail?.requeststatus !== "Inspecting"
+              && repairRequestDetail?.requeststatus !== "Done"
               && (
                 <Button size="lg"
                   onPress={handleUpdateRepairStatus}
@@ -346,6 +400,35 @@ export default function RepairDetailsScreen() {
                   </ButtonText>
                 </Button>
               )}
+            {(repairRequestDetail?.paymentstatus === 'Unpaid'
+              && repairRequestDetail?.paymentmethod === 'Tiền mặt')
+              && (repairRequestDetail?.requeststatus === 'Repairing'
+                || repairRequestDetail?.requeststatus === 'Done')
+              &&
+              <Button
+                className="bg-orange-500 mt-5 w-auto p-2 rounded"
+                size="lg"
+                disabled={repairRequestDetail?.requeststatus !== 'Done'}
+                onPress={() => {
+                  Alert.alert(
+                    "Xác nhận đã thanh toán",
+                    "Khách hàng đã trả đủ tiền mặt cho bạn?",
+                    [
+                      {
+                        text: "Hủy",
+                        style: "cancel",
+                      },
+                      {
+                        text: "Xác nhận",
+                        onPress: () => changePaymentStatus("Success"),
+                      },
+                    ]
+                  );
+                }}
+              >
+                <Text className="text-white text-center">Xác nhận thanh toán</Text>
+              </Button>
+            }
           </Box>
         </Box>
       </ScrollView>

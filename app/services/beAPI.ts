@@ -492,6 +492,17 @@ export async function getRepairCostPreview() {
   }
 }
 
+export async function getUnpaidPaymentsByRequestId(requestId: string, token: string) {
+  try {
+    const response = await axios.get(`https://motor-save-be.vercel.app/api/v1/transactions/payment/unpaid/request/${requestId}`,
+      { headers: { Authorization: "Bearer " + token } }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching unpaid payments:", error);
+  }
+}
+
 export async function cancelRequest(
   requestdetailid: string,
   token: string,

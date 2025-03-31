@@ -7,6 +7,7 @@ export default function Requestlayout() {
       <Stack.Screen name="request" options={{ headerShown: false }} />
       <Stack.Screen name="requestMap" options={{ headerShown: false }} />
       <Stack.Screen name="chatScreen" options={{ headerShown: false }} />
+      <Stack.Screen name="payments" options={{ headerShown: false }} />
     </Stack>
   );
 }
