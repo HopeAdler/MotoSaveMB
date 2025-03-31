@@ -99,6 +99,7 @@ export const renderStationMarkers = (stations: Station[], currentLoc: { latitude
 
                 <MapboxGL.PointAnnotation
                     id={`station-${station.id}`}
+                    key={station.id}
                     coordinate={[parseFloat(station.long), parseFloat(station.lat)]}
                 >
                     <StationMarker

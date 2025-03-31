@@ -1,6 +1,6 @@
 import { AuthContext } from "@/app/context/AuthContext";
 import { useCameraZoom } from "@/app/hooks/useCameraZoom";
-import { calculateFare, createRescueRequest, createTransaction, RescueRequestPayload, updateRequestStatus, } from "@/app/services/beAPI";
+import { calculateFare, createPayment, createRescueRequest, createTransaction, RescueRequestPayload, updateRequestStatus, } from "@/app/services/beAPI";
 import { geocodeAddress, getAutocomplete, getDirections, getReverseGeocode, } from "@/app/services/goongAPI";
 import { decodePolyline } from "@/app/utils/utils";
 import { Box } from "@/components/ui/box";
@@ -24,6 +24,8 @@ const { EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN } = process.env;
 MapboxGL.setAccessToken(`${EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN}`);
 import { User } from "../../../../context/formFields";
 import { GoBackButton } from "@/components/custom/GoBackButton";
+import { OriginMarker, DestinationMarker } from "../../../../../components/custom/CustomMapMarker";
+import { BackButton, SearchInput, SearchResults, ActionSheetToggle } from "../../../../../components/custom/MapUIComponents";
 const INITIAL_RADIUS = 5000; // 5 km
 const MAX_RADIUS = 20000;    // 15 km
 // Các hằng số cảnh báo khoảng cách (đơn vị mét)
@@ -303,6 +305,17 @@ const RescueMapScreen = () => {
     try {
       const result = await createRescueRequest(payload, token);
       console.log(result);
+      const reqId = result.requestdetailid;
+      const payment = await createPayment(
+        {
+          requestdetailid: reqId,
+          totalamount: fare,
+          paymentmethod: "Tiền mặt",
+          paymentstatus: "Unpaid",
+        },
+        token
+      );
+      console.log(payment)
       setShowActionsheet(true);
       // setShowCountdownSheet(true);
       setRequestDetailId(result.requestdetailid);
@@ -468,11 +481,6 @@ const RescueMapScreen = () => {
           if (radius <= MAX_RADIUS) {
             sendRideRequestToDrivers(radius + 2000, reqId);
           }
-          // else {
-          //   Alert.alert("No drivers available", "No drivers available nearby. Please try again later.");
-          //   handleCancelSearch();
-          //   return
-          // }
         }
       }, 20000);
     } else {
@@ -500,23 +508,7 @@ const RescueMapScreen = () => {
         sendRideRequestToDrivers(newRadius, reqId);
       }, 5000);
     }
-    //    else {
-    //     Alert.alert("No drivers available", "No drivers available in search radius");
-    //     // if (handleCancelSearch) {
-    //       handleCancelSearch();
-    //     // }
-    //     return
-    //   }
-    // }
   };
-  // const handleFindDriver = async () => {
-  //   const reqId = await handleCreateRequest();
-  //   // Đặt trạng thái tìm kiếm ngay lập tức
-  //   isSearchingRef.current = true;
-  //   setIsSearching(true);
-  //   setDriverAccepted(false);
-  //   sendRideRequestToDrivers(INITIAL_RADIUS, reqId);
-  // };
   const handleFindDriver = async () => {
     const reqId = await handleCreateRequest();
     if (!reqId) {
@@ -534,48 +526,9 @@ const RescueMapScreen = () => {
     setDriverAccepted(false);
 
     // Truyền reqId trực tiếp vào hàm tìm kiếm
-
-    // Truyền reqId trực tiếp vào hàm tìm kiếm
     sendRideRequestToDrivers(INITIAL_RADIUS, reqId);
   };
 
-  // const handleCancel = async () => {
-  //   if (!requestDetailId) return;
-  //   try {
-  //     const result = await updateRequestStatus(requestDetailId, token, "Cancel");
-  //     console.log(result.message);
-  //     // Alert.alert("Request canceled");
-  //     if (paymentMethod === "Zalopay") {
-  //       await refundTransaction(zpTransId, "User canceled request", fare);
-  //       const payZaloBridgeEmitter = new NativeEventEmitter(PayZaloBridge);
-  //       const subscription = payZaloBridgeEmitter.addListener("EventPayZalo", async (data: PayZaloEventData) => {
-  //         subscription.remove();
-  //       });
-  //     }
-  //     // setShowCountdownSheet(false);
-  //   } catch (error) {
-  //     console.error("Error canceling request:", error);
-  //   }
-  // };
-
-  // const handleCancelSearch = async () => {
-  //   console.log("handleCancelSearch được gọi");
-  //   // Ngay lập tức đặt trạng thái tìm kiếm về false
-  //   isSearchingRef.current = false;
-  //   setIsSearching(false);
-  //   // Cập nhật UI
-  //   setShowActionsheet(true);
-  //   setShowTracking(false);
-  //   // Đồng thời gọi hàm cancel để cập nhật trạng thái hệ thống
-  //   // await handleCancel();
-  //   try {
-  //     // Đồng thời gọi hàm cancel để cập nhật trạng thái hệ thống
-  //     await handleCancel();
-  //     console.log("Request đã được hủy thành công");
-  // } catch (error) {
-  //     console.error("Lỗi khi hủy request:", error);
-  // }
-  // };
   const handleCancel = async () => {
     console.log("handleCancel được gọi với requestDetailId:", requestDetailId);
 
@@ -730,82 +683,106 @@ const RescueMapScreen = () => {
 
   return (
     <Box className="flex-1">
-      <GoBackButton />
-
+      {/* Back button */}
+      <Box className="absolute top-4 left-4 z-20">
+        <BackButton onPress={() => router.back()} />
+      </Box>
+      {/* Header: Search origin & destination */}
       <Box className="absolute top-0 left-0 w-full z-10 p-4 pt-16">
-        <Input variant="outline" size="md" className="bg-white">
-          <InputField
-            placeholder="Search origin"
+        <Box className="bg-white/95 rounded-xl p-3 shadow-md">
+          <SearchInput
             value={originQuery}
             onChangeText={handleOriginChange}
+            placeholder="Search origin"
+            onClear={() => setOriginQuery("")}
           />
-        </Input>
-        {originResults.length > 0 && !originSelected && (
-          <FlatList
+          <SearchResults
             data={originResults}
-            keyExtractor={(_item, index) => index.toString()}
-            className="bg-white rounded max-h-40"
-            renderItem={({ item }) => (
-              <Pressable onPress={() => { setOriginQuery(item.description); handleFetchLocation(item.description, true); }} className="p-2">
-                <Text className="text-black">{item.description}</Text>
-              </Pressable>
-            )}
+            onSelectItem={(item) => {
+              setOriginQuery(item.description);
+              handleFetchLocation(item.description, true);
+            }}
+            visible={originResults.length > 0 && !originSelected}
           />
-        )}
-        <Box className="mt-2">
-          <Input variant="outline" size="md" className="bg-white" isDisabled={!originSelected}>
-            <InputField placeholder="Search destination" value={destinationQuery} onChangeText={handleDestinationChange} />
-          </Input>
-        </Box>
-        {destinationResults.length > 0 && !destinationSelected && (
-          <FlatList
+          <Box className="mt-2">
+            <SearchInput
+              value={destinationQuery}
+              onChangeText={handleDestinationChange}
+              placeholder="Search destination"
+              onClear={() => setDestinationQuery("")}
+              isDisabled={!originSelected}
+            />
+          </Box>
+          <SearchResults
             data={destinationResults}
-            keyExtractor={(_item, index) => index.toString()}
-            className="bg-white rounded max-h-40"
-            renderItem={({ item }) => (
-              <Pressable onPress={() => { setDestinationQuery(item.description); handleFetchLocation(item.description, false); }} className="p-2">
-                <Text className="text-black">{item.description}</Text>
-              </Pressable>
-            )}
+            onSelectItem={(item) => {
+              setDestinationQuery(item.description);
+              handleFetchLocation(item.description, false);
+            }}
+            visible={destinationResults.length > 0 && !destinationSelected}
           />
-        )}
+        </Box>
       </Box>
 
+      {/* Map view */}
       <Box className="flex-1">
-        <MapViewComponent users={users} currentLoc={currentLoc} isActionSheetOpen={showActionsheet} focusMode={[true, () => { }]}>
+        <MapViewComponent
+          users={users}
+          currentLoc={currentLoc}
+          isActionSheetOpen={showActionsheet}
+          focusMode={[true, () => { }]}
+        >
           {originCoordinates.latitude !== 0 && (
-            <MapboxGL.Camera ref={camera} centerCoordinate={[originCoordinates.longitude, originCoordinates.latitude]} />
+            <MapboxGL.Camera
+              ref={camera}
+              centerCoordinate={[originCoordinates.longitude, originCoordinates.latitude]}
+            />
           )}
           {currentLoc.latitude !== 0 && (
-            <MapboxGL.PointAnnotation id="current-location" coordinate={[currentLoc.longitude, currentLoc.latitude]}>
-              <Box style={{ width: 28, height: 28, alignItems: "center", justifyContent: "center" }}>
+            <MapboxGL.PointAnnotation
+              id="current-location"
+              coordinate={[currentLoc.longitude, currentLoc.latitude]}
+            >
+              <Box className="w-7 h-7 items-center justify-center">
                 <LocateFixed color="#0080FF" size={28} />
               </Box>
             </MapboxGL.PointAnnotation>
           )}
           {originCoordinates.latitude !== 0 && (
-            <MapboxGL.PointAnnotation id="origin-marker" coordinate={[originCoordinates.longitude, originCoordinates.latitude]}>
-              <MapboxGL.Callout title="Origin" />
-            </MapboxGL.PointAnnotation>
+            <MapboxGL.MarkerView
+              id="origin-marker"
+              coordinate={[originCoordinates.longitude, originCoordinates.latitude]}
+            >
+              <OriginMarker size={32} />
+            </MapboxGL.MarkerView>
           )}
           {destinationCoordinates.latitude !== 0 && (
-            <MapboxGL.PointAnnotation id="destination-marker" coordinate={[destinationCoordinates.longitude, destinationCoordinates.latitude]}>
-              <Box className="w-40 h-40 items-center relative z-10 -bottom-1 border-red-400 border-2">
-                <CircleChevronDown color="#0080FF" size={30} />
-              </Box>
-            </MapboxGL.PointAnnotation>
+            <MapboxGL.MarkerView
+              id="destination-marker"
+              coordinate={[destinationCoordinates.longitude, destinationCoordinates.latitude]}
+            >
+              <DestinationMarker size={32} />
+            </MapboxGL.MarkerView>
           )}
           {routeCoordinates.length > 0 && (
             <MapboxGL.ShapeSource
               id="routeSource"
-              shape={{ type: "Feature", geometry: { type: "LineString", coordinates: routeCoordinates }, properties: {} }}
+              shape={{
+                type: "Feature",
+                geometry: { type: "LineString", coordinates: routeCoordinates },
+                properties: {},
+              }}
             >
-              <MapboxGL.LineLayer id="routeLine" style={{ lineColor: "#ff0000", lineWidth: 4 }} />
+              <MapboxGL.LineLayer
+                id="routeLine"
+                style={{ lineColor: "#ff0000", lineWidth: 4 }}
+              />
             </MapboxGL.ShapeSource>
           )}
         </MapViewComponent>
       </Box>
 
+      {/* Trip details action sheet */}
       {showActionsheet && directionsInfo && (
         <TripDetailsActionSheet
           isOpen={showActionsheet}
@@ -820,8 +797,11 @@ const RescueMapScreen = () => {
           paymentMethodState={[paymentMethod, setPaymentMethod]}
           selectVehicleState={[selectedVehicleId, setSelectedVehicleId]}
           confirmDisabled={!isLocationValid()}
+          rescueType="normal"
         />
       )}
+
+      {/* Tracking action sheet */}
       {showTracking && requestDetailId && acceptedReqDetId && acceptedReqDetStatus !== "Pending" && (
         <TrackingActionSheet
           isOpen={showTracking}
@@ -834,29 +814,22 @@ const RescueMapScreen = () => {
         />
       )}
 
-      {/* <View className="absolute top-[15%] flex flex-col items-end w-full px-[5%] z-20">
-        <Text>Số người online: {users.size}</Text>
-      </View> */}
-
+      {/* ActionSheet Toggle buttons */}
       {!showActionsheet && directionsInfo && (
-        <Pressable
+        <ActionSheetToggle
           onPress={() => setShowActionsheet(true)}
-          className="absolute bottom-20 right-2 w-10 h-10 bg-white rounded-full items-center justify-center shadow-sm"
-        >
-          <ChevronUp size={24} color="#3B82F6" />
-        </Pressable>
+          visible={!showActionsheet}
+        />
       )}
-
       {!showTracking && requestDetailId && acceptedReqDetId && acceptedReqDetStatus !== "Pending" && (
-        <Pressable
+        <ActionSheetToggle
           onPress={() => setShowTracking(true)}
-          className="absolute bottom-20 right-2 w-10 h-10 bg-white rounded-full items-center justify-center shadow-sm"
-        >
-          <ChevronUp size={24} color="#3B82F6" />
-        </Pressable>
+          visible={true}
+        />
       )}
     </Box>
   );
+
 };
 
 export default RescueMapScreen;

@@ -24,6 +24,7 @@ import {
 import { Divider } from "@/components/ui/divider";
 import { AuthContext } from "@/app/context/AuthContext";
 import CreateVehicleModal, { Brand } from "@/components/custom/modal/CreateVehicleModal";
+import VehicleAlertDialog from "./VehicleAlertDialog";
 
 // Interface cho customer vehicle theo API hiện tại
 export interface CustomerVehicle {
@@ -37,7 +38,7 @@ export interface CustomerVehicle {
   stationaddress?: string | null;
 }
 
-interface TripDetailsActionSheetProps {
+export interface TripDetailsActionSheetProps {
   isOpen: boolean;
   onClose: () => void;
   onPayment: () => void;
@@ -50,6 +51,7 @@ interface TripDetailsActionSheetProps {
   paymentMethodState: [string, React.Dispatch<React.SetStateAction<string>>];
   selectVehicleState: [string, React.Dispatch<React.SetStateAction<string>>];
   confirmDisabled?: boolean;
+  rescueType: "emergency" | "normal" | "flood";
 }
 
 // Hàm định dạng biển số xe (như đã định nghĩa ở modal, có thể tách ra module chung)
@@ -75,7 +77,7 @@ const TripDetailsActionSheet: React.FC<TripDetailsActionSheetProps> = ({
   isSearching,
   directionsInfo,
   paymentMethodState: [paymentMethod, setPaymentMethod],
-  selectVehicleState: [selectVehicleId, setSelectVehicleId],
+  selectVehicleState: [selectVehicleId, setSelectVehicleId], rescueType
 }) => {
   const { token } = useContext(AuthContext);
 
@@ -85,6 +87,7 @@ const TripDetailsActionSheet: React.FC<TripDetailsActionSheetProps> = ({
   const [customerVehicles, setCustomerVehicles] = useState<CustomerVehicle[]>([]);
   const [loadingVehicles, setLoadingVehicles] = useState<boolean>(true);
   const [isCreateVehicleModalOpen, setIsCreateVehicleModalOpen] = useState<boolean>(false);
+  const [showVehicleAlert, setShowVehicleAlert] = useState(false);
 
   // Fetch danh sách brands từ API
   useEffect(() => {
@@ -243,55 +246,58 @@ const TripDetailsActionSheet: React.FC<TripDetailsActionSheetProps> = ({
                         </SelectPortal>
                       </Select>
                     </Box>
-                    <Box className="mt-4">
-                      <Text className="text-gray-600 mb-2">Loại xe</Text>
-                      {loadingVehicles ? (
-                        <ActivityIndicator size="small" color="#3B82F6" />
-                      ) : (
-                        <Select
-                          selectedValue={selectedVehicle}
-                          onValueChange={(value: any) => {
-                            if (value === "create-new") {
-                              setIsCreateVehicleModalOpen(true);
-                              setSelectedVehicle("");
-                            } else {
-                              setSelectedVehicle(value);
-                              setSelectVehicleId(value)
-                            }
-                          }}
-                        >
-                          <SelectTrigger className="border border-gray-200 rounded-xl p-5 flex-row items-center justify-between bg-gray-50 h-13">
-                            <SelectInput
-                              placeholder="Chọn xe của bạn"
-                              className="text-lg flex-1"
-                              value={selectedVehicleLabel}
-                            />
-                            <SelectIcon as={ChevronDownIcon} />
-                          </SelectTrigger>
-                          <SelectPortal>
-                            <SelectBackdrop />
-                            <SelectContent>
-                              {customerVehicles.length > 0 ? (
-                                customerVehicles.map((vehicle) => {
-                                  const label = `${vehicle.brandname} - ${formatLicensePlate(vehicle.licenseplate)}`;
-                                  return (
-                                    <SelectItem
-                                      key={vehicle.vehicleid}
-                                      label={label}
-                                      value={vehicle.vehicleid}
-                                    />
-                                  );
-                                })
-                              ) : (
-                                <SelectItem label="Không có xe nào" value="" isDisabled />
-                              )}
-                              <Divider className="my-2" />
-                              <SelectItem label="Tạo xe mới" value="create-new" />
-                            </SelectContent>
-                          </SelectPortal>
-                        </Select>
-                      )}
-                    </Box>
+                    {rescueType === "emergency" && (
+                      <Box className="mt-4">
+                        <Text className="text-gray-600 mb-2">Loại xe</Text>
+                        {loadingVehicles ? (
+                          <ActivityIndicator size="small" color="#3B82F6" />
+                        ) : (
+                          <Select
+                            selectedValue={selectedVehicle}
+                            onValueChange={(value: any) => {
+                              if (value === "create-new") {
+                                setIsCreateVehicleModalOpen(true);
+                                setSelectedVehicle("");
+                              } else {
+                                setSelectedVehicle(value);
+                                setSelectVehicleId(value)
+                              }
+                            }}
+                          >
+                            <SelectTrigger className="border border-gray-200 rounded-xl p-5 flex-row items-center justify-between bg-gray-50 h-13">
+                              <SelectInput
+                                placeholder="Chọn xe của bạn"
+                                className="text-lg flex-1"
+                                value={selectedVehicleLabel}
+                              />
+                              <SelectIcon as={ChevronDownIcon} />
+                            </SelectTrigger>
+                            <SelectPortal>
+                              <SelectBackdrop />
+                              <SelectContent>
+                                {customerVehicles.length > 0 ? (
+                                  customerVehicles.map((vehicle) => {
+                                    const label = `${vehicle.brandname} - ${formatLicensePlate(vehicle.licenseplate)}`;
+                                    return (
+                                      <SelectItem
+                                        key={vehicle.vehicleid}
+                                        label={label}
+                                        value={vehicle.vehicleid}
+                                      />
+                                    );
+                                  })
+                                ) : (
+                                  <SelectItem label="Không có xe nào" value="" isDisabled />
+                                )}
+                                <Divider className="my-2" />
+                                <SelectItem label="Tạo xe mới" value="create-new" />
+                              </SelectContent>
+                            </SelectPortal>
+                          </Select>
+                        )}
+                      </Box>
+                    )}
+
                     <Button
                       variant="solid"
                       size="lg"

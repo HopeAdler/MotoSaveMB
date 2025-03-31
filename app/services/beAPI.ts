@@ -38,6 +38,18 @@ export interface Transaction {
   paymentstatus: string;
 }
 
+export interface Payment {
+  requestdetailid: string | any;
+  totalamount: number | null;
+  paymentmethod: string;
+  paymentstatus: string;
+}
+
+export interface UpdatedPayment {
+  requestDetailId: string;
+  newStatus: string;
+}
+
 export interface Feedback {
   rating: number;
   comment: string;
@@ -154,6 +166,64 @@ export async function createTransaction(
   try {
     const response = await axios.post(
       "https://motor-save-be.vercel.app/api/v1/transactions",
+      payload,
+      {
+        headers: {
+          Authorization: "Bearer " + token,
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error creating transaction", error);
+    throw error;
+  }
+}
+
+export const updatePaymentInfo = async (requestdetailid: string | any, updatedData: any, token: string) => {
+  try {
+    const response = await axios.put(
+      `https://motor-save-be.vercel.app/api/v1/transactions/payment/info/${requestdetailid}`,
+      updatedData,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error updating payment:", error);
+    throw error;
+  }
+};
+
+export async function createPayment(
+  payload: Payment,
+  token: string
+): Promise<any> {
+  try {
+    const response = await axios.post(
+      "https://motor-save-be.vercel.app/api/v1/transactions/payment",
+      payload,
+      {
+        headers: {
+          Authorization: "Bearer " + token,
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error creating transaction", error);
+    throw error;
+  }
+}
+
+export async function updatePaymentStatus(
+  payload: UpdatedPayment,
+  token: string
+): Promise<any> {
+  try {
+    const response = await axios.put(
+      "https://motor-save-be.vercel.app/api/v1/transactions/payment/update",
       payload,
       {
         headers: {
