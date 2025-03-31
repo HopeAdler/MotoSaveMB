@@ -60,6 +60,7 @@ const RepairRequestScreen = () => {
   const [paymentLoading, setPaymentLoading] = useState<boolean>(false);
   const [paymentMethod, setPaymentMethod] = useState("Tiền mặt");
   const [fare, setFare] = useState<number | any>(0);
+  const [returnFare, setReturnFare] = useState<number | any>(0);
   const [zpTransId, setZpTransId] = useState<string | null>(null);
   const [destinationQuery, setDestinationQuery] = useState("");
   const [destinationResults, setDestinationResults] = useState<any[]>([]);
@@ -147,7 +148,7 @@ const RepairRequestScreen = () => {
   }, [requestDetail?.requeststatus]);
 
   useEffect(() => {
-    if (requestDetail?.requeststatus === "Done") {
+    if (requestDetail?.requeststatus === "Done" && destinationSelected === true) {
       const timer = setTimeout(() => {
         router.navigate(
           "/user/customer/home/emergencyRescue/returnVehicleRequest"
@@ -198,7 +199,7 @@ const RepairRequestScreen = () => {
       const distanceValue = directionsInfo.distance?.value || 0;
       calculateFare(distanceValue)
         .then((money) => {
-          setFare(money);
+          setReturnFare(money);
           console.log("Set fare success");
         })
         .catch((error) => {
@@ -227,7 +228,7 @@ const RepairRequestScreen = () => {
       deslat: destinationCoordinates.latitude,
       pickuplocation: requestDetail?.stationaddress,
       destination: destinationQuery,
-      totalprice: fare || 0,
+      totalprice: returnFare || 0,
     };
     try {
       if (destinationQuery !== "") {
@@ -237,6 +238,17 @@ const RepairRequestScreen = () => {
           requestDetail?.requestid
         );
         console.log(result);
+        const reqid = result.requestdetailid
+        const returnPayment = await createPayment(
+          {
+            requestdetailid: reqid,
+            totalamount: returnFare,
+            paymentmethod: "Tiền mặt",
+            paymentstatus: "Unpaid",
+          },
+          token
+        );
+        console.log("Return vehicle payment: " + returnPayment);
       }
       await acceptRepairQuote(requestDetail?.requestdetailid, token);
     } catch (error) {
@@ -258,7 +270,7 @@ const RepairRequestScreen = () => {
       deslat: destinationCoordinates.latitude,
       pickuplocation: requestDetail?.stationaddress,
       destination: destinationQuery,
-      totalprice: fare || 0,
+      totalprice: returnFare || 0,
     };
     try {
       if (destinationQuery !== "") {
@@ -268,6 +280,17 @@ const RepairRequestScreen = () => {
           requestDetail?.requestid
         );
         console.log(result);
+        const reqid = result.requestdetailid
+        const returnPayment = await createPayment(
+          {
+            requestdetailid: reqid,
+            totalamount: returnFare,
+            paymentmethod: "Tiền mặt",
+            paymentstatus: "Unpaid",
+          },
+          token
+        );
+        console.log("Return vehicle payment: " + returnPayment);
       }
       processPayment(fare, callbackUrl);
       const payZaloEmitter = new NativeEventEmitter(PayZaloBridge);
