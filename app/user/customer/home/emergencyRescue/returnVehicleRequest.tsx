@@ -35,7 +35,7 @@ import {
 import { Button, ButtonText } from "@/components/ui/button";
 import { decodedToken, handlePhoneCall } from "@/app/utils/utils";
 import { PayZaloEventData, processPayment } from "@/app/utils/payment";
-import { createPayment, createTransaction } from "@/app/services/beAPI";
+import { createPayment, createTransaction, updatePaymentInfo } from "@/app/services/beAPI";
 import { RequestContext } from "@/app/context/RequestContext";
 import { Avatar } from "react-native-elements";
 
@@ -134,7 +134,14 @@ const ReturnVehicleRequestScreen = () => {
           if (data.returnCode === "1") {
             // router.navigate("/user/customer/home/normalRescue/rescueMap");
             console.log("Payment successful:", data);
+            const updatedPaymentInfo = {
+              paymentmethod: "Tiền mặt",
+              paymentstatus: "Cancel",
+            };
+            const updateOldPaymentInfo = await updatePaymentInfo(requestDetail?.requestdetailid, updatedPaymentInfo, token)
+            console.log("Old payment cancel: " + updateOldPaymentInfo);
             setZpTransId(data.transactionId || null);
+            // Update old payment to cancel
             try {
               const transactionResponse = await createTransaction(
                 {

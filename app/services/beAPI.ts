@@ -180,6 +180,22 @@ export async function createTransaction(
   }
 }
 
+export const updatePaymentInfo = async (requestdetailid: string | any, updatedData: any, token: string) => {
+  try {
+    const response = await axios.put(
+      `https://motor-save-be.vercel.app/api/v1/transactions/payment/info/${requestdetailid}`,
+      updatedData,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error updating payment:", error);
+    throw error;
+  }
+};
+
 export async function createPayment(
   payload: Payment,
   token: string
