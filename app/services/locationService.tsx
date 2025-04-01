@@ -9,6 +9,11 @@ export const getCurrentLocation = async () => {
   return await Location.getCurrentPositionAsync({});
 };
 
+export const getCurrentHeading=async()=>{
+  return await Location.getHeadingAsync();
+}
+
+
 export const watchLocation = async (callback: any) => {
   return await Location.watchPositionAsync(
     { accuracy: Location.Accuracy.High, distanceInterval: 50 },
