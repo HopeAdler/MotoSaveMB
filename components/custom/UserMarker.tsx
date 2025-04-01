@@ -1,44 +1,36 @@
 import React from "react";
 import MapboxGL from "@rnmapbox/maps";
-import { View, StyleSheet } from "react-native";
-import { Bike, Truck } from "lucide-react-native";
+import { View, Image } from "react-native";
 import { User } from "../../app/context/formFields";
-import { Image } from "react-native";
-// type User = {
-//   uuid: string;
-//   username: string;
-//   role: string;
-//   latitude: number;
-//   longitude: number;
-// };
+
 type UserMarkerComponentProps = {
   user: User;
 };
+
 const UserMarker: React.FC<UserMarkerComponentProps> = ({ user }) => {
   if (user.role === "Driver") {
+    // console.log(user);
     return (
-      <MapboxGL.MarkerView id={user.uuid} coordinate={[user.longitude, user.latitude]}>
-        <View style={{ transform: [{ rotate: `${user.heading}deg` }] }}>
-          {/* <Truck color="#FF8000" size={28} style={styles.icon} /> */}
-          <Image source={require("../../assets/images/truck.png")}/>
+      <MapboxGL.MarkerView
+        id={user.uuid}
+        coordinate={[user.longitude, user.latitude]}
+      >
+        <View
+          className="w-28 h-28  rounded-lg overflow-visible items-center justify-center"
+          style={{ transform: [{ rotate: `${user.heading}deg` }] }}
+        >
+          <Image
+            source={require("../../assets/images/truck.png")}
+            className="w-16 h-16 p-2"
+            resizeMode="contain"
+          />
         </View>
+
       </MapboxGL.MarkerView>
     );
   } else {
     return null;
   }
 };
-
-
-const styles = StyleSheet.create({
-  iconContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  icon: {
-    // position: "absolute",
-    // transform: [{ rotate: "45deg" }],
-  },
-});
 
 export default UserMarker;

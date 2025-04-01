@@ -62,6 +62,7 @@ import { User } from "../../../../context/formFields";
 import { GoBackButton } from "@/components/custom/GoBackButton";
 import { OriginMarker } from "../../../../../components/custom/CustomMapMarker";
 import { BackButton, SearchInput, SearchResults, ActionSheetToggle } from "../../../../../components/custom/MapUIComponents";
+import { getHeadingAsync } from "expo-location";
 const INITIAL_RADIUS = 5000; // 5 km
 const MAX_RADIUS = 20000; // 15 km
 // Các hằng số cảnh báo khoảng cách (đơn vị mét)
@@ -80,7 +81,7 @@ const FloodRescueMapScreen = () => {
   const { PayZaloBridge } = NativeModules;
   const userId = decodedToken(token)?.id;
   // Các state chính
-  const [currentLoc, setCurrentLoc] = useState({ latitude: 0, longitude: 0 });
+  const [currentLoc, setCurrentLoc] = useState({ latitude: 0, longitude: 0, heading: 0 });
   const [originCoordinates, setOriginCoordinates] = useState({
     latitude: 0,
     longitude: 0,
@@ -580,11 +581,13 @@ const FloodRescueMapScreen = () => {
   const updateLocation = async (locationSubscription: any) => {
     if ((await requestLocationPermission()) && userId) {
       const location = await getCurrentLocation();
+      const bearing = await getHeadingAsync();
       if (!location?.coords) return;
 
       setCurrentLoc({
         latitude: location.coords.latitude,
         longitude: location.coords.longitude,
+        heading: bearing.trueHeading,
       });
 
       setOriginCoordinates((prev) => {
@@ -599,7 +602,8 @@ const FloodRescueMapScreen = () => {
         userId,
         user,
         location.coords.latitude,
-        location.coords.longitude
+        location.coords.longitude,
+        currentLoc.heading
       );
 
       locationSubscription = await watchLocation((position: any) => {
@@ -608,7 +612,8 @@ const FloodRescueMapScreen = () => {
           userId,
           user,
           position.coords.latitude,
-          position.coords.longitude
+          position.coords.longitude,
+          currentLoc.heading
         );
       });
     }
@@ -635,8 +640,8 @@ const FloodRescueMapScreen = () => {
             updatedMap.set(msg.publisher, msg.message);
             return acceptedDriverId
               ? new Map(
-                  [...updatedMap].filter(([key]) => key === acceptedDriverId)
-                )
+                [...updatedMap].filter(([key]) => key === acceptedDriverId)
+              )
               : updatedMap;
           });
         }
@@ -648,8 +653,8 @@ const FloodRescueMapScreen = () => {
             updated.delete(event.uuid);
             return acceptedDriverId
               ? new Map(
-                  [...updated].filter(([key]) => key === acceptedDriverId)
-                )
+                [...updated].filter(([key]) => key === acceptedDriverId)
+              )
               : updated;
           });
         }
@@ -770,14 +775,15 @@ const FloodRescueMapScreen = () => {
             />
           )}
           {currentLoc.latitude !== 0 && (
-            <MapboxGL.PointAnnotation
-              id="current-location"
-              coordinate={[currentLoc.longitude, currentLoc.latitude]}
-            >
-              <Box className="w-7 h-7 items-center justify-center">
-                <Text style={{ color: "#0080FF" }}>◎</Text>
-              </Box>
-            </MapboxGL.PointAnnotation>
+            <Box className="items-center justify-center">
+              <MapboxGL.LocationPuck
+                pulsing="default"
+                puckBearingEnabled
+                puckBearing="course"
+                key="current-location"
+                visible
+              />
+            </Box>
           )}
           {originCoordinates.latitude !== 0 && (
             <MapboxGL.MarkerView
