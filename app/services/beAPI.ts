@@ -504,7 +504,7 @@ export async function getUnpaidPaymentsByRequestId(requestId: string, token: str
 }
 
 export async function cancelRequest(
-  requestdetailid: string,
+  requestdetailid: string | any,
   token: string,
   note: string
 ): Promise<any> {
