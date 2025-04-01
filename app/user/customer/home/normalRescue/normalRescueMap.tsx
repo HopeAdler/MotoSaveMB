@@ -599,13 +599,13 @@ const RescueMapScreen = () => {
     if (await requestLocationPermission() && userId) {
       const location = await getCurrentLocation();
       const bearing = await getHeadingAsync();
-      console.log(bearing);
+      // console.log(bearing);
       if (!location?.coords) return;
 
       setCurrentLoc({
         latitude: location.coords.latitude,
         longitude: location.coords.longitude,
-        heading: bearing.trueHeading ,
+        heading: bearing.trueHeading,
       });
 
       setOriginCoordinates((prev) => {
@@ -743,14 +743,23 @@ const RescueMapScreen = () => {
             />
           )}
           {currentLoc.latitude !== 0 && (
-            <MapboxGL.PointAnnotation
-              id="current-location"
-              coordinate={[currentLoc.longitude, currentLoc.latitude]}
-            >
-              <Box className="w-7 h-7 items-center justify-center">
-                <LocateFixed color="#0080FF" size={28} />
-              </Box>
-            </MapboxGL.PointAnnotation>
+            // <MapboxGL.PointAnnotation
+            //   id="current-location"
+            //   coordinate={[currentLoc.longitude, currentLoc.latitude]}
+            // >
+            //   <Box className="w-7 h-7 items-center justify-center">
+            //     <LocateFixed color="#0080FF" size={28} />
+            //   </Box>
+            // </MapboxGL.PointAnnotation>
+            <Box className="items-center justify-center">
+              <MapboxGL.LocationPuck
+                pulsing="default"
+                puckBearingEnabled
+                puckBearing="course"
+                key="current-location"
+                visible
+              />
+            </Box>
           )}
           {originCoordinates.latitude !== 0 && (
             <MapboxGL.MarkerView
