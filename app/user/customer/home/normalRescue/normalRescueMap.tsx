@@ -26,6 +26,7 @@ import { User } from "../../../../context/formFields";
 import { GoBackButton } from "@/components/custom/GoBackButton";
 import { OriginMarker, DestinationMarker } from "../../../../../components/custom/CustomMapMarker";
 import { BackButton, SearchInput, SearchResults, ActionSheetToggle } from "../../../../../components/custom/MapUIComponents";
+import { getHeadingAsync } from "expo-location";
 const INITIAL_RADIUS = 5000; // 5 km
 const MAX_RADIUS = 20000;    // 15 km
 // Các hằng số cảnh báo khoảng cách (đơn vị mét)
@@ -597,12 +598,14 @@ const RescueMapScreen = () => {
   const updateLocation = async (locationSubscription: any) => {
     if (await requestLocationPermission() && userId) {
       const location = await getCurrentLocation();
+      const bearing = await getHeadingAsync();
+      console.log(bearing);
       if (!location?.coords) return;
 
       setCurrentLoc({
         latitude: location.coords.latitude,
         longitude: location.coords.longitude,
-        heading: location.coords.heading ?? 0,
+        heading: bearing.trueHeading ,
       });
 
       setOriginCoordinates((prev) => {
