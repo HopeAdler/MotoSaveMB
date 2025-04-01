@@ -6,10 +6,9 @@ import MapboxGL from "@rnmapbox/maps";
 import axios from "axios";
 import { router, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useContext, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Alert, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, TouchableOpacity } from "react-native";
 import Icon from "react-native-vector-icons/Feather";
-// Import the ActionSheet components from gluestack-ui
-import { createRepairRequest, getUnpaidPaymentsByRequestId, updatePaymentStatus, updateRequestStatus } from "@/app/services/beAPI";
+import { createRepairRequest, getUnpaidPaymentsByRequestId, updateRequestStatus } from "@/app/services/beAPI";
 import { getDirections } from "@/app/services/goongAPI";
 import { decodedToken, decodePolyline } from "@/app/utils/utils";
 import MapViewComponent from "@/components/custom/MapViewComponent";
@@ -19,10 +18,11 @@ import {
   ActionsheetContent,
   ActionsheetDragIndicator,
   ActionsheetDragIndicatorWrapper,
-  ActionsheetSectionHeaderText,
 } from "@/components/ui/actionsheet";
-import { MessageSquare } from "lucide-react-native";
+import { MessageSquare, MapPin, AlertCircle, Navigation2, Clock, CreditCard, Phone, MapPinCheckInsideIcon } from "lucide-react-native";
 import { GoBackButton } from "@/components/custom/GoBackButton";
+import { handlePhoneCall } from "@/app/utils/utils";
+import DriverRequestDetail from "@/components/custom/DriverRequestDetail";
 
 type User = {
   uuid: string;
@@ -30,12 +30,13 @@ type User = {
   role: string;
   latitude: number;
   longitude: number;
+  heading: number;
 };
 
 interface RequestDetail {
-  requestid: string,
-  servicepackagename: string,
-  requesttype: string,
+  requestid: string;
+  servicepackagename: string;
+  requesttype: string;
   customername: string;
   customerphone: string;
   pickuplocation: string;
@@ -51,13 +52,13 @@ interface RequestDetail {
 }
 
 interface UnpaidPayments {
-  paymentid: string,
-  paymentmethod: string,
-  paymentstatus: string,
-  totalamount: number,
-  requestdetailid: string,
-  name: string,
-  requestid: string
+  paymentid: string;
+  paymentmethod: string;
+  paymentstatus: string;
+  totalamount: number;
+  requestdetailid: string;
+  name: string;
+  requestid: string;
 }
 
 interface DirectionsLeg {
@@ -80,38 +81,24 @@ interface ICamera {
 }
 
 const RequestMap: React.FC = () => {
-  // Inline generic type for search params to satisfy the constraint.
   const { requestdetailid } = useLocalSearchParams<{ requestdetailid: string }>();
   const { token } = useContext(AuthContext);
   const userId = decodedToken(token)?.id;
-  const {
-    jsonCurLoc = '{"latitude":0,"longitude":0}',
-    jsonUsers = "{}"
-  } = useLocalSearchParams<any>();
+  const { jsonCurLoc = '{"latitude":0,"longitude":0}', jsonUsers = "{}" } = useLocalSearchParams<any>();
   const router = useRouter();
 
-  // Parse users from JSON and reconstruct the Map
   const [users, setUsers] = useState<Map<string, User>>(new Map(Object.entries(JSON.parse(jsonUsers))));
-  // Parse currentLoc
   const [currentLoc, setCurrentLoc] = useState({ latitude: 0, longitude: 0 });
-
   const [requestDetail, setRequestDetail] = useState<RequestDetail | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [originCoordinates, setOriginCoordinates] = useState({ latitude: 0, longitude: 0 });
   const [destinationCoordinates, setDestinationCoordinates] = useState({ latitude: 0, longitude: 0 });
-
   const [routeCoordinates, setRouteCoordinates] = useState<[number, number][]>([]);
   const [directionsInfo, setDirectionsInfo] = useState<DirectionsLeg | null>(null);
-  // State to control the open/close state of the ActionSheet.
   const [isActionSheetOpen, setIsActionSheetOpen] = useState<boolean>(true);
-
   const [unpaidPayments, setUnpaidPayments] = useState<UnpaidPayments[]>([]);
-
-
   const camera = useRef<MapboxGL.Camera>(null);
-
   const [focusOnMe, setFocusOnMe] = useState<boolean>(true);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const changeRequestStatus = async () => {
     let newStatus = "";
@@ -129,8 +116,7 @@ const RequestMap: React.FC = () => {
         default:
           break;
       }
-    }
-    else if (requestDetail?.requesttype === "Trả xe") {
+    } else if (requestDetail?.requesttype === "Trả xe") {
       switch (requestDetail?.requeststatus) {
         case "Accepted":
           newStatus = "Processing";
@@ -144,23 +130,26 @@ const RequestMap: React.FC = () => {
     }
     const result = await updateRequestStatus(requestdetailid, token, newStatus);
     fetchRequestDetail();
-    if (result && requestDetail?.requeststatus === "Processing"
-      && requestDetail?.servicepackagename === "Cứu hộ đến trạm"
-      && requestDetail?.requesttype === "Cứu hộ") {
-      createRepairRequest(requestDetail?.requestid, token)
+    if (
+      result &&
+      requestDetail?.requeststatus === "Processing" &&
+      requestDetail?.servicepackagename === "Cứu hộ đến trạm" &&
+      requestDetail?.requesttype === "Cứu hộ"
+    ) {
+      createRepairRequest(requestDetail?.requestid, token);
     }
   };
 
   const changeButtonColor = (): string => {
     switch (requestDetail?.requeststatus) {
       case "Accepted":
-        return "bg-yellow-500";
+        return "bg-[#fab753]";
       case "Pickup":
-        return "bg-blue-500";
+        return "bg-[#1a3148]";
       case "Processing":
-        return "bg-green-500";
+        return "bg-[#fab753]";
       default:
-        return "bg-gray-500";
+        return "bg-green-500";
     }
   };
 
@@ -173,7 +162,7 @@ const RequestMap: React.FC = () => {
         if (requestDetail?.requesttype === "Trả xe") {
           return "Bắt đầu trả xe";
         }
-        break; // Prevents fall-through
+        break;
 
       case "Pickup":
         return "Tiến hành chở khách";
@@ -185,7 +174,7 @@ const RequestMap: React.FC = () => {
         if (requestDetail?.requesttype === "Trả xe") {
           return "Trả xe";
         }
-        break; // Prevents fall-through
+        break;
 
       default:
         if (requestDetail?.requesttype === "Cứu hộ") {
@@ -196,8 +185,7 @@ const RequestMap: React.FC = () => {
         }
     }
 
-    // Ensure a string is always returned
-    return "Trạng thái không xác định"; // Default fallback
+    return "Trạng thái không xác định";
   };
 
   const fetchRequestDetail = async () => {
@@ -221,6 +209,7 @@ const RequestMap: React.FC = () => {
       setLoading(false);
     }
   };
+
   const fetchUnpaidPayments = async () => {
     const requestId = requestDetail?.requestid;
     if (requestId)
@@ -235,17 +224,14 @@ const RequestMap: React.FC = () => {
   };
 
   useEffect(() => {
-    // Immediately fetch on mount or when dependencies change
     fetchRequestDetail();
     fetchUnpaidPayments();
 
-    // Set up an interval to re-fetch every 5 seconds
     const interval = setInterval(() => {
       fetchRequestDetail();
       fetchUnpaidPayments();
     }, 5000);
 
-    // Clear the interval on cleanup
     return () => clearInterval(interval);
   }, [requestdetailid, token]);
 
@@ -256,20 +242,20 @@ const RequestMap: React.FC = () => {
     let startStr = "";
     let endStr = "";
 
-    if (requestDetail?.requeststatus === 'Done') return setRouteCoordinates([]);
+    if (requestDetail?.requeststatus === "Done") return setRouteCoordinates([]);
     switch (requestDetail?.requeststatus) {
       case "Accepted":
         startStr = originStr;
         endStr = requestDetail.destination ? destinationStr : originStr;
-        break; // ✅ Use break instead of return
+        break;
       case "Pickup":
         startStr = currentLocStr;
         endStr = originStr;
-        break; // ✅ Use break instead of return
+        break;
       case "Processing":
         startStr = currentLocStr;
         endStr = requestDetail.destination ? destinationStr : originStr;
-        break; // ✅ Use break instead of return
+        break;
     }
 
     getDirections(startStr, endStr)
@@ -286,9 +272,7 @@ const RequestMap: React.FC = () => {
           console.log("No routes found:", data);
         }
       })
-      .catch((error: any) =>
-        console.error("Error fetching directions:", error)
-      );
+      .catch((error: any) => console.error("Error fetching directions:", error));
   };
 
   useEffect(() => {
@@ -318,7 +302,6 @@ const RequestMap: React.FC = () => {
     fetchRoute();
   }, [currentLoc, requestDetail?.requeststatus]);
 
-
   useEffect(() => {
     if (routeCoordinates.length > 0 && camera.current) {
       const lats = routeCoordinates.map((coord) => coord[1]);
@@ -336,138 +319,256 @@ const RequestMap: React.FC = () => {
   }, [routeCoordinates]);
 
   const toChatScreen = () => {
+    setIsActionSheetOpen(false);
     router.push({
       pathname: "/user/driver/requests/chatScreen",
       params: {
         currentUserId: userId,
-        requestDetailId: requestdetailid
-      }
+        requestDetailId: requestdetailid,
+      },
     });
-  }
+  };
 
   useEffect(() => {
-    if (requestDetail?.requeststatus === 'Done' && unpaidPayments.length > 0) {
+    if (requestDetail?.requeststatus === "Done" && unpaidPayments.length > 0) {
       setIsActionSheetOpen(false);
       router.push({
         pathname: "/user/driver/requests/payments",
         params: {
           requestId: requestDetail.requestid,
-          unpaidPayments: JSON.stringify(unpaidPayments)
+          unpaidPayments: JSON.stringify(unpaidPayments),
         },
       });
     }
   }, [requestDetail?.requeststatus]);
+
   return (
     <Box className="flex-1">
       <GoBackButton />
-      <MapViewComponent users={users} currentLoc={focusOnMe ? currentLoc : originCoordinates} focusMode={[focusOnMe, setFocusOnMe]} isActionSheetOpen={isActionSheetOpen}>
-        <MapboxGL.Camera ref={camera}
-          centerCoordinate={
-            focusOnMe ? [currentLoc.longitude, currentLoc.latitude] : [originCoordinates.longitude, originCoordinates.latitude]}
+      {loading ? (
+        <ActivityIndicator size="large" color="#fab753" />
+      ) : requestDetail?.requeststatus === "Done" ? (
+        <DriverRequestDetail
+          requestDetail={requestDetail}
+          changeButtonTitle={changeButtonTitle}
+          toChatScreen={toChatScreen}
         />
-        {originCoordinates && (
-          <MapboxGL.PointAnnotation id="ori-marker" coordinate={[originCoordinates.longitude, originCoordinates.latitude]}>
-            <MapboxGL.Callout title="Origin" />
-          </MapboxGL.PointAnnotation>
-        )}
-        {requestDetail?.destination && destinationCoordinates && (
-          <MapboxGL.PointAnnotation id="destination-marker" coordinate={[destinationCoordinates.longitude, destinationCoordinates.latitude]}>
-            <MapboxGL.Callout title="Destination" />
-          </MapboxGL.PointAnnotation>
-        )}
-        {routeCoordinates.length > 0 && (
-          <MapboxGL.ShapeSource
-            id="routeSource"
-            shape={{
-              type: "Feature",
-              geometry: { type: "LineString", coordinates: routeCoordinates },
-              properties: {},
-            }}
+      ) : (
+        <>
+          <MapViewComponent
+            users={users}
+            currentLoc={focusOnMe ? currentLoc : originCoordinates}
+            focusMode={[focusOnMe, setFocusOnMe]}
+            isActionSheetOpen={isActionSheetOpen}
           >
-            <MapboxGL.LineLayer
-              id="routeLine"
-              style={{ lineColor: "#007AFF", lineWidth: 4 }}
-            />
-          </MapboxGL.ShapeSource>
-        )}
-      </MapViewComponent>
-
-      {/* ActionSheet from gluestack-ui for the request details */}
-      <Actionsheet isOpen={isActionSheetOpen} onClose={() => setIsActionSheetOpen(false)}>
-        <ActionsheetBackdrop />
-        <ActionsheetContent>
-          <ActionsheetDragIndicatorWrapper>
-            <ActionsheetDragIndicator className="bg-gray-300 rounded-full w-10 h-1 mx-auto my-2" />
-          </ActionsheetDragIndicatorWrapper>
-          <ActionsheetSectionHeaderText>
-            <Text className="text-lg font-bold">Request Details</Text>
-          </ActionsheetSectionHeaderText>
-          <Button variant="outline" size="md" onPress={toChatScreen}>
-            <ButtonText>
-              <MessageSquare size={18} color="#4B5563" style={{ marginTop: 2 }} /> Chat
-            </ButtonText>
-          </Button>
-          {loading ? (
-            <ActivityIndicator size="large" color="#007AFF" />
-          ) : (
-            <View className="space-y-2">
-              <Text className="text-lg font-bold">
-                Full name: {requestDetail?.customername}
-              </Text>
-              <Text className="text-gray-600">
-                📞 Phone: {requestDetail?.customerphone}
-              </Text>
-              <Text className="text-gray-700">
-                📍 Xuất phát ở: {requestDetail?.pickuplocation}
-              </Text>
-              {requestDetail?.destination &&
-                <>
-                  <Text className="text-gray-700">
-                    📍 Kết thúc tại: {requestDetail?.destination}
-                  </Text>
-                  <Text className="text-gray-700">
-                    Distance: {directionsInfo?.distance?.text}
-                  </Text>
-                  <Text className="text-gray-700">
-                    Duration: {directionsInfo?.duration?.text}
-                  </Text>
-                </>
+            <MapboxGL.Camera
+              ref={camera}
+              centerCoordinate={
+                focusOnMe
+                  ? [currentLoc.longitude, currentLoc.latitude]
+                  : [originCoordinates.longitude, originCoordinates.latitude]
               }
-              <Text className="text-green-600 font-semibold">
-                💰 Tổng tiền: {requestDetail?.totalprice.toLocaleString()} VND
-              </Text>
-              <Text className="text-green-600 font-semibold">
-                💰 Phương thức thanh toán: {requestDetail?.paymentmethod}
-              </Text>
-              <View
-                className="m-5 flex flex-col justify-between items-center"
+            />
+            {originCoordinates && (
+              <MapboxGL.PointAnnotation
+                id="ori-marker"
+                coordinate={[originCoordinates.longitude, originCoordinates.latitude]}
               >
-                <Button
-                  className={`${changeButtonColor()} p-2 rounded`}
-                  size="lg"
-                  onPress={changeRequestStatus}
-                  disabled={requestDetail?.requeststatus === 'Done' ? true : false}
-                >
-                  <Text className="text-white text-center">
-                    {changeButtonTitle()}
-                  </Text>
-                </Button>
-              </View>
-            </View>
-          )}
-        </ActionsheetContent>
-      </Actionsheet>
+                <MapboxGL.Callout title="Origin" />
+              </MapboxGL.PointAnnotation>
+            )}
+            {requestDetail?.destination && destinationCoordinates && (
+              <MapboxGL.PointAnnotation
+                id="destination-marker"
+                coordinate={[destinationCoordinates.longitude, destinationCoordinates.latitude]}
+              >
+                <MapboxGL.Callout title="Destination" />
+              </MapboxGL.PointAnnotation>
+            )}
+            {routeCoordinates.length > 0 && (
+              <MapboxGL.ShapeSource
+                id="routeSource"
+                shape={{
+                  type: "Feature",
+                  geometry: { type: "LineString", coordinates: routeCoordinates },
+                  properties: {},
+                }}
+              >
+                <MapboxGL.LineLayer
+                  id="routeLine"
+                  style={{ lineColor: "#007AFF", lineWidth: 4 }}
+                />
+              </MapboxGL.ShapeSource>
+            )}
+          </MapViewComponent>
 
-      {/* Button to open the ActionSheet when it's closed */}
-      {/* {!isActionSheetOpen && ( */}
-      <TouchableOpacity
-        onPress={() => setIsActionSheetOpen(true)}
-        className="absolute bottom-24 left-5 bg-white p-2 rounded-2xl shadow-lg"
-      >
-        <Icon name="chevron-up" size={24} color="#000" />
-      </TouchableOpacity>
-      {/* )} */}
+          <Actionsheet 
+            isOpen={isActionSheetOpen}
+            onClose={() => setIsActionSheetOpen(false)}
+          >
+            <ActionsheetBackdrop />
+            <ActionsheetContent className="bg-white rounded-t-3xl px-0 pt-2 pb-6">
+              <ActionsheetDragIndicatorWrapper>
+                <ActionsheetDragIndicator className="bg-gray-300" />
+              </ActionsheetDragIndicatorWrapper>
 
+              {loading ? (
+                <ActivityIndicator size="large" color="#fab753" />
+              ) : (
+                <Box className="space-y-4 px-4 w-full">
+                  <Box className="flex-row items-center justify-between w-full">
+                    <Box className="flex-1">
+                      <Text className="text-2xl font-bold text-[#1a3148] mb-1">
+                        {requestDetail?.customername}
+                      </Text>
+                    </Box>
+
+                    <Box className="flex-row gap-3 pb-2">
+                      <Button
+                        variant="solid"
+                        onPress={() => handlePhoneCall(requestDetail?.customerphone)}
+                        className={`rounded-xl h-12 w-12 items-center justify-center ${
+                          requestDetail?.requeststatus === "Done" 
+                            ? "bg-gray-200" 
+                            : "bg-[#1a3148]"
+                        }`}
+                        disabled={requestDetail?.requeststatus === "Done"}
+                      >
+                        <Phone size={22} color={requestDetail?.requeststatus === "Done" ? "#9CA3AF" : "white"} />
+                      </Button>
+                      <Button
+                        variant="solid" 
+                        onPress={toChatScreen}
+                        className={`rounded-xl h-12 w-12 items-center justify-center ${
+                          requestDetail?.requeststatus === "Done" 
+                            ? "bg-gray-200" 
+                            : "bg-[#fab753]"
+                        }`}
+                        disabled={requestDetail?.requeststatus === "Done"}
+                      >
+                        <MessageSquare size={22} color={requestDetail?.requeststatus === "Done" ? "#9CA3AF" : "white"} />
+                      </Button>
+                    </Box>
+                  </Box>
+
+                  {directionsInfo && (
+                    <Box className="flex-row w-full bg-[#f8fafc] rounded-xl p-4">
+                      <Box className="flex-1 items-center">
+                        <Box className="flex-row items-center mb-2">
+                          <Box className="w-12 h-12 bg-[#1a3148]/5 rounded-xl items-center justify-center">
+                            <Navigation2 size={24} color="#1a3148" />
+                          </Box>
+                          <Box className="ml-3">
+                            <Text className="text-sm text-gray-500">Distance</Text>
+                            <Text className="text-xl font-bold text-[#1a3148]">
+                              {directionsInfo?.distance?.text}
+                            </Text>
+                          </Box>
+                        </Box>
+                      </Box>
+
+                      <Box className="w-[1px] h-16 bg-gray-200 mx-2 self-center" />
+
+                      <Box className="flex-1 items-center">
+                        <Box className="flex-row items-center mb-2">
+                          <Box className="w-12 h-12 bg-[#1a3148]/5 rounded-xl items-center justify-center">
+                            <Clock size={24} color="#1a3148" />
+                          </Box>
+                          <Box className="ml-3">
+                            <Text className="text-sm text-gray-500">Duration</Text>
+                            <Text className="text-xl font-bold text-[#1a3148]">
+                              {directionsInfo?.duration?.text}
+                            </Text>
+                          </Box>
+                        </Box>
+                      </Box>
+                    </Box>
+                  )}
+
+                  <Box className="bg-[#f8fafc] rounded-xl p-4 space-y-3 w-full relative">
+                    {requestDetail?.destination && (
+                      <Box className="absolute left-[31px] top-[60px] w-[1.5px] h-[28px] bg-black/10" />
+                    )}
+                    <Box className="flex-row items-center w-full">
+                      <Box className="w-10 h-10 bg-[#1a3148]/5 rounded-lg items-center justify-center">
+                        <MapPin size={20} color="#1a3148" />
+                      </Box>
+                      <Box className="ml-3 flex-1">
+                        <Text className="text-sm text-gray-500">Pickup Location</Text>
+                        <Text className="text-base font-medium text-[#1a3148]">
+                          {requestDetail?.pickuplocation}
+                        </Text>
+                      </Box>
+                    </Box>
+
+                    {requestDetail?.destination && (
+                      <Box className="flex-row items-center w-full">
+                        <Box className="w-10 h-10 bg-[#fab753]/10 rounded-lg items-center justify-center">
+                          {requestDetail?.requeststatus === "Done" ? (
+                            <MapPinCheckInsideIcon size={20} color="#fab753" />
+                          ) : (
+                            <AlertCircle size={20} color="#fab753" />
+                          )}
+                        </Box>
+                        <Box className="ml-3 flex-1">
+                          <Text className="text-sm text-gray-500">Destination</Text>
+                          <Text className="text-base font-medium text-[#1a3148]">
+                            {requestDetail?.destination}
+                          </Text>
+                        </Box>
+                      </Box>
+                    )}
+                  </Box>
+
+                  <Box className="w-full bg-[#f8fafc] rounded-xl p-4">
+                    <Box className="flex-row items-center justify-between">
+                      <Box>
+                        <Box className="flex-row items-center mb-1">
+                          <CreditCard size={18} color="#1a3148" />
+                          <Text className="text-sm text-gray-500 ml-2">Total Price</Text>
+                        </Box>
+                        <Text className="text-xl font-bold text-[#1a3148]">
+                          {requestDetail?.totalprice.toLocaleString()} VND
+                        </Text>
+                      </Box>
+                      <Box className="bg-black px-4 py-2 rounded-lg">
+                        <Text className="text-white font-bold">
+                          {requestDetail?.paymentmethod}
+                        </Text>
+                      </Box>
+                    </Box>
+                  </Box>
+
+                  <Button
+                    className={`h-14 rounded-xl ${changeButtonColor()} active:opacity-80 shadow-sm`}
+                    onPress={changeRequestStatus}
+                    disabled={requestDetail?.requeststatus === "Done"}
+                  >
+                    <ButtonText className={`font-bold text-lg ${
+                      requestDetail?.requeststatus === "Pickup" || 
+                      requestDetail?.requeststatus === "Processing"||
+                      requestDetail?.requeststatus === "Done" 
+                        ? "text-white" 
+                        : "text-[#1a3148]"
+                    }`}>
+                      {changeButtonTitle()}
+                    </ButtonText>
+                  </Button>
+                </Box>
+              )}
+            </ActionsheetContent>
+          </Actionsheet>
+
+          <TouchableOpacity
+            onPress={() => setIsActionSheetOpen(true)}
+            className="absolute bottom-24 right-5 w-12 h-12 bg-white rounded-full items-center justify-center shadow-lg"
+          >
+            <Box className="rotate-180">
+              <Icon name="chevron-down" size={24} color="#1a3148" />
+            </Box>
+          </TouchableOpacity>
+        </>
+      )}
     </Box>
   );
 };

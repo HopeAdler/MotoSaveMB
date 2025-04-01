@@ -33,31 +33,18 @@ export default function CustomerLayout() {
         screenOptions={{
           headerShown: false,
           tabBarStyle: {
-            backgroundColor: 'rgba(255, 255, 255, 0.9)',
-            position: 'absolute',
-            bottom: 16,
-            right: 16,
-            left: 16,
+            backgroundColor: 'white',
+            borderTopWidth: 1,
+            borderTopColor: 'rgba(0,0,0,0.1)',
             height: 64,
-            borderRadius: 25,
-            shadowColor: '#000',
-            shadowOffset: {
-              width: 0,
-              height: 4,
-            },
-            shadowOpacity: 0.1,
-            shadowRadius: 12,
-            elevation: 8,
-            borderTopWidth: 0,
-            paddingBottom: 8,
             paddingTop: 8,
-            marginHorizontal: 16,
+            paddingBottom: 8,
           },
           tabBarActiveTintColor: '#fab753',
           tabBarInactiveTintColor: '#1a3148',
           tabBarLabelStyle: {
             fontSize: 11,
-            fontWeight: '300',
+            fontWeight: '500',
             marginTop: 1,
           },
         }}
@@ -75,7 +62,7 @@ export default function CustomerLayout() {
                 }}
               >
                 <House
-                  size={20}
+                  size={22}
                   color={tabInfo.focused ? "#fab753" : "#1a3148"}
                   strokeWidth={tabInfo.focused ? 2.5 : 2}
                 />
