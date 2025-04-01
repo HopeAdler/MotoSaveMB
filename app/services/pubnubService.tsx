@@ -17,7 +17,7 @@ export const usePubNubService = () => {
     throw new Error("PubNub instance is not available");
   }
 
-  const publishLocation = (userId: string, user: User, latitude: number, longitude: number) => {
+  const publishLocation = (userId: string, user: User, latitude: number, longitude: number, heading: number) => {
     pubnub.publish({
       channel: "global",
       message: {
@@ -26,6 +26,7 @@ export const usePubNubService = () => {
         role: user.role,
         latitude,
         longitude,
+        heading,
       },
     });
   };

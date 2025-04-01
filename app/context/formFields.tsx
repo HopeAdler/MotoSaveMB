@@ -26,6 +26,7 @@ export type User = {
   role: string;
   latitude: number;
   longitude: number;
+  heading: number;
 };
 
 
