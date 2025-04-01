@@ -149,7 +149,11 @@ export default function CHomeScreen() {
         </Box>
       </Box>
 
-      <ScrollView className="flex-1 -mt-12 px-5" showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        className="flex-1 -mt-12 px-5" 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 16 }}
+      >
         <Box className="bg-white rounded-2xl shadow-sm border border-gray-100/50">
           <Box className="p-5 mb-6">
             <Text className="text-xl font-bold text-[#1a3148] mb-4">
