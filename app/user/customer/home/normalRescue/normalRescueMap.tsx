@@ -599,7 +599,7 @@ const RescueMapScreen = () => {
     if (await requestLocationPermission() && userId) {
       const location = await getCurrentLocation();
       const bearing = await getHeadingAsync();
-      console.log(bearing);
+      // console.log(bearing);
       if (!location?.coords) return;
 
       setCurrentLoc({

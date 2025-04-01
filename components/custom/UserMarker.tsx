@@ -3,6 +3,7 @@ import MapboxGL from "@rnmapbox/maps";
 import { View, StyleSheet } from "react-native";
 import { Bike, Truck } from "lucide-react-native";
 import { User } from "../../app/context/formFields";
+import { Image } from "react-native";
 // type User = {
 //   uuid: string;
 //   username: string;
@@ -15,11 +16,11 @@ type UserMarkerComponentProps = {
 };
 const UserMarker: React.FC<UserMarkerComponentProps> = ({ user }) => {
   if (user.role === "Driver") {
-    {(console.log(user))}
     return (
       <MapboxGL.MarkerView id={user.uuid} coordinate={[user.longitude, user.latitude]}>
         <View style={{ transform: [{ rotate: `${user.heading}deg` }] }}>
-          <Truck color="#FF8000" size={28} style={styles.icon} />
+          {/* <Truck color="#FF8000" size={28} style={styles.icon} /> */}
+          <Image source={require("../../assets/images/truck.png")}/>
         </View>
       </MapboxGL.MarkerView>
     );
