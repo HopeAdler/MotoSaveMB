@@ -581,7 +581,7 @@ const EmergencyRescueMapScreen = () => {
 
   // Bắt đầu tìm tài xế
   const handleFindDriver = async () => {
-    if ( !selectedVehicleId) {
+    if (!selectedVehicleId) {
       setShowVehicleAlert(true);
       return;
     }
@@ -654,7 +654,8 @@ const EmergencyRescueMapScreen = () => {
         userId,
         user,
         location.coords.latitude,
-        location.coords.longitude
+        location.coords.longitude,
+        location.coords.heading ?? 0,
       );
       locationSubscription = await watchLocation((position: any) => {
         setCurrentLoc(position.coords);
@@ -662,7 +663,8 @@ const EmergencyRescueMapScreen = () => {
           userId,
           user,
           position.coords.latitude,
-          position.coords.longitude
+          position.coords.longitude,
+          location.coords.heading ?? 0,
         );
       });
     }
@@ -713,7 +715,7 @@ const EmergencyRescueMapScreen = () => {
         createDirectChannel(msg?.publisher, msg.message.requestDetailId);
       }
     });
-    return () => {};
+    return () => { };
   }, []);
 
   useEffect(() => {
@@ -908,7 +910,7 @@ const EmergencyRescueMapScreen = () => {
           onPress={() => setShowTracking(true)}
           visible={!!(!showActionsheet && directionsInfo)} />
       )}
-        <VehicleAlertDialog
+      <VehicleAlertDialog
         isOpen={showVehicleAlert}
         onClose={() => setShowVehicleAlert(false)}
       />

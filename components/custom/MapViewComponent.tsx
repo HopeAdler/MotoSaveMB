@@ -6,14 +6,8 @@ import { LocateFixed } from "lucide-react-native";
 import { heightPercentageToDP as hp } from "react-native-responsive-screen";
 import MyLocationButton from "./MyLocationButton";
 import { useSharedValue, withTiming, useAnimatedStyle } from "react-native-reanimated";
+import { User } from "../../app/context/formFields";
 
-type User = {
-  uuid: string;
-  username: string;
-  role: string;
-  latitude: number;
-  longitude: number;
-};
 
 type Users = Map<string, User>;
 
