@@ -613,11 +613,11 @@ const RescueMapScreen = () => {
         return prev;
       });
 
-      publishLocation(userId, user, location.coords.latitude, location.coords.longitude);
+      publishLocation(userId, user, location.coords.latitude, location.coords.longitude, currentLoc.heading);
 
       locationSubscription = await watchLocation((position: any) => {
         setCurrentLoc(position.coords);
-        publishLocation(userId, user, position.coords.latitude, position.coords.longitude);
+        publishLocation(userId, user, position.coords.latitude, position.coords.longitude, currentLoc.heading);
       });
     }
   };

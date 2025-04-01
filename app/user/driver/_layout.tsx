@@ -28,8 +28,9 @@ export default function DriverLayout() {
   } = usePubNubService(); // ✅ Get service functions
   const { user, token } = useContext(AuthContext);
 
-  const [currentLoc, setCurrentLoc] = useState({ latitude: 0, longitude: 0 });
-  const lastLocation = useRef({ latitude: 0, longitude: 0 });
+  const [currentLoc, setCurrentLoc] = useState({ latitude: 0, longitude: 0, heading: 0 });
+  const lastLocation = useRef({ latitude: 0, longitude: 0, heading: 0 });
+  
   const userId = decodedToken(token)?.id;
   const [users, setUsers] = useState(new Map<string, User>());
   const [pendingReqDetailIds, setPendingReqDetailIds] = useState(new Map<string, string>());
@@ -37,29 +38,50 @@ export default function DriverLayout() {
   const updateLocation = async (locationSubscription: any) => {
     if (await requestLocationPermission() && userId) {
       const location = await getCurrentLocation();
+      const { latitude, longitude, heading } = location.coords;
+
+      const newLocation = {
+        latitude,
+        longitude,
+        heading: heading ?? 0, // Ensure heading is never null
+      };
+
       if (
-        location.coords.latitude !== lastLocation.current.latitude ||
-        location.coords.longitude !== lastLocation.current.longitude
+        newLocation.latitude !== lastLocation.current.latitude ||
+        newLocation.longitude !== lastLocation.current.longitude ||
+        newLocation.heading !== lastLocation.current.heading
       ) {
-        lastLocation.current = location.coords;
-        setCurrentLoc(location.coords);
+        lastLocation.current = newLocation;
+        setCurrentLoc(newLocation);
       }
-      publishLocation(userId, user, location.coords.latitude, location.coords.longitude); // ✅ Use function from service
+
+      publishLocation(userId, user, latitude, longitude, newLocation.heading);
+
       // Subscribe to live location updates
       locationSubscription = await watchLocation((position: any) => {
+        const { latitude, longitude, heading } = position.coords;
+        const updatedLocation = {
+          latitude,
+          longitude,
+          heading: heading ?? 0, // Ensure heading is never null
+        };
+
         if (
-          position.coords.latitude !== lastLocation.current.latitude ||
-          position.coords.longitude !== lastLocation.current.longitude
+          updatedLocation.latitude !== lastLocation.current.latitude ||
+          updatedLocation.longitude !== lastLocation.current.longitude ||
+          updatedLocation.heading !== lastLocation.current.heading
         ) {
-          lastLocation.current = position.coords;
-          setCurrentLoc(position.coords);
+          lastLocation.current = updatedLocation;
+          setCurrentLoc(updatedLocation);
         }
-        publishLocation(userId, user, position.coords.latitude, position.coords.longitude); // ✅ Use function from service
+
+        publishLocation(userId, user, latitude, longitude, updatedLocation.heading);
       });
     }
   };
 
-   useEffect(() => {
+
+  useEffect(() => {
     if (token) {
       axios.get("https://motor-save-be.vercel.app/api/v1/auth/profile", {
         headers: { Authorization: `Bearer ${token}` },
@@ -171,7 +193,7 @@ export default function DriverLayout() {
             tabBarIcon: (tabInfo) => <ChartArea size={24} color={tabInfo.color} />,
           }}
         />
-      <Tabs.Screen
+        <Tabs.Screen
           name="account"
           options={{
             tabBarLabel: "Account",
