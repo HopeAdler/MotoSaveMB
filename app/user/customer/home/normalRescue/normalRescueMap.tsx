@@ -37,7 +37,7 @@ const RescueMapScreen = () => {
   const { PayZaloBridge } = NativeModules;
   const userId = decodedToken(token)?.id;
   // Các state chính
-  const [currentLoc, setCurrentLoc] = useState({ latitude: 0, longitude: 0 });
+  const [currentLoc, setCurrentLoc] = useState({ latitude: 0, longitude: 0, heading: 0 });
   const [originCoordinates, setOriginCoordinates] = useState({ latitude: 0, longitude: 0 });
   const [destinationCoordinates, setDestinationCoordinates] = useState({ latitude: 0, longitude: 0 });
   const [originQuery, setOriginQuery] = useState("");
@@ -601,7 +601,8 @@ const RescueMapScreen = () => {
 
       setCurrentLoc({
         latitude: location.coords.latitude,
-        longitude: location.coords.longitude
+        longitude: location.coords.longitude,
+        heading: location.coords.heading ?? 0,
       });
 
       setOriginCoordinates((prev) => {
