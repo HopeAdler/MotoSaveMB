@@ -16,6 +16,7 @@ import axios from "axios";
 import AuthContext from "@/app/context/AuthContext";
 import { RepairQuote, RepairRequestDetail } from "@/app/context/formFields";
 import {
+  Alert,
   FlatList,
   NativeEventEmitter,
   NativeModules,
@@ -44,12 +45,38 @@ import { PayZaloEventData, processPayment } from "@/app/utils/payment";
 import {
   acceptRepairQuote,
   calculateFare,
+  cancelRequest,
   createPayment,
   createReturnVehicleRequest,
   createTransaction,
   RescueRequestPayload,
 } from "@/app/services/beAPI";
 import { RequestContext } from "@/app/context/RequestContext";
+import {
+  Actionsheet,
+  ActionsheetBackdrop,
+  ActionsheetContent,
+  ActionsheetDragIndicator,
+  ActionsheetDragIndicatorWrapper,
+} from "@/components/ui/actionsheet";
+import { VStack } from "@/components/ui/vstack";
+import {
+  FormControl,
+  FormControlError,
+  FormControlErrorIcon,
+  FormControlErrorText,
+  FormControlLabel,
+  FormControlLabelText,
+} from "@/components/ui/form-control";
+import { Radio, RadioGroup, RadioLabel } from "@/components/ui/radio";
+import {
+  AlertDialog,
+  AlertDialogBackdrop,
+  AlertDialogBody,
+  AlertDialogContent,
+  AlertDialogFooter,
+  AlertDialogHeader,
+} from "@/components/ui/alert-dialog";
 
 const RepairRequestScreen = () => {
   const { PayZaloBridge } = NativeModules;
@@ -74,6 +101,18 @@ const RepairRequestScreen = () => {
     longitude: 0,
   });
   const [directionsInfo, setDirectionsInfo] = useState<any>(null);
+  // State cho cancellation actionsheet và alert confirmation
+  const [showCancelActionsheet, setShowCancelActionsheet] = useState(false);
+  const [showCancelAlert, setShowCancelAlert] = useState(false);
+  const [selectedReason, setSelectedReason] = useState("");
+  const [customReason, setCustomReason] = useState("");
+
+  const cancelReasons = [
+    "Repair cost too high",
+    "Mechanic behavior not acceptable",
+    "Change of plans",
+    "Other",
+  ];
 
   // Hàm xử lý khi fetch địa chỉ từ geocode
   const handleFetchLocation = async (address: string) => {
@@ -148,7 +187,10 @@ const RepairRequestScreen = () => {
   }, [requestDetail?.requeststatus]);
 
   useEffect(() => {
-    if (requestDetail?.requeststatus === "Done" && destinationSelected === true) {
+    if (
+      requestDetail?.requeststatus === "Done" &&
+      destinationSelected === true
+    ) {
       const timer = setTimeout(() => {
         router.navigate(
           "/user/customer/home/emergencyRescue/returnVehicleRequest"
@@ -238,7 +280,7 @@ const RepairRequestScreen = () => {
           requestDetail?.requestid
         );
         console.log(result);
-        const reqid = result.requestdetailid
+        const reqid = result.requestdetailid;
         const returnPayment = await createPayment(
           {
             requestdetailid: reqid,
@@ -280,7 +322,7 @@ const RepairRequestScreen = () => {
           requestDetail?.requestid
         );
         console.log(result);
-        const reqid = result.requestdetailid
+        const reqid = result.requestdetailid;
         const returnPayment = await createPayment(
           {
             requestdetailid: reqid,
@@ -343,6 +385,40 @@ const RepairRequestScreen = () => {
         requestDetailId: requestDetail?.requestdetailid,
       },
     });
+  };
+
+  // Hàm xử lý hủy chuyến sử dụng API cancelRequest từ beAPI
+  const handleSubmitCancellation = async () => {
+    let reasonToSend = selectedReason;
+    if (selectedReason === "Other") {
+      if (!customReason.trim()) {
+        Alert.alert("Please enter a cancellation reason");
+        return;
+      }
+      reasonToSend = customReason.trim();
+    }
+    console.log("Cancelling request with reason:", reasonToSend);
+    try {
+      const response = await cancelRequest(
+        requestDetail?.requestdetailid,
+        token,
+        reasonToSend
+      );
+      console.log("Cancel response:", response);
+      Alert.alert("Request has been cancelled", response.message);
+      router.navigate("/user/customer/home/homepage");
+      setShowCancelActionsheet(false);
+      setShowCancelAlert(false);
+    } catch (error: any) {
+      console.error("Error cancelling request:", error);
+      Alert.alert(
+        "Failed to cancel request",
+        error?.response?.data?.message || error.message
+      );
+    } finally {
+      setShowCancelAlert(false);
+      setShowCancelActionsheet(false);
+    }
   };
 
   const renderProgressSteps = () => {
@@ -472,7 +548,7 @@ const RepairRequestScreen = () => {
                 )
               }
             >
-              Xem bảng giá sửa xe
+              View repair cost preview
             </Text>
           </Box>
         </Box>
@@ -511,7 +587,7 @@ const RepairRequestScreen = () => {
                   Total Price
                 </Text>
                 <Text className="text-lg font-bold text-red-500">
-                  {requestDetail?.totalprice} VND
+                  {requestDetail?.totalprice.toLocaleString()} VND
                 </Text>
               </Box>
 
@@ -578,7 +654,7 @@ const RepairRequestScreen = () => {
                   <Button
                     variant="outline"
                     className="flex-1 mx-2 border-red-500"
-                    onPress={() => console.log("Cancel Pressed")}
+                    onPress={() => setShowCancelActionsheet(true)}
                   >
                     <ButtonText className="text-red-500">Cancel</ButtonText>
                   </Button>
@@ -617,6 +693,108 @@ const RepairRequestScreen = () => {
             </Pressable>
           </>
         )}
+        {/* Cancellation Actionsheet */}
+        <Actionsheet
+          isOpen={showCancelActionsheet}
+          onClose={() => setShowCancelActionsheet(false)}
+          snapPoints={[50]}
+          closeOnOverlayClick={true}
+          isKeyboardDismissable={true}
+        >
+          <ActionsheetBackdrop
+            onPress={() => setShowCancelActionsheet(false)}
+          />
+          <ActionsheetContent className="bg-white rounded-t-3xl p-4">
+            <ActionsheetDragIndicatorWrapper>
+              <ActionsheetDragIndicator />
+            </ActionsheetDragIndicatorWrapper>
+            <Text className="text-lg font-bold text-center mb-4">
+              Cancel Request
+            </Text>
+            <VStack space="md">
+              <FormControl isRequired>
+                <FormControlLabel>
+                  <FormControlLabelText>
+                    Select a reason for cancellation
+                  </FormControlLabelText>
+                </FormControlLabel>
+                <RadioGroup
+                  value={selectedReason}
+                  onChange={(nextValue: React.SetStateAction<string>) =>
+                    setSelectedReason(nextValue)
+                  }
+                >
+                  {cancelReasons.map((reason) => (
+                    <Radio key={reason} value={reason}>
+                      <RadioLabel>{reason}</RadioLabel>
+                    </Radio>
+                  ))}
+                </RadioGroup>
+              </FormControl>
+              {selectedReason === "Other" && (
+                <FormControl isRequired isInvalid={!customReason.trim()}>
+                  <FormControlLabel>
+                    <FormControlLabelText>
+                      Enter custom reason
+                    </FormControlLabelText>
+                  </FormControlLabel>
+                  <Input variant="outline" size="md">
+                    <InputField
+                      placeholder="Enter reason..."
+                      value={customReason}
+                      onChangeText={setCustomReason}
+                    />
+                  </Input>
+                  {!customReason.trim() && (
+                    <FormControlError>
+                      <FormControlErrorIcon />
+                      <FormControlErrorText>
+                        Reason is required.
+                      </FormControlErrorText>
+                    </FormControlError>
+                  )}
+                </FormControl>
+              )}
+              <Button
+                onPress={() => setShowCancelAlert(true)}
+                className="bg-red-500"
+                size="md"
+              >
+                <ButtonText>Submit Cancellation</ButtonText>
+              </Button>
+            </VStack>
+          </ActionsheetContent>
+        </Actionsheet>
+
+        {/* AlertDialog xác nhận hủy request */}
+        <AlertDialog
+          isOpen={showCancelAlert}
+          onClose={() => setShowCancelAlert(false)}
+          size="md"
+        >
+          <AlertDialogBackdrop />
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <Text className="text-lg font-bold">Confirm Cancellation</Text>
+            </AlertDialogHeader>
+            <AlertDialogBody>
+              <Text>Are you sure you want to cancel the request?</Text>
+            </AlertDialogBody>
+            <AlertDialogFooter>
+              <Button
+                variant="outline"
+                action="secondary"
+                size="sm"
+                onPress={() => setShowCancelAlert(false)}
+              >
+                <ButtonText>Back</ButtonText>
+              </Button>
+              <Button size="sm" onPress={handleSubmitCancellation}>
+                <ButtonText>Confirm</ButtonText>
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </Box>
     </ScrollView>
   );
