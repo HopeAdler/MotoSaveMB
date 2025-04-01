@@ -8,6 +8,7 @@ import { Tabs, useRouter, useSegments } from "expo-router";
 import { ChartArea, DollarSign, House, List, CircleUserRound } from "lucide-react-native";
 import { useContext, useEffect, useRef, useState } from "react";
 import axios from "axios";
+import { getHeadingAsync } from "expo-location";
 
 type User = {
   uuid: string;
@@ -16,6 +17,7 @@ type User = {
   latitude: number;
   longitude: number;
 };
+const SMOOTHING_FACTOR = 0.1; 
 
 export default function DriverLayout() {
   const router = useRouter();
@@ -30,7 +32,7 @@ export default function DriverLayout() {
 
   const [currentLoc, setCurrentLoc] = useState({ latitude: 0, longitude: 0, heading: 0 });
   const lastLocation = useRef({ latitude: 0, longitude: 0, heading: 0 });
-  
+
   const userId = decodedToken(token)?.id;
   const [users, setUsers] = useState(new Map<string, User>());
   const [pendingReqDetailIds, setPendingReqDetailIds] = useState(new Map<string, string>());
@@ -38,47 +40,83 @@ export default function DriverLayout() {
   const updateLocation = async (locationSubscription: any) => {
     if (await requestLocationPermission() && userId) {
       const location = await getCurrentLocation();
-      const { latitude, longitude, heading } = location.coords;
-
+      const { latitude, longitude } = location.coords;
+      const bearing = await getHeadingAsync();
+  
       const newLocation = {
         latitude,
         longitude,
-        heading: heading ?? 0, // Ensure heading is never null
+        heading: bearing.trueHeading, // Ensure heading is always a number
       };
-
-      if (
-        newLocation.latitude !== lastLocation.current.latitude ||
-        newLocation.longitude !== lastLocation.current.longitude ||
-        newLocation.heading !== lastLocation.current.heading
-      ) {
-        lastLocation.current = newLocation;
-        setCurrentLoc(newLocation);
+  
+      // Ensure `currentLoc` has valid values before smoothing
+      if (currentLoc?.latitude && currentLoc?.longitude) {
+        var smoothedLatitude =
+          currentLoc.latitude + SMOOTHING_FACTOR * (newLocation.latitude - currentLoc.latitude);
+        var smoothedLongitude =
+          currentLoc.longitude + SMOOTHING_FACTOR * (newLocation.longitude - currentLoc.longitude);
+      } else {
+        // If currentLoc is null, use raw values
+        smoothedLatitude = latitude;
+        smoothedLongitude = longitude;
       }
-
-      publishLocation(userId, user, latitude, longitude, newLocation.heading);
-
-      // Subscribe to live location updates
-      locationSubscription = await watchLocation((position: any) => {
-        const { latitude, longitude, heading } = position.coords;
+  
+      // ✅ Use smoothed values when publishing
+      publishLocation(userId, user, smoothedLatitude, smoothedLongitude, newLocation.heading);
+  
+      // ✅ Use smoothed values when updating state
+      const smoothedLocation = {
+        latitude: smoothedLatitude,
+        longitude: smoothedLongitude,
+        heading: newLocation.heading,
+      };
+  
+      if (
+        smoothedLocation.latitude !== lastLocation.current.latitude ||
+        smoothedLocation.longitude !== lastLocation.current.longitude ||
+        smoothedLocation.heading !== lastLocation.current.heading
+      ) {
+        lastLocation.current = smoothedLocation;
+        setCurrentLoc(smoothedLocation); // ✅ Update state with smoothed values
+      }
+  
+      // Watch for location changes
+      locationSubscription = await watchLocation(async (position: any) => {
+        const { latitude, longitude } = position.coords;
+        const updatedBearing = await getHeadingAsync(); // Fetch new heading
+  
         const updatedLocation = {
           latitude,
           longitude,
-          heading: heading ?? 0, // Ensure heading is never null
+          heading: updatedBearing.trueHeading, // Ensure heading is never null
         };
-
+  
+        // Smooth location updates
+        const smoothedLatitude =
+          lastLocation.current.latitude + SMOOTHING_FACTOR * (updatedLocation.latitude - lastLocation.current.latitude);
+        const smoothedLongitude =
+          lastLocation.current.longitude + SMOOTHING_FACTOR * (updatedLocation.longitude - lastLocation.current.longitude);
+  
+        const smoothedUpdatedLocation = {
+          latitude: smoothedLatitude,
+          longitude: smoothedLongitude,
+          heading: updatedLocation.heading,
+        };
+  
         if (
-          updatedLocation.latitude !== lastLocation.current.latitude ||
-          updatedLocation.longitude !== lastLocation.current.longitude ||
-          updatedLocation.heading !== lastLocation.current.heading
+          smoothedUpdatedLocation.latitude !== lastLocation.current.latitude ||
+          smoothedUpdatedLocation.longitude !== lastLocation.current.longitude ||
+          smoothedUpdatedLocation.heading !== lastLocation.current.heading
         ) {
-          lastLocation.current = updatedLocation;
-          setCurrentLoc(updatedLocation);
+          lastLocation.current = smoothedUpdatedLocation;
+          setCurrentLoc(smoothedUpdatedLocation); // ✅ Use smoothed values here
         }
-
-        publishLocation(userId, user, latitude, longitude, updatedLocation.heading);
       });
     }
   };
+  
+
+
 
 
   useEffect(() => {
@@ -95,7 +133,7 @@ export default function DriverLayout() {
     let locationSubscription: any;
 
     updateLocation(locationSubscription);
-    const intervalId = setInterval(updateLocation, 10000);
+    const intervalId = setInterval(updateLocation, 5000);
 
     return () => {
       clearInterval(intervalId);

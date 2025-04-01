@@ -2,7 +2,13 @@ import React from "react";
 import MapboxGL from "@rnmapbox/maps";
 import { View, Image } from "react-native";
 import { User } from "../../app/context/formFields";
-
+// type User = {
+//   uuid: string;
+//   username: string;
+//   role: string;
+//   latitude: number;
+//   longitude: number;
+// };
 type UserMarkerComponentProps = {
   user: User;
 };
