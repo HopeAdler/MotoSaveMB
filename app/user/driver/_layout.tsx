@@ -8,6 +8,7 @@ import { Tabs, useRouter, useSegments } from "expo-router";
 import { ChartArea, DollarSign, House, List, CircleUserRound } from "lucide-react-native";
 import { useContext, useEffect, useRef, useState } from "react";
 import axios from "axios";
+import { getHeadingAsync } from "expo-location";
 
 type User = {
   uuid: string;
@@ -30,7 +31,7 @@ export default function DriverLayout() {
 
   const [currentLoc, setCurrentLoc] = useState({ latitude: 0, longitude: 0, heading: 0 });
   const lastLocation = useRef({ latitude: 0, longitude: 0, heading: 0 });
-  
+
   const userId = decodedToken(token)?.id;
   const [users, setUsers] = useState(new Map<string, User>());
   const [pendingReqDetailIds, setPendingReqDetailIds] = useState(new Map<string, string>());
@@ -38,13 +39,16 @@ export default function DriverLayout() {
   const updateLocation = async (locationSubscription: any) => {
     if (await requestLocationPermission() && userId) {
       const location = await getCurrentLocation();
-      const { latitude, longitude, heading } = location.coords;
+      const { latitude, longitude } = location.coords;
+      const bearing = await getHeadingAsync();
 
       const newLocation = {
         latitude,
         longitude,
-        heading: heading ?? 0, // Ensure heading is never null
+        heading: bearing.trueHeading, // Ensure heading is always a number
       };
+
+      publishLocation(userId, user, latitude, longitude, newLocation.heading);
 
       if (
         newLocation.latitude !== lastLocation.current.latitude ||
@@ -55,15 +59,14 @@ export default function DriverLayout() {
         setCurrentLoc(newLocation);
       }
 
-      publishLocation(userId, user, latitude, longitude, newLocation.heading);
+      locationSubscription = await watchLocation(async (position: any) => {
+        const { latitude, longitude } = position.coords;
+        const updatedBearing = await getHeadingAsync(); // Fetch new heading
 
-      // Subscribe to live location updates
-      locationSubscription = await watchLocation((position: any) => {
-        const { latitude, longitude, heading } = position.coords;
         const updatedLocation = {
           latitude,
           longitude,
-          heading: heading ?? 0, // Ensure heading is never null
+          heading: updatedBearing.trueHeading, // Ensure heading is never null
         };
 
         if (
@@ -74,11 +77,11 @@ export default function DriverLayout() {
           lastLocation.current = updatedLocation;
           setCurrentLoc(updatedLocation);
         }
-
-        publishLocation(userId, user, latitude, longitude, updatedLocation.heading);
       });
     }
   };
+
+
 
 
   useEffect(() => {
@@ -95,7 +98,7 @@ export default function DriverLayout() {
     let locationSubscription: any;
 
     updateLocation(locationSubscription);
-    const intervalId = setInterval(updateLocation, 10000);
+    const intervalId = setInterval(updateLocation, 5000);
 
     return () => {
       clearInterval(intervalId);
