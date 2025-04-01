@@ -5,53 +5,53 @@ const getStatusStyleAndText = (status: string) => {
   switch (status?.toLowerCase()) {
     case 'inspecting':
       return {
-        backgroundColor: '#d4edda',
-        color: '#155724',
-        icon: 'check-square-o',
-        text: 'Đang kiểm tra tình trạng xe'
-      }; // Magnifying glass for inspecting
+        backgroundColor: '#f3f4f6',
+        color: '#374151',
+        icon: 'search',
+        text: 'Đang kiểm tra'
+      };
     case 'waiting':
       return {
         backgroundColor: '#fff3cd',
-        color: '#856404',
+        color: '#856404', 
         icon: 'hourglass-half',
-        text: 'Đợi khách hàng chấp nhận báo giá'
-      }; // Hourglass for waiting
+        text: 'Chờ chấp nhận'
+      };
     case 'accepted':
       return {
         backgroundColor: '#d4edda',
         color: '#155724',
         icon: 'thumbs-up',
-        text: 'Báo giá đã được chấp nhận'
-      }; // Thumbs up for accepted
+        text: 'Đã chấp nhận'
+      };
     case 'repairing':
       return {
-        backgroundColor: '#a8d7da',
-        color: '#721c24',
+        backgroundColor: '#cce5ff',
+        color: '#004085',
         icon: 'wrench',
-        text: 'Đang tiến hành sửa chữa'
-      }; // Tools icon for repairing
+        text: 'Đang sửa'
+      };
+    case 'done':
+      return {
+        backgroundColor: '#c3e6cb', 
+        color: '#155724',
+        icon: 'check-circle',
+        text: 'Hoàn thành'
+      };
     case 'cancel':
       return {
         backgroundColor: '#f8d7da',
         color: '#721c24',
         icon: 'ban',
-        text: 'Khách hàng đã hủy'
-      }; // Ban icon for canceled
-    case 'done':
-      return {
-        backgroundColor: '#c3e6cb',
-        color: '#155724',
-        icon: 'check-circle',
-        text: 'Sửa chữa hoàn tất!'
-      }; // Check circle for done
+        text: 'Đã hủy'
+      };
     default:
       return {
         backgroundColor: '#d1ecf1',
         color: '#0c5460',
         icon: 'info-circle',
-        text: 'UNKNOWN'
-      }; // Default info icon
+        text: 'Chờ xử lý'
+      };
   }
 };
 
