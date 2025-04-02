@@ -328,7 +328,7 @@ const RescueMapScreen = () => {
   };
 
   const handlePayment = async () => {
-    const callbackUrl = "myapp://user/customer/home/normalRescue/rescueMap";
+    const callbackUrl = "myapp://user/customer/home/normalRescue/normalRescueMap";
     if (!token) return;
     setPaymentLoading(true);
     const payload: RescueRequestPayload = {
