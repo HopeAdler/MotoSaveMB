@@ -429,15 +429,25 @@ export async function getRepairQuotesByRequestDetailId(requestDetailId: string):
 
 export async function acceptRequest(requestdetailid: string, token: string): Promise<any> {
   try {
-    await axios.put(
+    const response = await axios.put(
       `https://motor-save-be.vercel.app/api/v1/requests/${requestdetailid}/accept`,
       {},
       { headers: { Authorization: "Bearer " + token } }
     );
-    Alert.alert("Success", "Request accepted!");
-  } catch (error) {
+
+    // If request is successful, return the response data
+    return response.data;
+  } catch (error: any) {
     console.error("Error accepting request:", error);
-    Alert.alert("Error", "Failed to accept request");
+
+    // Extract error message from response
+    let errorMessage = "Failed to accept request";
+    if (error.response?.data?.message) {
+      errorMessage = error.response.data.message;
+    }
+
+    // Throw the error so the caller knows it failed
+    throw new Error(errorMessage);
   }
 }
 

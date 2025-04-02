@@ -1,9 +1,11 @@
-import React from 'react';
-import { Box } from "@/components/ui/box";
-import { Text } from "@/components/ui/text";
-import { Button } from "@/components/ui/button";
-import { Phone, MessageSquare, MapPin, CreditCard, MapPinCheckInsideIcon } from "lucide-react-native";
 import { handlePhoneCall } from "@/app/utils/utils";
+import { Box } from "@/components/ui/box";
+import { Button } from "@/components/ui/button";
+import { Text } from "@/components/ui/text";
+import { CreditCard, MapPin, MapPinCheckInsideIcon, MessageSquare, Phone } from "lucide-react-native";
+import React from 'react';
+import { UnpaidPaymentList } from './UnpaidPayments';
+import { ScrollView } from "react-native-gesture-handler";
 
 interface RequestDetail {
   requestid: string;
@@ -31,7 +33,7 @@ const DriverRequestDetail: React.FC<DriverRequestDetailProps> = ({
   toChatScreen
 }) => {
   return (
-    <Box className="flex-1 bg-white">
+    <ScrollView className="flex-1 bg-white">
       <Box className="pt-16 px-4 pb-4 border-b border-gray-100">
         <Box className="flex-row items-center justify-between">
           <Text className="text-2xl font-bold text-[#1a3148]">Request Details</Text>
@@ -61,7 +63,7 @@ const DriverRequestDetail: React.FC<DriverRequestDetailProps> = ({
                   <Phone size={20} color="#9CA3AF" />
                 </Button>
                 <Button
-                  variant="solid" 
+                  variant="solid"
                   onPress={toChatScreen}
                   className="bg-gray-200 rounded-xl h-12 w-12 items-center justify-center"
                   disabled={true}
@@ -147,7 +149,12 @@ const DriverRequestDetail: React.FC<DriverRequestDetailProps> = ({
           </Text>
         </Button>
       </Box>
-    </Box>
+      <Box className="relative">
+        {requestDetail?.requestid &&
+          <UnpaidPaymentList requestId={requestDetail?.requestid} />
+        }
+      </Box>
+    </ScrollView>
   );
 };
 
