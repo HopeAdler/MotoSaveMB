@@ -23,6 +23,7 @@ import { MessageSquare, MapPin, AlertCircle, Navigation2, Clock, CreditCard, Pho
 import { GoBackButton } from "@/components/custom/GoBackButton";
 import { handlePhoneCall } from "@/app/utils/utils";
 import DriverRequestDetail from "@/components/custom/DriverRequestDetail";
+import { DestinationMarker, OriginMarker } from "@/components/custom/CustomMapMarker";
 
 type User = {
   uuid: string;
@@ -88,7 +89,7 @@ const RequestMap: React.FC = () => {
   const router = useRouter();
 
   const [users, setUsers] = useState<Map<string, User>>(new Map(Object.entries(JSON.parse(jsonUsers))));
-  const [currentLoc, setCurrentLoc] = useState({ latitude: 0, longitude: 0 });
+  const [currentLoc, setCurrentLoc] = useState({ latitude: 0, longitude: 0, heading: 0 });
   const [requestDetail, setRequestDetail] = useState<RequestDetail | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [originCoordinates, setOriginCoordinates] = useState({ latitude: 0, longitude: 0 });
@@ -278,9 +279,10 @@ const RequestMap: React.FC = () => {
   useEffect(() => {
     try {
       setCurrentLoc(JSON.parse(jsonCurLoc));
+      console.log(jsonCurLoc)
     } catch (error) {
       console.error("Failed to parse jsonCurLoc:", error, jsonCurLoc);
-      setCurrentLoc({ latitude: 0, longitude: 0 });
+      setCurrentLoc({ latitude: 0, longitude: 0, heading: 0 });
     }
   }, [jsonCurLoc]);
 
@@ -357,33 +359,44 @@ const RequestMap: React.FC = () => {
         <>
           <MapViewComponent
             users={users}
-            currentLoc={focusOnMe ? currentLoc : originCoordinates}
+            currentLoc={currentLoc}
             focusMode={[focusOnMe, setFocusOnMe]}
             isActionSheetOpen={isActionSheetOpen}
           >
-            <MapboxGL.Camera
-              ref={camera}
-              centerCoordinate={
-                focusOnMe
-                  ? [currentLoc.longitude, currentLoc.latitude]
-                  : [originCoordinates.longitude, originCoordinates.latitude]
-              }
-            />
-            {originCoordinates && (
-              <MapboxGL.PointAnnotation
-                id="ori-marker"
+            {!focusOnMe &&
+              requestDetail?.requeststatus === "Pickup" &&
+              originCoordinates.latitude !== 0 && (
+                <MapboxGL.Camera
+                  centerCoordinate={[originCoordinates.longitude, originCoordinates.latitude]}
+                  zoomLevel={14}
+                  animationDuration={1000}
+                />
+              )}
+
+            {!focusOnMe &&
+              requestDetail?.requeststatus === "Processing" &&
+              destinationCoordinates.latitude !== 0 && (
+                <MapboxGL.Camera
+                  centerCoordinate={[destinationCoordinates.longitude, destinationCoordinates.latitude]}
+                  zoomLevel={14}
+                  animationDuration={1000}
+                />
+              )}
+            {requestDetail?.requeststatus !== 'Processing' && originCoordinates && (
+              <MapboxGL.MarkerView
+                id="origin-marker"
                 coordinate={[originCoordinates.longitude, originCoordinates.latitude]}
               >
-                <MapboxGL.Callout title="Origin" />
-              </MapboxGL.PointAnnotation>
+                <OriginMarker size={32} />
+              </MapboxGL.MarkerView>
             )}
-            {requestDetail?.destination && destinationCoordinates && (
-              <MapboxGL.PointAnnotation
+            {requestDetail?.requeststatus !== 'Pickup' && requestDetail?.destination && destinationCoordinates && (
+              <MapboxGL.MarkerView
                 id="destination-marker"
                 coordinate={[destinationCoordinates.longitude, destinationCoordinates.latitude]}
               >
-                <MapboxGL.Callout title="Destination" />
-              </MapboxGL.PointAnnotation>
+                <DestinationMarker size={32} />
+              </MapboxGL.MarkerView>
             )}
             {routeCoordinates.length > 0 && (
               <MapboxGL.ShapeSource
@@ -402,7 +415,7 @@ const RequestMap: React.FC = () => {
             )}
           </MapViewComponent>
 
-          <Actionsheet 
+          <Actionsheet
             isOpen={isActionSheetOpen}
             onClose={() => setIsActionSheetOpen(false)}
           >
@@ -427,23 +440,21 @@ const RequestMap: React.FC = () => {
                       <Button
                         variant="solid"
                         onPress={() => handlePhoneCall(requestDetail?.customerphone)}
-                        className={`rounded-xl h-12 w-12 items-center justify-center ${
-                          requestDetail?.requeststatus === "Done" 
-                            ? "bg-gray-200" 
-                            : "bg-[#1a3148]"
-                        }`}
+                        className={`rounded-xl h-12 w-12 items-center justify-center ${requestDetail?.requeststatus === "Done"
+                          ? "bg-gray-200"
+                          : "bg-[#1a3148]"
+                          }`}
                         disabled={requestDetail?.requeststatus === "Done"}
                       >
                         <Phone size={22} color={requestDetail?.requeststatus === "Done" ? "#9CA3AF" : "white"} />
                       </Button>
                       <Button
-                        variant="solid" 
+                        variant="solid"
                         onPress={toChatScreen}
-                        className={`rounded-xl h-12 w-12 items-center justify-center ${
-                          requestDetail?.requeststatus === "Done" 
-                            ? "bg-gray-200" 
-                            : "bg-[#fab753]"
-                        }`}
+                        className={`rounded-xl h-12 w-12 items-center justify-center ${requestDetail?.requeststatus === "Done"
+                          ? "bg-gray-200"
+                          : "bg-[#fab753]"
+                          }`}
                         disabled={requestDetail?.requeststatus === "Done"}
                       >
                         <MessageSquare size={22} color={requestDetail?.requeststatus === "Done" ? "#9CA3AF" : "white"} />
@@ -544,13 +555,12 @@ const RequestMap: React.FC = () => {
                     onPress={changeRequestStatus}
                     disabled={requestDetail?.requeststatus === "Done"}
                   >
-                    <ButtonText className={`font-bold text-lg ${
-                      requestDetail?.requeststatus === "Pickup" || 
-                      requestDetail?.requeststatus === "Processing"||
-                      requestDetail?.requeststatus === "Done" 
-                        ? "text-white" 
-                        : "text-[#1a3148]"
-                    }`}>
+                    <ButtonText className={`font-bold text-lg ${requestDetail?.requeststatus === "Pickup" ||
+                      requestDetail?.requeststatus === "Processing" ||
+                      requestDetail?.requeststatus === "Done"
+                      ? "text-white"
+                      : "text-[#1a3148]"
+                      }`}>
                       {changeButtonTitle()}
                     </ButtonText>
                   </Button>
