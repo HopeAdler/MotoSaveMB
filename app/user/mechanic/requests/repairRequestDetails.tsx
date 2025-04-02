@@ -1,15 +1,22 @@
 import AuthContext from "@/app/context/AuthContext";
 import LoadingScreen from "@/app/loading/loading";
-import { createRepairQuote, getRepairCostPreview, getRepairQuotesByRequestDetailId, getRepairRequestDetailForMechanic, updatePaymentStatus, updateRepairRequestStatus } from "@/app/services/beAPI";
+import {
+  createRepairQuote,
+  getRepairCostPreview,
+  getRepairQuotesByRequestDetailId,
+  getRepairRequestDetailForMechanic,
+  updatePaymentStatus,
+  updateRepairRequestStatus,
+} from "@/app/services/beAPI";
 import { usePubNubService } from "@/app/services/pubnubService";
 import { decodedToken, formatMoney, handlePhoneCall } from "@/app/utils/utils";
 import { GoBackButton } from "@/components/custom/GoBackButton";
-import { RepairStatusBadge } from "@/components/custom/MechanicStatusBadge";
 import RepairCostPreviewSelect from "@/components/custom/RepairCostPreviewSelect";
 import { CustomerInfo } from "@/components/custom/RepairCustomerInfo";
 import { VehicleInfoBox } from "@/components/custom/VehicleInfoBox";
+import { RepairStatusBadge } from "@/components/custom/MechanicStatusBadge";
 import { Box } from "@/components/ui/box";
-import { Button, ButtonSpinner, ButtonText } from "@/components/ui/button";
+import { Button, ButtonText } from "@/components/ui/button";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useContext, useEffect, useState } from "react";
 import {
@@ -20,32 +27,33 @@ import {
   ScrollView,
   Text,
   TextInput,
-  TouchableOpacity
 } from "react-native";
+import { CreditCard } from "lucide-react-native";
+
 interface RepairRequestDetail {
-  requestid: string,
-  requesttype: string,
-  requestdetailid: string,
-  requeststatus: string,
-  totalprice: number | null,
-  stationid: string,
-  stationname: string,
-  stationaddress: string,
-  customerid: string,
-  customername: string,
-  customerphone: string,
-  customeravatar: string,
-  vehicleid: string,
-  licenseplate: string,
-  vehiclephoto: string,
-  vehiclecondition: string,
-  paymentmethod: string,
-  paymentstatus: string,
+  requestid: string;
+  requesttype: string;
+  requestdetailid: string;
+  requeststatus: string;
+  totalprice: number | null;
+  stationid: string;
+  stationname: string;
+  stationaddress: string;
+  customerid: string;
+  customername: string;
+  customerphone: string;
+  customeravatar: string;
+  vehicleid: string;
+  licenseplate: string;
+  vehiclephoto: string;
+  vehiclecondition: string;
+  paymentmethod: string;
+  paymentstatus: string;
 }
 interface RepairCostPreview {
-  id: string,
+  id: string;
   name: string;
-  description: string,
+  description: string;
   min: number;
   max: number;
 }
@@ -60,73 +68,89 @@ interface RepairQuote {
   repaircostpreviewid: number;
   createddate?: string;
   updateddate?: string;
-  min?: number,
-  max?: number
+  min?: number;
+  max?: number;
 }
 
 export default function RepairDetailsScreen() {
   const { token } = useContext(AuthContext);
   const userId = decodedToken(token)?.id;
   const { createDirectChannel } = usePubNubService();
-  const { requestDetailId, requestId } = useLocalSearchParams<{ requestDetailId: string, requestId: string }>();
-  const [repairCostPreviews, setRepairCostPreviews] = useState<RepairCostPreview[]>([]);
-  const [repairRequestDetail, setRepairRequestDetail] = useState<RepairRequestDetail>();
+  const { requestDetailId, requestId } = useLocalSearchParams<{
+    requestDetailId: string;
+    requestId: string;
+  }>();
+  const [repairCostPreviews, setRepairCostPreviews] = useState<
+    RepairCostPreview[]
+  >([]);
+  const [repairRequestDetail, setRepairRequestDetail] =
+    useState<RepairRequestDetail>();
   const [repairQuotes, setRepairQuotes] = useState<RepairQuote[]>([
-    { index: 1, detail: "", cost: 0, requestdetailid: requestDetailId, repaircostpreviewid: 0 },
+    {
+      index: 1,
+      detail: "",
+      cost: 0,
+      requestdetailid: requestDetailId,
+      repaircostpreviewid: 0,
+    },
   ]);
   const [isNew, setIsNew] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const fetchRepairRequestDetail = async () => {
-    try {
-      const results = await getRepairRequestDetailForMechanic(token, requestId);
-      setRepairRequestDetail(results);
-    } catch (error) {
-      console.error("Error fetching requests:", error);
-    }
-  }
-  const fetchRepairCostPreview = async () => {
-    try {
-      const results = await getRepairCostPreview();
-      setRepairCostPreviews(results);
-    } catch (error) {
-      console.error("Error fetching requests:", error);
-    }
-  }
-  const fetchRepairQuotes = async () => {
-    try {
-      const results = await getRepairQuotesByRequestDetailId(requestDetailId);
 
-      if (results && results.length > 0) {
-        // Add an index field to each element based on its position
-        const updatedResults = results.map((quote: any, idx: number) => ({
-          ...quote,
-          index: idx + 1, // Ensure index starts from 1
-        }));
-        setIsNew(false);
-        setRepairQuotes(updatedResults);
-      } else {
-        // If no repair quotes exist, initialize a new one
-        setRepairQuotes([{ index: 1, detail: "", cost: 0, requestdetailid: requestDetailId, repaircostpreviewid: 0 }]);
+  const fetchData = async () => {
+    try {
+      setIsLoading(true);
+      const results = await getRepairRequestDetailForMechanic(token, requestId);
+      if (results) {
+        setRepairRequestDetail(results);
+
+        if (
+          ["Waiting", "Accepted", "Repairing", "Done"].includes(
+            results.requeststatus
+          )
+        ) {
+          const quoteResults =
+            await getRepairQuotesByRequestDetailId(requestDetailId);
+          if (quoteResults?.length > 0) {
+            setRepairQuotes(
+              quoteResults.map((quote: any, idx: number) => ({
+                ...quote,
+                index: idx + 1,
+              }))
+            );
+            setIsNew(false);
+          }
+        }
       }
-      setIsLoading(false)
-      console.log("Fetched repair quotes:", results);
     } catch (error) {
-      console.error("Error fetching repair quotes:", error);
+      console.error("Error fetching data:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      fetchRepairRequestDetail();
-    }, 7000);
-    return () => clearInterval(interval);
-  }, [requestDetailId]);
+    fetchData();
+    
+    // Only poll if in Waiting status
+    if (repairRequestDetail?.requeststatus === "Waiting") {
+      const interval = setInterval(fetchData, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [requestDetailId, repairRequestDetail?.requeststatus]);
 
+  // Separate effect for repair cost previews
   useEffect(() => {
-    fetchRepairRequestDetail();
-    fetchRepairCostPreview()
-    fetchRepairQuotes()
-  }, [])
+    const loadRepairCostPreviews = async () => {
+      try {
+        const previews = await getRepairCostPreview();
+        setRepairCostPreviews(previews || []);
+      } catch (error) {
+        console.error("Error fetching repair cost previews:", error);
+      }
+    };
+    loadRepairCostPreviews();
+  }, []);
 
   const addRepairItem = () => {
     setRepairQuotes((prev) => {
@@ -153,22 +177,27 @@ export default function RepairDetailsScreen() {
     (item) => item.cost === 0 || !item.repairname
   );
   const isSubmitDisabled = repairQuotes.some(
-    (item) => item.min !== undefined && item.max !== undefined &&
-      (item.cost < item.min || item.cost > item.max)
-      || !item.repairname
+    (item) =>
+      (item.min !== undefined &&
+        item.max !== undefined &&
+        (item.cost < item.min || item.cost > item.max)) ||
+      !item.repairname
   );
 
-  const handleRepairSelection = (index: number, selectedRepair: RepairCostPreview) => {
+  const handleRepairSelection = (
+    index: number,
+    selectedRepair: RepairCostPreview
+  ) => {
     setRepairQuotes((prev) =>
       prev.map((item) =>
         item.index === index
           ? {
-            ...item,
-            repairname: selectedRepair.name,
-            repaircostpreviewid: parseInt(selectedRepair.id),
-            min: selectedRepair.min,
-            max: selectedRepair.max,
-          }
+              ...item,
+              repairname: selectedRepair.name,
+              repaircostpreviewid: parseInt(selectedRepair.id),
+              min: selectedRepair.min,
+              max: selectedRepair.max,
+            }
           : item
       )
     );
@@ -184,14 +213,10 @@ export default function RepairDetailsScreen() {
   };
 
   const handleConfirmSend = () => {
-    Alert.alert(
-      "Xác nhận gửi báo giá",
-      "Bạn có chắc chắn muốn gửi báo giá?",
-      [
-        { text: "Hủy", style: "cancel" },
-        { text: "Xác nhận", onPress: handleSendRepairQuote }
-      ]
-    );
+    Alert.alert("Xác nhận gửi báo giá", "Bạn có chắc chắn muốn gửi báo giá?", [
+      { text: "Hủy", style: "cancel" },
+      { text: "Xác nhận", onPress: handleSendRepairQuote },
+    ]);
   };
 
   const sendRepairQuote = async (repairQuote: RepairQuote) => {
@@ -207,11 +232,15 @@ export default function RepairDetailsScreen() {
   const handleSendRepairQuote = async () => {
     try {
       await Promise.all(repairQuotes.map(sendRepairQuote));
-      await updateRepairRequestStatus(requestDetailId, token, 'Waiting')
+      await updateRepairRequestStatus(requestDetailId, token, "Waiting");
+      
+      fetchData();
+      
       Alert.alert("Thành công", "Báo giá đã được gửi!");
-      setIsNew(false)
-      if (repairRequestDetail)
-        createDirectChannel(repairRequestDetail.customerid, requestDetailId)
+      setIsNew(false);
+      if (repairRequestDetail) {
+        createDirectChannel(repairRequestDetail.customerid, requestDetailId);
+      }
     } catch (error) {
       console.error("Error sending repair quotes:", error);
       Alert.alert("Lỗi", "Đã có lỗi xảy ra khi gửi báo giá.");
@@ -222,213 +251,302 @@ export default function RepairDetailsScreen() {
     const requestStatus = repairRequestDetail?.requeststatus;
     switch (requestStatus) {
       case "Accepted":
-        await updateRepairRequestStatus(requestDetailId, token, 'Repairing')
-        console.log('Status updated to Repairing')
+        await updateRepairRequestStatus(requestDetailId, token, "Repairing");
+        console.log("Status updated to Repairing");
         break;
       case "Repairing":
-        await updateRepairRequestStatus(requestDetailId, token, 'Done')
-        console.log('Status updated to Done & Changed the status of return request to Pending')
+        await updateRepairRequestStatus(requestDetailId, token, "Done");
+        console.log(
+          "Status updated to Done & Changed the status of return request to Pending"
+        );
         break;
       default:
         break;
-
     }
-    fetchRepairRequestDetail();
-  }
+    fetchData();
+  };
 
   const toChatScreen = () => {
     router.push({
       pathname: "/user/mechanic/requests/chatScreen",
       params: {
         currentUserId: userId,
-        requestDetailId: requestDetailId
-      }
+        requestDetailId: requestDetailId,
+      },
     });
-  }
+  };
   const onCallPress = () => {
     handlePhoneCall(repairRequestDetail?.customerphone);
-  }
-
-  const renderPaymentStatus = (paymentstatus: string | undefined) => {
-    let paymentStatusText = "";
-    let bgColor = "";
-
-    switch (paymentstatus) {
-      case "Unpaid":
-        paymentStatusText = "Chưa thanh toán";
-        bgColor = "bg-red-100 text-red-600"; // Light red background for unpaid
-        break;
-      case "Success":
-        paymentStatusText = "Đã thanh toán";
-        bgColor = "bg-green-100 text-green-600"; // Light green background for success
-        break;
-      default:
-        paymentStatusText = "UNKNOWN";
-        bgColor = "bg-gray-100 text-gray-600"; // Gray background for unknown
-        break;
-    }
-    return (
-      <Text className={`p-5 rounded-md font-semibold ${bgColor}`}>
-        {paymentStatusText}
-      </Text>
-    );
   };
 
   const changePaymentStatus = async (newStatus: string) => {
     if (repairRequestDetail) {
-
       const payload = {
         requestDetailId: repairRequestDetail?.requestdetailid,
-        newStatus
-      }
-      const result = await updatePaymentStatus(payload, token)
-      if (result) fetchRepairRequestDetail();
+        newStatus,
+      };
+      const result = await updatePaymentStatus(payload, token);
+      if (result) fetchData();
     }
+  };
+
+  if (isLoading) return <LoadingScreen />;
+
+  if (!repairRequestDetail) {
+    return (
+      <Box className="flex-1 bg-gray-50 items-center justify-center p-4">
+        <Text className="text-gray-600 text-center">
+          No repair details found
+        </Text>
+      </Box>
+    );
   }
 
-  if (isLoading) return <LoadingScreen />
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} className="flex-1">
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      className="flex-1 bg-gray-50"
+    >
       <ScrollView className="flex-1">
-        <Box className="flex-1 p-5">
+        <Box className="bg-[#1a3148] pt-14 pb-8 rounded-b-[32px]">
           <GoBackButton />
-          <Text className="text-lg font-bold text-center mb-2">Chi tiết sửa xe:</Text>
-          <CustomerInfo repairRequestDetail={repairRequestDetail} onCallPress={onCallPress} toChatScreen={toChatScreen} />
-          {repairRequestDetail && <RepairStatusBadge status={repairRequestDetail?.requeststatus} />}
+          <Box className="px-5">
+            <Box className="flex-row items-center justify-between mt-6">
+              <Text className="text-2xl font-bold text-white">
+                Repair Details
+              </Text>
+              <RepairStatusBadge status={repairRequestDetail.requeststatus} />
+            </Box>
+          </Box>
+        </Box>
 
-          <VehicleInfoBox repairRequestDetail={repairRequestDetail} />
+        <Box className="flex-1 px-5 -mt-6">
+          <Box className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+            <CustomerInfo
+              repairRequestDetail={repairRequestDetail}
+              onCallPress={onCallPress}
+              toChatScreen={toChatScreen}
+            />
 
-          <Box className="border border-gray-300 rounded-lg p-3 my-3">
-            <Text className="font-bold">Bảng báo giá:</Text>
+            <Box className="mt-4 p-4 bg-[#f8fafc] rounded-xl border border-gray-100/80">
+              <VehicleInfoBox repairRequestDetail={repairRequestDetail} />
+            </Box>
+          </Box>
+
+          <Box className="mt-4 bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+            <Box className="flex-row items-center justify-between mb-5">
+              <Text className="text-lg font-bold text-[#1a3148]">
+                Repair Quotes
+              </Text>
+              {isNew && (
+                <Text className="text-sm text-gray-500">
+                  {repairQuotes.length} items
+                </Text>
+              )}
+            </Box>
+
             <FlatList
               scrollEnabled={false}
               data={repairQuotes}
               keyExtractor={(item) => item?.index.toString()}
-              renderItem={({ item, index }) => {
-                return (
-                  <Box className="p-4 border border-gray-300 rounded-xl my-2 bg-white shadow-md">
-                    <Box className="mb-2">
-                      {isNew ? (
-                        <RepairCostPreviewSelect
-                          repairOptions={repairCostPreviews.filter(
-                            (repair) => !repairQuotes.some((quote) => quote.repairname === repair.name)
-                          )}
-                          selectedRepair={item.detail}
-                          onSelectRepair={(repair) => handleRepairSelection(item.index, repair)}
-                        />
-                      ) : (
-                        <Text className="text-base font-semibold text-gray-800">{item.repairname || "No repair name found"}</Text>
-                      )}
-                    </Box>
-
+              ItemSeparatorComponent={() => <Box className="h-4" />}
+              renderItem={({ item }) => (
+                <Box className="bg-[#f8fafc] rounded-xl p-4">
+                  <Box className="mb-3">
                     {isNew ? (
-                      <Box className="flex-row items-center">
-                        <TextInput
-                          className={`flex-1 border p-3 rounded-md text-base mr-3 transition-all duration-200 ${item.min && item.max && (item.cost < item.min || item.cost > item.max) ? 'border-red-500 border-2' : 'border-gray-300'
-                            }`}
-                          placeholder="Nhập giá"
-                          keyboardType="numeric"
-                          value={item.cost === 0 ? "" : item.cost.toString()}
-                          onChangeText={(text) => handlePriceChange(item.index, text)}
-                        />
-                        {repairQuotes.length > 1 && (
-                          <TouchableOpacity className="bg-red-500 px-4 py-2 rounded-full shadow-md active:opacity-75" onPress={() => removeRepairItem(item.index)}>
-                            <Text className="text-white font-bold">X</Text>
-                          </TouchableOpacity>
+                      <RepairCostPreviewSelect
+                        repairOptions={repairCostPreviews.filter(
+                          (repair) =>
+                            !repairQuotes.some(
+                              (quote) => quote.repairname === repair.name
+                            )
                         )}
-                      </Box>
+                        selectedRepair={item.detail}
+                        onSelectRepair={(repair) =>
+                          handleRepairSelection(item.index, repair)
+                        }
+                      />
                     ) : (
-                      <Text className="text-lg font-semibold text-green-600">{formatMoney(item.cost)}</Text>
+                      <Text className="text-base font-semibold text-[#1a3148]">
+                        {item.repairname || "No repair name found"}
+                      </Text>
                     )}
                   </Box>
-                );
-              }}
+
+                  {isNew ? (
+                    <Box className="flex-row items-center">
+                      <TextInput
+                        className={`flex-1 bg-white p-4 rounded-xl text-base mr-3 ${
+                          item.min &&
+                          item.max &&
+                          (item.cost < item.min || item.cost > item.max)
+                            ? "border-2 border-red-500"
+                            : "border border-gray-200"
+                        }`}
+                        placeholder="Enter price"
+                        keyboardType="numeric"
+                        value={item.cost === 0 ? "" : item.cost.toString()}
+                        onChangeText={(text) =>
+                          handlePriceChange(item.index, text)
+                        }
+                      />
+                      {repairQuotes.length > 1 && (
+                        <Button
+                          className="bg-red-500 h-12 w-12 rounded-xl items-center justify-center"
+                          onPress={() => removeRepairItem(item.index)}
+                        >
+                          <Text className="text-white text-xl font-bold">
+                            ×
+                          </Text>
+                        </Button>
+                      )}
+                    </Box>
+                  ) : (
+                    <Text className="text-xl font-bold text-[#fab753]">
+                      {formatMoney(item.cost)}
+                    </Text>
+                  )}
+                </Box>
+              )}
             />
 
             {isNew && (
-              <Box className="items-center">
-                <TouchableOpacity className={`rounded-full py-3 px-5 m-5 
-                  ${isAddDisabled ? 'bg-gray-400 opacity-50' :
-                    'bg-green-300'}`} onPress={addRepairItem} disabled={isAddDisabled}>
-                  <Text className="text-xl">+</Text>
-                </TouchableOpacity>
-
-                {repairQuotes.length > 0 && (
-                  <Button size="lg"
-                    onPress={handleConfirmSend}
-                    isDisabled={isSubmitDisabled} // ✅ Gluestack uses "isDisabled" instead of "disabled"
-                    className={isSubmitDisabled ? "bg-gray-400 opacity-50" : "bg-blue-500"}
+              <Box className="mt-6">
+                <Box className="flex flex-col gap-4">
+                  <Button
+                    onPress={addRepairItem}
+                    disabled={isAddDisabled}
+                    className={`h-12 rounded-xl ${
+                      isAddDisabled ? "bg-gray-200" : "bg-[#fab753]"
+                    }`}
                   >
-                    <ButtonText className="font-extrabold text-sm text-white">
-                      Gửi báo giá
-                    </ButtonText>
+                    <Text className="text-white font-bold">
+                      + Add Repair Item
+                    </Text>
                   </Button>
-                )}
+
+                  {repairQuotes.length > 0 && (
+                    <Button
+                      onPress={handleConfirmSend}
+                      disabled={isSubmitDisabled}
+                      className={`h-12 rounded-xl ${
+                        isSubmitDisabled ? "bg-gray-200" : "bg-[#1a3148]"
+                      }`}
+                    >
+                      <Text className="text-white font-bold">Send Quote</Text>
+                    </Button>
+                  )}
+                </Box>
               </Box>
             )}
-            {repairRequestDetail?.paymentmethod &&
-              (
-                <>
-                  <Text className="text-green-600 font-semibold">
-                    💰 Tổng tiền: {repairRequestDetail?.totalprice?.toLocaleString()} VND
-                  </Text>
-                  <Text className="text-green-600 font-semibold">
-                    💰 Phương thức thanh toán: {repairRequestDetail?.paymentmethod}
-                  </Text>
-                  <Text className="text-green-600 font-semibold">
-                    💰 Trạng thái thanh toán: {renderPaymentStatus(repairRequestDetail?.paymentstatus)}
-                  </Text>
-                </>
-              )}
           </Box>
 
-          <Box className="items-center mt-5">
-            {repairRequestDetail
-              && repairRequestDetail?.requeststatus !== "Inspecting"
-              && repairRequestDetail?.requeststatus !== "Done"
-              && (
-                <Button size="lg"
-                  onPress={handleUpdateRepairStatus}
-                  isDisabled={!['Accepted', 'Repairing'].includes(repairRequestDetail.requeststatus)}
-                  className={`rounded-lg font-extrabold ${['Accepted', 'Repairing'].includes(repairRequestDetail.requeststatus)
-                    ? 'bg-green-500'
-                    : 'bg-gray-400 opacity-50'
-                    }`}
+          {repairRequestDetail?.paymentmethod && (
+            <Box className="mt-4 bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+              <Box className="flex-row items-center justify-between mb-4">
+                <Text className="text-lg font-bold text-[#1a3148]">
+                  Payment Details
+                </Text>
+                <Box
+                  className={`px-3 py-1.5 rounded-full ${
+                    repairRequestDetail.paymentstatus === "Success"
+                      ? "bg-green-100"
+                      : "bg-red-100"
+                  }`}
                 >
-                  <ButtonText className="text-white text-sm">
-                    {repairRequestDetail?.requeststatus === 'Repairing' ? "Hoàn tất sửa chữa" : "Bắt đầu sửa xe"}
-                  </ButtonText>
+                  <Text
+                    className={`text-sm font-semibold ${
+                      repairRequestDetail.paymentstatus === "Success"
+                        ? "text-green-600"
+                        : "text-red-600"
+                    }`}
+                  >
+                    {repairRequestDetail.paymentstatus === "Success"
+                      ? "Paid"
+                      : "Unpaid"}
+                  </Text>
+                </Box>
+              </Box>
+
+              <Box className="bg-[#f8fafc] rounded-xl p-4">
+                <Box className="flex-row items-center justify-between mb-4">
+                  <Box>
+                    <Box className="flex-row items-center mb-1">
+                      <CreditCard size={18} color="#1a3148" />
+                      <Text className="text-xs uppercase tracking-wider text-gray-500 ml-2">
+                        Total Amount
+                      </Text>
+                    </Box>
+                    <Text className="text-2xl font-bold text-[#1a3148]">
+                      {repairRequestDetail?.totalprice?.toLocaleString()} VND
+                    </Text>
+                  </Box>
+                  <Box className="bg-black px-4 py-2 rounded-xl">
+                    <Text className="text-white font-bold text-sm">
+                      {repairRequestDetail?.paymentmethod}
+                    </Text>
+                  </Box>
+                </Box>
+              </Box>
+
+              {repairRequestDetail?.paymentstatus === "Unpaid" &&
+                repairRequestDetail?.paymentmethod === "Tiền mặt" &&
+                (repairRequestDetail?.requeststatus === "Repairing" ||
+                  repairRequestDetail?.requeststatus === "Done") && (
+                  <Button
+                    onPress={() => {
+                      Alert.alert(
+                        "Confirm Payment",
+                        "Has the customer paid in full?",
+                        [
+                          { text: "Cancel", style: "cancel" },
+                          {
+                            text: "Confirm",
+                            onPress: () => changePaymentStatus("Success"),
+                          },
+                        ]
+                      );
+                    }}
+                    disabled={repairRequestDetail?.requeststatus !== "Done"}
+                    className={`h-12 rounded-xl mt-4 ${
+                      repairRequestDetail?.requeststatus === "Done"
+                        ? "bg-[#fab753]"
+                        : "bg-gray-200"
+                    }`}
+                  >
+                    <Text className="text-white font-bold">
+                      Confirm Payment
+                    </Text>
+                  </Button>
+                )}
+            </Box>
+          )}
+
+          <Box className="my-6 space-y-4">
+            {repairRequestDetail?.requeststatus !== "Inspecting" &&
+              repairRequestDetail?.requeststatus !== "Done" && (
+                <Button
+                  onPress={handleUpdateRepairStatus}
+                  disabled={
+                    !["Accepted", "Repairing"].includes(
+                      repairRequestDetail.requeststatus
+                    )
+                  }
+                  className={`h-14 rounded-xl ${
+                    ["Accepted", "Repairing"].includes(
+                      repairRequestDetail.requeststatus
+                    )
+                      ? "bg-green-500 shadow-sm shadow-green-500/20"
+                      : "bg-gray-200"
+                  }`}
+                >
+                  <Text className="text-white text-base font-bold">
+                    {repairRequestDetail?.requeststatus === "Repairing"
+                      ? "Complete Repair"
+                      : "Start Repair"}
+                  </Text>
                 </Button>
               )}
-            {(repairRequestDetail?.paymentstatus === 'Unpaid'
-              && repairRequestDetail?.paymentmethod === 'Tiền mặt')
-              && (repairRequestDetail?.requeststatus === 'Repairing'
-                || repairRequestDetail?.requeststatus === 'Done')
-              &&
-              <Button
-                className="bg-orange-500 mt-5 w-auto p-2 rounded"
-                size="lg"
-                disabled={repairRequestDetail?.requeststatus !== 'Done'}
-                onPress={() => {
-                  Alert.alert(
-                    "Xác nhận đã thanh toán",
-                    "Khách hàng đã trả đủ tiền mặt cho bạn?",
-                    [
-                      {
-                        text: "Hủy",
-                        style: "cancel",
-                      },
-                      {
-                        text: "Xác nhận",
-                        onPress: () => changePaymentStatus("Success"),
-                      },
-                    ]
-                  );
-                }}
-              >
-                <Text className="text-white text-center">Xác nhận thanh toán</Text>
-              </Button>
-            }
           </Box>
         </Box>
       </ScrollView>
