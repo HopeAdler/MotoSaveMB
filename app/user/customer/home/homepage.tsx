@@ -17,6 +17,7 @@ import LoadingScreen from "../../../loading/loading";
 import { RequestContext } from "@/app/context/RequestContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
+import { Avatar } from "react-native-elements";
 
 interface ServiceCardProps {
   icon: React.ElementType;
@@ -118,18 +119,27 @@ export default function CHomeScreen() {
   if (isLoading) return <LoadingScreen />;
 
   return (
-      <Box className="flex-1 bg-[#f1f5f9]">
+    <Box className="flex-1 bg-[#f1f5f9]">
       <Box className="bg-[#1a3148] pt-14 pb-20 rounded-b-[32px]">
         <Box className="px-5">
           <Box className="flex-row items-center justify-between mb-6">
             <Box className="flex-row items-center">
               <Box className="w-12 h-12 bg-white/10 rounded-xl items-center justify-center mr-4 border border-white/20">
-                <Text className="text-lg font-bold text-white">
-                  {user?.username?.[0]?.toUpperCase()}
-                </Text>
+              {user?.avatar ?
+                <Avatar
+                  size={52}
+                  rounded
+                  source={{ uri: user?.avatar }}
+                  containerStyle={{ borderWidth: 2, borderColor: 'white' }}
+                />
+                :
+                  <Text className="text-lg font-bold text-white">
+                    {user?.username?.[0]?.toUpperCase()}
+                  </Text>
+              }
               </Box>
               <Box>
-                <Text className="text-[#fab753] text-sm">Welcome back</Text>
+                <Text className="text-[#fab753] text-sm">Welcome back,</Text>
                 <Text className="text-white text-lg font-bold">
                   {user?.username}
                 </Text>
@@ -149,8 +159,8 @@ export default function CHomeScreen() {
         </Box>
       </Box>
 
-      <ScrollView 
-        className="flex-1 -mt-12 px-5" 
+      <ScrollView
+        className="flex-1 -mt-12 px-5"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 16 }}
       >
@@ -217,17 +227,17 @@ export default function CHomeScreen() {
           </Box>
         </Box>
 
-        {requestId !== null && latestRequestDetail?.requeststatus !== "Done" && 
-         latestRequestDetail?.requeststatus !== "Cancel" && (
-          <Box className="flex-row justify-center my-6">
-            <Text
-              className="text-base font-medium text-[#1a3148]"
-              onPress={handleNavigate}
-            >
-              Your recent request is not done yet. Continue?
-            </Text>
-          </Box>
-        )}
+        {requestId !== null && latestRequestDetail?.requeststatus !== "Done" &&
+          latestRequestDetail?.requeststatus !== "Cancel" && (
+            <Box className="flex-row justify-center my-6">
+              <Text
+                className="text-base font-medium text-[#1a3148]"
+                onPress={handleNavigate}
+              >
+                Your recent request is not done yet. Continue?
+              </Text>
+            </Box>
+          )}
 
         <Pressable
           onPress={() => router.navigate("/user/customer/home/servicePackage")}

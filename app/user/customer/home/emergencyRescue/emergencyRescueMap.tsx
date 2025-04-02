@@ -269,6 +269,59 @@ const EmergencyRescueMapScreen = () => {
     }
   }, [originCoordinates, destinationCoordinates, originSelected]);
 
+  //Fetching route based on driver progress:
+  const fetchRoute = () => {
+    if (acceptedDriverId && users.size > 0) {
+      if (
+        originSelected &&
+        originCoordinates.latitude &&
+        destinationCoordinates.latitude
+      ) {
+        const driverLoc = `${users.get(acceptedDriverId)?.latitude},${users.get(acceptedDriverId)?.longitude}`;
+        const originStr = `${originCoordinates.latitude},${originCoordinates.longitude}`;
+        const destinationStr = `${destinationCoordinates.latitude},${destinationCoordinates.longitude}`;
+        let startStr = "";
+        let endStr = "";
+
+        if (acceptedReqDetStatus === 'Done') return setRouteCoordinates([]);
+        switch (acceptedReqDetStatus) {
+          case "Accepted":
+            startStr = originStr;
+            endStr = destinationStr;
+            break;
+          case "Pickup":
+            startStr = driverLoc;
+            endStr = originStr;
+            break;
+          case "Processing":
+            startStr = driverLoc;
+            endStr = destinationStr;
+            break;
+        }
+
+        getDirections(startStr, endStr)
+          .then((data: any) => {
+            if (data.routes && data.routes.length > 0) {
+              const encodedPolyline = data.routes[0].overview_polyline.points;
+              const decoded = decodePolyline(encodedPolyline);
+              setRouteCoordinates(decoded);
+              if (data.routes[0].legs && data.routes[0].legs.length > 0) {
+                setDirectionsInfo(data.routes[0].legs[0]);
+                console.log("Switching route...");
+              }
+            } else {
+              console.log("No routes found:", data);
+            }
+          })
+          .catch((error: any) =>
+            console.error("Error fetching directions:", error)
+          );
+      }
+    }
+  };
+  useEffect(() => {
+    fetchRoute();
+  }, [currentLoc, acceptedReqDetStatus]);
   // Tính toán cước phí khi có thông tin đường đi
   useEffect(() => {
     if (directionsInfo && !showActionsheet) {
