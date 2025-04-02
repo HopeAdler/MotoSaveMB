@@ -97,20 +97,16 @@ export default function RepairDetailsScreen() {
   const [isNew, setIsNew] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  const fetchData = async () => {
+  const fetchData = async (isInitialFetch = false) => {
     try {
-      setIsLoading(true);
+      if (isInitialFetch) setIsLoading(true);
+      
       const results = await getRepairRequestDetailForMechanic(token, requestId);
       if (results) {
         setRepairRequestDetail(results);
 
-        if (
-          ["Waiting", "Accepted", "Repairing", "Done"].includes(
-            results.requeststatus
-          )
-        ) {
-          const quoteResults =
-            await getRepairQuotesByRequestDetailId(requestDetailId);
+        if (["Waiting", "Accepted", "Repairing", "Done"].includes(results.requeststatus)) {
+          const quoteResults = await getRepairQuotesByRequestDetailId(requestDetailId);
           if (quoteResults?.length > 0) {
             setRepairQuotes(
               quoteResults.map((quote: any, idx: number) => ({
@@ -125,21 +121,20 @@ export default function RepairDetailsScreen() {
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
-      setIsLoading(false);
+      if (isInitialFetch) setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchData();
+    fetchData(true);
     
     // Only poll if in Waiting status
     if (repairRequestDetail?.requeststatus === "Waiting") {
-      const interval = setInterval(fetchData, 5000);
+      const interval = setInterval(() => fetchData(false), 5000);
       return () => clearInterval(interval);
     }
   }, [requestDetailId, repairRequestDetail?.requeststatus]);
 
-  // Separate effect for repair cost previews
   useEffect(() => {
     const loadRepairCostPreviews = async () => {
       try {
