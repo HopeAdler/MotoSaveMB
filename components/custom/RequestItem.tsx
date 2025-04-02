@@ -86,23 +86,21 @@ export const renderItem = ({
               return;
             }
             try {
-              await acceptRequest(item.requestdetailid, token);
-              try {
-                if (item.requesttype !== "Trả xe") {
+              // Wait for acceptRequest to complete and return a result
+              const result = await acceptRequest(item.requestdetailid, token);
+              // If there is a valid result, proceed to publishAcceptRequest
+              if (result && item.requesttype !== "Trả xe") {
+                try {
                   await publishAcceptRequest(item.requestdetailid);
+                  Alert.alert("Success", "Request accepted and notification sent!");
+                } catch (pubnubError) {
+                  Alert.alert("Warning", "Request accepted, but notification failed");
                 }
-                Alert.alert(
-                  "Success",
-                  "Request accepted and notification sent!"
-                );
-              } catch (pubnubError) {
-                Alert.alert(
-                  "Warning",
-                  "Request accepted, but notification failed"
-                );
+              } else {
+                Alert.alert("Success", "Request accepted!");
               }
-            } catch (apiError) {
-              Alert.alert("Error", "Failed to accept request");
+            } catch (apiError: any) {
+              Alert.alert("Error", apiError.message);
             }
           }}
         >
@@ -114,8 +112,7 @@ export const renderItem = ({
         <Button
           variant="outline"
           className="border-gray-300 rounded-md h-12 hover:border-gray-400"
-          onPress={() =>
-          {
+          onPress={() => {
 
             console.log(item.requestdetailid.toString())
             router.push({
