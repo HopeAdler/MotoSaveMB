@@ -19,26 +19,19 @@ export default function RegisterScreen() {
     const router = useRouter();
 
     const [form, setForm] = useState(registerForm);
-    //NAY LA DANH CHO SET STATE CUA CAC INPUT FIELD
-
-    // const [errors, setErrors] = useState<Record<string, string>>({});
     const [errors, setErrors] = useState<any>({});
-    //NAY LA VIEC SET ERROR 
-
-    // const [touched, setTouched] = useState<Record<string, boolean>>({});
     const [touched, setTouched] = useState<any>({});
-    //NAY LA CHECK XEM USER CO TAP VAO INPUT HAY CHUA
 
     const getIcon = (field: string) => {
         switch (field) {
             case "username":
-                return <User size={24} color="#6B7280" />;
+                return <User size={24} color="#fab753" />;
             case "password":
-                return <Lock size={24} color="#6B7280" />;
+                return <Lock size={24} color="#fab753" />;
             case "fullName":
-                return <UserPlus size={24} color="#6B7280" />;
+                return <UserPlus size={24} color="#fab753" />;
             case "phone":
-                return <Phone size={24} color="#6B7280" />;
+                return <Phone size={24} color="#fab753" />;
             default:
                 return null;
         }
@@ -46,27 +39,18 @@ export default function RegisterScreen() {
 
     const handleBlur = (field: string) => {
         handleBlurField(field, form, setTouched, setErrors);
-        //NAY LA LAY BEN UTILS QUA NO LO HET VIEC KIEM TRA NGUOI DUNG CO TAP CAI INPUT HAY CHUA
     };
 
     const handleChange = (field: string, value: string) => {
-        //NAY LA DE LO CAI THAY DOI TRANG THAI  TRONG INPUT
-
         setForm((prev) => ({ ...prev, [field]: value }));
-        //NEU NGUOI DUNG DUNG CAI INPUT ROI THI NO CHECK XEM FIELD CO DUOC NHAP DUNG HAY |CHUA/NHAP SAI FORMAT|
 
         if (touched[field]) {
             const error = validateField(field, value);
-
-            //NAY THI SET ERROR THOI
-
-            // setErrors((prev) => ({ ...prev, [field]: error }));
             setErrors((prev: any) => ({ ...prev, [field]: error }));
         }
     };
 
     const handleSubmit = async () => {
-        // Kiểm tra validation
         const newErrors: any = {};
         Object.keys(form).forEach((field) => {
             const error = validateField(field, form[field as keyof typeof form]);
@@ -113,68 +97,89 @@ export default function RegisterScreen() {
     };
 
     return (
-        <Box className="flex-1 bg-white justify-center p-6">
-            <Box className="items-center mb-8">
-                <Image
-                    source={require("../../assets/images/logo.png")}
-                    style={{ width: 120, height: 120 }}
-                    resizeMode="contain"
-                />
+        <Box className="flex-1 bg-[#f8fafc]">
+            <Box className="bg-[#1a3148] h-[45%] rounded-b-[40px] shadow-lg px-6 pt-12 pb-20">
+                <Box className="items-center justify-end flex-1 pb-6">
+                    <Image
+                        source={require("../../assets/images/logo.png")}
+                        style={{ width: 140, height: 140 }}
+                        resizeMode="contain"
+                    />
+                    <Text className="text-white text-2xl font-bold mt-4">
+                        Create Account
+                    </Text>
+                    <Text className="text-white/60 text-base mt-1">
+                        Sign up to get started
+                    </Text>
+                </Box>
             </Box>
 
-            <Box className="bg-white rounded-3xl p-8 shadow-lg">
-                {Object.keys(registerForm).map((field) => (
-                    <FormControl key={field} isInvalid={!!errors[field]} className="mb-6">
-                        <Box className="relative">
-                            <Box className="absolute left-4 top-1/2 -translate-y-1/2 z-10">
-                                {getIcon(field)}
+            <Box className="px-6 -mt-12">
+                <Box className="bg-white rounded-2xl p-6 shadow-xl border border-gray-100">
+                    {Object.keys(registerForm).map((field) => (
+                        <FormControl key={field} isInvalid={!!errors[field]} className="mb-5">
+                            <Box className="relative">
+                                <Box className="absolute left-4 top-1.5 z-10">
+                                    {getIcon(field)}
+                                </Box>
+                                <Input>
+                                    <InputField
+                                        placeholder={`${translateFieldName(field)}`}
+                                        secureTextEntry={field === "password"}
+                                        keyboardType={field === "phone" ? "numeric" : "default"}
+                                        className={`w-full bg-gray-50 h-[52px] pl-14 rounded-xl ${
+                                            errors[field] 
+                                                ? "border-red-500 border-2" 
+                                                : "border border-gray-200"
+                                        }`}
+                                        style={{
+                                            fontSize: 16,
+                                            lineHeight: 24,
+                                            paddingVertical: 14,
+                                            minHeight: 56,
+                                        }}
+                                        autoCapitalize="none"
+                                        autoCorrect={false}
+                                        value={form[field as keyof typeof form]}
+                                        onChangeText={(value) => handleChange(field, value)}
+                                        onBlur={() => handleBlur(field)}
+                                    />
+                                </Input>
                             </Box>
-                            <Input>
-                                <InputField
-                                    placeholder={`${translateFieldName(field)}`}
-                                    secureTextEntry={field === "password"}
-                                    keyboardType={field === "phone" ? "numeric" : "default"}
-                                    className="bg-gray-50 h-14 pl-14 rounded-xl text-lg"
-                                    value={form[field as keyof typeof form]}
-                                    onChangeText={(value) => handleChange(field, value)}
-                                    onBlur={() => handleBlur(field)}
-                                />
-                            </Input>
-                        </Box>
-                        {errors[field] && (
-                            <FormControlError>
-                                <FormControlErrorText className="text-sm mt-2">
-                                    {errors[field]}
-                                </FormControlErrorText>
-                            </FormControlError>
-                        )}
-                    </FormControl>
-                ))}
+                            {errors[field] && (
+                                <FormControlError>
+                                    <FormControlErrorText className="text-sm mt-2 text-red-500">
+                                        {errors[field]}
+                                    </FormControlErrorText>
+                                </FormControlError>
+                            )}
+                        </FormControl>
+                    ))}
 
-                {errors.server && (
-                    <Text className="text-red-500 text-center text-sm mb-4">
-                        {errors.server}
-                    </Text>
-                )}
+                    {errors.server && (
+                        <Text className="text-red-500 text-center text-sm mb-4">
+                            {errors.server}
+                        </Text>
+                    )}
 
-                <Button 
-                    onPress={handleSubmit}
-                    className="bg-blue-600 h-12 rounded-xl mt-4"
-                >
-                    <Box className="flex-row items-center">
-                        <UserPlus size={20} color="white" style={{ marginRight: 8 }} />
-                        <Text className="text-white font-semibold text-lg">Đăng ký</Text>
-                    </Box>
-                </Button>
-
-                <Box className="flex-row justify-center mt-6">
-                    <Text className="text-gray-600">Đã có tài khoản? </Text>
-                    <Text
-                        className="text-blue-600 font-semibold"
-                        onPress={() => router.navigate("/auth/login")}
+                    <Button 
+                        onPress={handleSubmit}
+                        className="h-14 rounded-xl bg-[#fab753] mt-2 shadow-sm shadow-[#fab753]/20"
                     >
-                        Đăng nhập ngay
-                    </Text>
+                        <Box className="flex-row items-center">
+                            <Text className="text-white font-bold text-lg">Sign Up</Text>
+                        </Box>
+                    </Button>
+
+                    <Box className="flex-row justify-center mt-6">
+                        <Text className="text-gray-600">Already have an account? </Text>
+                        <Text
+                            className="text-[#fab753] font-semibold"
+                            onPress={() => router.navigate("/auth/login")}
+                        >
+                            Sign In
+                        </Text>
+                    </Box>
                 </Box>
             </Box>
         </Box>

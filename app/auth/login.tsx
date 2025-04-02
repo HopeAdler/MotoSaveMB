@@ -104,71 +104,92 @@ export default function LoginScreen() {
   };
 
   return (
-    <Box className="flex-1 bg-white justify-center p-6">
-      <Box className="items-center mb-8">
-        <Image
-          source={require("../../assets/images/logo.png")}
-          style={{ width: 120, height: 120 }}
-          resizeMode="contain"
-        />
+    <Box className="flex-1 bg-[#f8fafc]">
+      <Box className="bg-[#1a3148] h-[45%] rounded-b-[40px] shadow-lg px-6 pt-12 pb-20">
+        <Box className="items-center justify-end flex-1 pb-6">
+          <Image
+            source={require("../../assets/images/logo.png")}
+            style={{ width: 140, height: 140 }}
+            resizeMode="contain"
+          />
+          <Text className="text-white text-2xl font-bold mt-4">
+            Welcome Back
+          </Text>
+          <Text className="text-white/60 text-base mt-1">
+            Sign in to continue
+          </Text>
+        </Box>
       </Box>
 
-      <Box className="bg-white rounded-3xl p-8 shadow-lg">
-        {Object.keys(loginForm).map((field) => (
-          <FormControl key={field} isInvalid={!!errors[field]} className="mb-6">
-            <Box className="relative">
-              <Box className="absolute left-4 top-1.5 z-10">
-                {field === "identifier" ? (
-                  <User size={24} color="#6B7280" />
-                ) : (
-                  <Lock size={24} color="#6B7280" />
-                )}
+      <Box className="px-6 -mt-12">
+        <Box className="bg-white rounded-3xl p-6 shadow-xl border border-gray-100">
+          {Object.keys(loginForm).map((field) => (
+            <FormControl key={field} isInvalid={!!errors[field]} className="mb-5">
+              <Box className="relative">
+                <Box className="absolute left-4 top-1.5 z-10">
+                  {field === "identifier" ? (
+                    <User size={24} color={errors[field] ? "#EF4444" : "#fab753"} />
+                  ) : (
+                    <Lock size={24} color={errors[field] ? "#EF4444" : "#fab753"} />
+                  )}
+                </Box>
+                <Input>
+                  <InputField
+                    placeholder={`${translateFieldName(field)}`}
+                    secureTextEntry={field === "password"}
+                    className={`w-full bg-gray-50 h-[52px] pl-14 rounded-xl ${
+                      errors[field] 
+                        ? "border-red-500 border-2" 
+                        : "border border-gray-200"
+                    }`}
+                    style={{
+                      fontSize: 16,
+                      lineHeight: 24,
+                      paddingVertical: 14,
+                      minHeight: 56,
+                    }}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    value={form[field as keyof typeof form]}
+                    onChangeText={(value) => handleChange(field, value)}
+                    onBlur={() => handleBlur(field)}
+                  />
+                </Input>
               </Box>
-              <Input>
-                <InputField
-                  placeholder={`${translateFieldName(field)}`}
-                  secureTextEntry={field === "password"}
-                  className="bg-gray-50 h-14 pl-14 rounded-xl text-lg"
-                  value={form[field as keyof typeof form]}
-                  onChangeText={(value) => handleChange(field, value)}
-                  onBlur={() => handleBlur(field)}
-                />
-              </Input>
-            </Box>
-            {errors[field] && (
-              <FormControlError>
-                <FormControlErrorText className="text-sm mt-2">
-                  {errors[field]}
-                </FormControlErrorText>
-              </FormControlError>
-            )}
-          </FormControl>
-        ))}
+              {errors[field] && (
+                <FormControlError>
+                  <FormControlErrorText className="text-sm mt-2 text-red-500">
+                    {errors[field]}
+                  </FormControlErrorText>
+                </FormControlError>
+              )}
+            </FormControl>
+          ))}
 
-        {errors.server && (
-          <Text className="text-red-500 text-center text-sm mb-4">
-            {errors.server}
-          </Text>
-        )}
+          {errors.server && (
+            <Text className="text-red-500 text-center text-sm mb-4">
+              {errors.server}
+            </Text>
+          )}
 
-        <Button 
-          onPress={handleSubmit}
-          className="bg-blue-600 h-12 rounded-xl mt-4"
-        >
-          <Box className="flex-row items-center">
-            <LogIn size={20} color="white" style={{ marginRight: 8 }} />
-            <Text className="text-white font-semibold text-lg">Đăng nhập</Text>
-          </Box>
-        </Button>
-
-        <Box className="flex-row justify-center mt-6">
-          <Text className="text-gray-600">Chưa có tài khoản? </Text>
-          <Text
-            className="text-blue-600 font-semibold"
-            onPress={() => router.navigate("/auth/register")}
+          <Button 
+            onPress={handleSubmit}
+            className="h-14 rounded-xl bg-[#fab753] mt-2 shadow-sm shadow-[#fab753]/20"
           >
-            Đăng ký ngay
-          </Text>
+            <Box className="flex-row items-center">
+              <Text className="text-white font-bold text-lg">Sign In</Text>
+            </Box>
+          </Button>
+
+          <Box className="flex-row justify-center mt-6">
+            <Text className="text-gray-600">Don't have an account? </Text>
+            <Text
+              className="text-[#fab753] font-semibold"
+              onPress={() => router.navigate("/auth/register")}
+            >
+              Sign Up
+            </Text>
+          </Box>
         </Box>
       </Box>
     </Box>
