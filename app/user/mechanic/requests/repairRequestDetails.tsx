@@ -11,25 +11,24 @@ import {
 import { usePubNubService } from "@/app/services/pubnubService";
 import { decodedToken, formatMoney, handlePhoneCall } from "@/app/utils/utils";
 import { GoBackButton } from "@/components/custom/GoBackButton";
+import { RepairStatusBadge } from "@/components/custom/MechanicStatusBadge";
+import PriceInput from "@/components/custom/PriceInput";
 import RepairCostPreviewSelect from "@/components/custom/RepairCostPreviewSelect";
 import { CustomerInfo } from "@/components/custom/RepairCustomerInfo";
 import { VehicleInfoBox } from "@/components/custom/VehicleInfoBox";
-import { RepairStatusBadge } from "@/components/custom/MechanicStatusBadge";
 import { Box } from "@/components/ui/box";
-import { Button, ButtonText } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useCallback, useContext, useEffect, useRef, useState } from "react";
+import { CreditCard } from "lucide-react-native";
+import React, { useCallback, useContext, useEffect, useState } from "react";
 import {
   Alert,
   FlatList,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Text,
-  TextInput,
+  Text
 } from "react-native";
-import { CreditCard } from "lucide-react-native";
-import PriceInput from "@/components/custom/PriceInput";
 
 interface RepairRequestDetail {
   requestid: string;
