@@ -79,10 +79,6 @@ const StationInfo: React.FC<StationProps> = ({ name, location }) => (
 // const pendingRepairRequest = dummyRepairRequests.filter(r => r.requeststatus === "Pending")
 export default function MHomeScreen() {
   const { user, dispatch, token } = useContext(AuthContext);
-  const handleLogout = async () => {
-    dispatch?.({ type: "LOGOUT" });
-    router.replace("/auth/login");
-  };
   const [loading, setLoading] = useState(false);
   const [pendingRepairRequests, setPendingRepairRequests] = useState<RepairRequest[]>([]);
   const [myStation, setMyStation] = useState<Station | null>();

@@ -1,23 +1,22 @@
-import React, { useContext, useState, useEffect } from "react";
 import { AuthContext } from "@/app/context/AuthContext";
+import { RequestContext } from "@/app/context/RequestContext";
 import { Box } from "@/components/ui/box";
 import { Text } from "@/components/ui/text";
-import { ScrollView, Pressable } from "react-native";
+import axios from "axios";
+import { router } from "expo-router";
 import {
-  Car,
   Ambulance,
-  Wrench,
   Battery,
+  Bell,
+  Car,
   Fuel,
   Search,
-  Bell,
+  Wrench,
 } from "lucide-react-native";
-import { router } from "expo-router";
-import LoadingScreen from "../../../loading/loading";
-import { RequestContext } from "@/app/context/RequestContext";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import axios from "axios";
+import React, { useContext, useEffect, useState } from "react";
+import { Pressable, ScrollView } from "react-native";
 import { Avatar } from "react-native-elements";
+import LoadingScreen from "../../../loading/loading";
 
 interface ServiceCardProps {
   icon: React.ElementType;

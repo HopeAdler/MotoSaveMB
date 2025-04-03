@@ -3,30 +3,26 @@ import { useCameraZoom } from "@/app/hooks/useCameraZoom";
 import { calculateFare, createPayment, createRescueRequest, createTransaction, RescueRequestPayload, updateRequestStatus, } from "@/app/services/beAPI";
 import { geocodeAddress, getAutocomplete, getDirections, getReverseGeocode, } from "@/app/services/goongAPI";
 import { decodePolyline } from "@/app/utils/utils";
+import TrackingActionSheet from "@/components/custom/TrackingActionSheet";
+import TripDetailsActionSheet from "@/components/custom/TripDetailsActionSheet";
 import { Box } from "@/components/ui/box";
-import { Input, InputField } from "@/components/ui/input";
-import { Pressable } from "@/components/ui/pressable";
 import MapboxGL from "@rnmapbox/maps";
 import { router } from "expo-router";
 import { getDistance } from "geolib";
-import { ChevronLeft, ChevronUp, CircleChevronDown, LocateFixed } from "lucide-react-native";
 import React, { useContext, useEffect, useRef, useState } from "react";
-import { Alert, FlatList, Linking, NativeEventEmitter, NativeModules, Text, View } from "react-native";
-import TrackingActionSheet from "@/components/custom/TrackingActionSheet";
-import TripDetailsActionSheet from "@/components/custom/TripDetailsActionSheet";
+import { Alert, NativeEventEmitter, NativeModules } from "react-native";
 // Các import liên quan đến PubNub và Payment
 import { getCurrentLocation, requestLocationPermission, watchLocation } from "@/app/services/locationService";
+import { usePubNubService } from "@/app/services/pubnubService"; // ✅ Use the custom hook
 import { PayZaloEventData, processPayment, refundTransaction } from "@/app/utils/payment";
 import { decodedToken } from "@/app/utils/utils";
+import { getHeadingAsync } from "expo-location";
+import { DestinationMarker, OriginMarker } from "../../../../../components/custom/CustomMapMarker";
+import { ActionSheetToggle, BackButton, SearchInput, SearchResults } from "../../../../../components/custom/MapUIComponents";
 import MapViewComponent from "../../../../../components/custom/MapViewComponent";
-import { usePubNubService } from "@/app/services/pubnubService"; // ✅ Use the custom hook
+import { User } from "../../../../context/formFields";
 const { EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN } = process.env;
 MapboxGL.setAccessToken(`${EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN}`);
-import { User } from "../../../../context/formFields";
-import { GoBackButton } from "@/components/custom/GoBackButton";
-import { OriginMarker, DestinationMarker } from "../../../../../components/custom/CustomMapMarker";
-import { BackButton, SearchInput, SearchResults, ActionSheetToggle } from "../../../../../components/custom/MapUIComponents";
-import { getHeadingAsync } from "expo-location";
 const INITIAL_RADIUS = 5000; // 5 km
 const MAX_RADIUS = 20000;    // 15 km
 // Các hằng số cảnh báo khoảng cách (đơn vị mét)
