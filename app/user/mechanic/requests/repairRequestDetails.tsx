@@ -11,24 +11,24 @@ import {
 import { usePubNubService } from "@/app/services/pubnubService";
 import { decodedToken, formatMoney, handlePhoneCall } from "@/app/utils/utils";
 import { GoBackButton } from "@/components/custom/GoBackButton";
+import { RepairStatusBadge } from "@/components/custom/MechanicStatusBadge";
+import PriceInput from "@/components/custom/PriceInput";
 import RepairCostPreviewSelect from "@/components/custom/RepairCostPreviewSelect";
 import { CustomerInfo } from "@/components/custom/RepairCustomerInfo";
 import { VehicleInfoBox } from "@/components/custom/VehicleInfoBox";
-import { RepairStatusBadge } from "@/components/custom/MechanicStatusBadge";
 import { Box } from "@/components/ui/box";
-import { Button, ButtonText } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useContext, useEffect, useState } from "react";
+import { CreditCard } from "lucide-react-native";
+import React, { useCallback, useContext, useEffect, useState } from "react";
 import {
   Alert,
   FlatList,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Text,
-  TextInput,
+  Text
 } from "react-native";
-import { CreditCard } from "lucide-react-native";
 
 interface RepairRequestDetail {
   requestid: string;
@@ -97,20 +97,16 @@ export default function RepairDetailsScreen() {
   const [isNew, setIsNew] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  const fetchData = async () => {
+  const fetchData = async (isInitialFetch = false) => {
     try {
-      setIsLoading(true);
+      if (isInitialFetch) setIsLoading(true);
+
       const results = await getRepairRequestDetailForMechanic(token, requestId);
       if (results) {
         setRepairRequestDetail(results);
 
-        if (
-          ["Waiting", "Accepted", "Repairing", "Done"].includes(
-            results.requeststatus
-          )
-        ) {
-          const quoteResults =
-            await getRepairQuotesByRequestDetailId(requestDetailId);
+        if (["Waiting", "Accepted", "Repairing", "Done"].includes(results.requeststatus)) {
+          const quoteResults = await getRepairQuotesByRequestDetailId(requestDetailId);
           if (quoteResults?.length > 0) {
             setRepairQuotes(
               quoteResults.map((quote: any, idx: number) => ({
@@ -125,21 +121,20 @@ export default function RepairDetailsScreen() {
     } catch (error) {
       console.error("Error fetching data:", error);
     } finally {
-      setIsLoading(false);
+      if (isInitialFetch) setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchData();
-    
+    fetchData(true);
+
     // Only poll if in Waiting status
     if (repairRequestDetail?.requeststatus === "Waiting") {
-      const interval = setInterval(fetchData, 5000);
+      const interval = setInterval(() => fetchData(false), 5000);
       return () => clearInterval(interval);
     }
   }, [requestDetailId, repairRequestDetail?.requeststatus]);
 
-  // Separate effect for repair cost previews
   useEffect(() => {
     const loadRepairCostPreviews = async () => {
       try {
@@ -192,25 +187,52 @@ export default function RepairDetailsScreen() {
       prev.map((item) =>
         item.index === index
           ? {
-              ...item,
-              repairname: selectedRepair.name,
-              repaircostpreviewid: parseInt(selectedRepair.id),
-              min: selectedRepair.min,
-              max: selectedRepair.max,
-            }
+            ...item,
+            repairname: selectedRepair.name,
+            repaircostpreviewid: parseInt(selectedRepair.id),
+            min: selectedRepair.min,
+            max: selectedRepair.max,
+            cost: selectedRepair.min
+          }
           : item
       )
     );
   };
 
-  const handlePriceChange = (index: number, costStr: string) => {
-    const parsedCost = costStr === "" ? 0 : parseInt(costStr) || 0;
+  const handlePriceChange = useCallback(
+    (index: number, costStr: string) => {
+      const parsedCost = costStr === "" ? 0 : parseInt(costStr) || 0;
+      setRepairQuotes((prev) =>
+        prev.map((item) =>
+          item.index === index ? { ...item, cost: parsedCost } : item
+        )
+      );
+    },
+    []
+  );
+
+  // When the input loses focus, round the value and validate.
+  const handlePriceBlur = useCallback((index: number) => {
     setRepairQuotes((prev) =>
-      prev.map((item) =>
-        item.index === index ? { ...item, cost: parsedCost } : item
-      )
+      prev.map((item) => {
+        if (item.index === index) {
+          // Round up to the next 1000 (e.g., 19500 or 19100 become 20000)
+          const roundedCost = Math.ceil(item.cost / 1000) * 1000;
+          return {
+            ...item,
+            cost: roundedCost,
+            isValid:
+              item.min !== undefined &&
+              item.max !== undefined &&
+              roundedCost >= item.min &&
+              roundedCost <= item.max,
+          };
+        }
+        return item;
+      })
     );
-  };
+  }, []);
+
 
   const handleConfirmSend = () => {
     Alert.alert("Xác nhận gửi báo giá", "Bạn có chắc chắn muốn gửi báo giá?", [
@@ -233,9 +255,9 @@ export default function RepairDetailsScreen() {
     try {
       await Promise.all(repairQuotes.map(sendRepairQuote));
       await updateRepairRequestStatus(requestDetailId, token, "Waiting");
-      
+
       fetchData();
-      
+
       Alert.alert("Thành công", "Báo giá đã được gửi!");
       setIsNew(false);
       if (repairRequestDetail) {
@@ -375,20 +397,11 @@ export default function RepairDetailsScreen() {
 
                   {isNew ? (
                     <Box className="flex-row items-center">
-                      <TextInput
-                        className={`flex-1 bg-white p-4 rounded-xl text-base mr-3 ${
-                          item.min &&
-                          item.max &&
-                          (item.cost < item.min || item.cost > item.max)
-                            ? "border-2 border-red-500"
-                            : "border border-gray-200"
-                        }`}
-                        placeholder="Enter price"
-                        keyboardType="numeric"
-                        value={item.cost === 0 ? "" : item.cost.toString()}
-                        onChangeText={(text) =>
-                          handlePriceChange(item.index, text)
-                        }
+                      <PriceInput
+                        key={item.index}
+                        item={item}
+                        onPriceChange={handlePriceChange}
+                        onBlur={handlePriceBlur}
                       />
                       {repairQuotes.length > 1 && (
                         <Button
@@ -416,9 +429,8 @@ export default function RepairDetailsScreen() {
                   <Button
                     onPress={addRepairItem}
                     disabled={isAddDisabled}
-                    className={`h-12 rounded-xl ${
-                      isAddDisabled ? "bg-gray-200" : "bg-[#fab753]"
-                    }`}
+                    className={`h-12 rounded-xl ${isAddDisabled ? "bg-gray-200" : "bg-[#fab753]"
+                      }`}
                   >
                     <Text className="text-white font-bold">
                       + Add Repair Item
@@ -429,9 +441,8 @@ export default function RepairDetailsScreen() {
                     <Button
                       onPress={handleConfirmSend}
                       disabled={isSubmitDisabled}
-                      className={`h-12 rounded-xl ${
-                        isSubmitDisabled ? "bg-gray-200" : "bg-[#1a3148]"
-                      }`}
+                      className={`h-12 rounded-xl ${isSubmitDisabled ? "bg-gray-200" : "bg-[#1a3148]"
+                        }`}
                     >
                       <Text className="text-white font-bold">Send Quote</Text>
                     </Button>
@@ -448,18 +459,16 @@ export default function RepairDetailsScreen() {
                   Payment Details
                 </Text>
                 <Box
-                  className={`px-3 py-1.5 rounded-full ${
-                    repairRequestDetail.paymentstatus === "Success"
-                      ? "bg-green-100"
-                      : "bg-red-100"
-                  }`}
+                  className={`px-3 py-1.5 rounded-full ${repairRequestDetail.paymentstatus === "Success"
+                    ? "bg-green-100"
+                    : "bg-red-100"
+                    }`}
                 >
                   <Text
-                    className={`text-sm font-semibold ${
-                      repairRequestDetail.paymentstatus === "Success"
-                        ? "text-green-600"
-                        : "text-red-600"
-                    }`}
+                    className={`text-sm font-semibold ${repairRequestDetail.paymentstatus === "Success"
+                      ? "text-green-600"
+                      : "text-red-600"
+                      }`}
                   >
                     {repairRequestDetail.paymentstatus === "Success"
                       ? "Paid"
@@ -508,11 +517,10 @@ export default function RepairDetailsScreen() {
                       );
                     }}
                     disabled={repairRequestDetail?.requeststatus !== "Done"}
-                    className={`h-12 rounded-xl mt-4 ${
-                      repairRequestDetail?.requeststatus === "Done"
-                        ? "bg-[#fab753]"
-                        : "bg-gray-200"
-                    }`}
+                    className={`h-12 rounded-xl mt-4 ${repairRequestDetail?.requeststatus === "Done"
+                      ? "bg-[#fab753]"
+                      : "bg-gray-200"
+                      }`}
                   >
                     <Text className="text-white font-bold">
                       Confirm Payment
@@ -532,13 +540,12 @@ export default function RepairDetailsScreen() {
                       repairRequestDetail.requeststatus
                     )
                   }
-                  className={`h-14 rounded-xl ${
-                    ["Accepted", "Repairing"].includes(
-                      repairRequestDetail.requeststatus
-                    )
-                      ? "bg-green-500 shadow-sm shadow-green-500/20"
-                      : "bg-gray-200"
-                  }`}
+                  className={`h-14 rounded-xl ${["Accepted", "Repairing"].includes(
+                    repairRequestDetail.requeststatus
+                  )
+                    ? "bg-green-500 shadow-sm shadow-green-500/20"
+                    : "bg-gray-200"
+                    }`}
                 >
                   <Text className="text-white text-base font-bold">
                     {repairRequestDetail?.requeststatus === "Repairing"

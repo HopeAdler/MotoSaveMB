@@ -1,20 +1,18 @@
 import { AuthContext } from "@/app/context/AuthContext";
+import { usePubNub } from "@/app/context/PubNubContext";
+import { getPendingReturnRequest } from "@/app/services/beAPI";
+import { usePubNubService } from "@/app/services/pubnubService";
 import { renderItem } from "@/components/custom/RequestItem";
 import { Box } from "@/components/ui/box";
-import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
 import axios from "axios";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Truck, MapPin, Clock, AlertCircle, LogOut } from "lucide-react-native";
+import { AlertCircle, Bell, Clock, MapPin, Truck } from "lucide-react-native";
 import React, { useContext, useEffect, useState } from "react";
-import { FlatList, Pressable, View, ScrollView } from "react-native";
+import { FlatList, Pressable, View } from "react-native";
 import { Avatar } from "react-native-elements";
-import LoadingScreen from "../../loading/loading";
-import { usePubNub } from "@/app/context/PubNubContext";
-import { usePubNubService } from "@/app/services/pubnubService";
-import { getPendingReturnRequest } from "@/app/services/beAPI";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { B } from "@expo/html-elements";
+import LoadingScreen from "../../loading/loading";
 
 // interface ServiceCardProps {
 //   icon: LucideIcon;
@@ -132,147 +130,155 @@ export default function DHomeScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-100">
-      <Box className="bg-blue-600 px-6 pt-4 pb-6 shadow-lg">
-        <Box className="flex-row items-center justify-between">
-          <Box className="flex-row items-center">
-            <Avatar
-              size={52}
-              rounded
-              source={{ uri: "https://randomuser.me/api/portraits/men/36.jpg" }}
-              containerStyle={{ borderWidth: 2, borderColor: 'white' }}
-            />
-            <Box className="ml-4">
-              <Text className="text-white text-lg font-bold">Xin chào, {user?.username}</Text>
-              <Text className="text-blue-100 text-sm">Trạng thái: Sẵn sàng</Text>
+      <Box className="bg-[#1a3148] pt-10 pb-5 rounded-b-[32px]">
+        <Box className="px-5">
+          <Box className="flex-row items-center justify-between mb-6">
+            <Box className="flex-row items-center">
+              <Box className="w-12 h-12 bg-white/10 rounded-xl items-center justify-center mr-4 border border-white/20">
+                {user?.avatar ?
+                  <Avatar
+                    size={52}
+                    rounded
+                    source={{ uri: user?.avatar }}
+                    containerStyle={{ borderWidth: 2, borderColor: 'white' }}
+                  />
+                  :
+                  <Text className="text-lg font-bold text-white">
+                    {user?.username?.[0]?.toUpperCase()}
+                  </Text>
+                }
+              </Box>
+              <Box>
+                <Text className="text-[#fab753] text-sm">Welcome back, Driver</Text>
+                <Text className="text-white text-lg font-bold">
+                  {user?.username}
+                </Text>
+              </Box>
             </Box>
+            <Pressable className="w-12 h-12 bg-white/10 rounded-xl items-center justify-center border border-white/20">
+              <Bell color="#fab753" size={22} />
+            </Pressable>
           </Box>
-          <Button 
-            variant="outline" 
-            onPress={handleLogout}
-            className="p-2"
-          >
-            <LogOut color="white" size={24} />
-          </Button>
         </Box>
       </Box>
 
-      <FlatList 
-      className="flex-1 px-4"
-      data={[]}
-      showsVerticalScrollIndicator={false}
-      keyExtractor={() => "main-scroll"}
-      ListHeaderComponent={
-        <>
-        {/* Rescue Requests Section */}
-        <Box className="bg-white rounded-2xl p-4 mt-4 shadow-sm">
-          <Box className="flex-row justify-between items-center mb-3">
-            <Text className="text-lg font-bold text-gray-800">
-              Yêu cầu cứu hộ
-              <Text className="text-blue-600"> ({pendingRescueRequests?.length})</Text>
-            </Text>
-            <Clock color="#4b5563" size={18} />
-          </Box>
-          
-          {pendingRescueRequests?.length > 0 ? (
-            <FlatList
-              pagingEnabled={true}
-              data={pendingRescueRequests}
-              showsHorizontalScrollIndicator={false}
-              keyExtractor={(item) => `${item.requestdetailid}-${item.requeststatus}`}
-              renderItem={({ item }) => renderItem({ 
-                item, 
-                token, 
-                router, 
-                pubnub, 
-                publishAcceptRequest 
-              })}
-            />
-          ) : (
-            <Box className="bg-blue-50 rounded-lg p-4 items-center">
-              <AlertCircle color="#3b82f6" size={32} />
-              <Text className="text-gray-600 mt-2 text-center">
-                Hiện không có yêu cầu cứu hộ nào đang chờ
+      <FlatList
+        className="flex-1 px-4"
+        data={[]}
+        showsVerticalScrollIndicator={false}
+        keyExtractor={() => "main-scroll"}
+        ListHeaderComponent={
+          <>
+            {/* Rescue Requests Section */}
+            <Box className="bg-white rounded-2xl p-4 mt-4 shadow-sm">
+              <Box className="flex-row justify-between items-center mb-3">
+                <Text className="text-lg font-bold text-gray-800">
+                  Yêu cầu cứu hộ
+                  <Text className="text-blue-600"> ({pendingRescueRequests?.length})</Text>
+                </Text>
+                <Clock color="#4b5563" size={18} />
+              </Box>
+
+              {pendingRescueRequests?.length > 0 ? (
+                <FlatList
+                  pagingEnabled={true}
+                  data={pendingRescueRequests}
+                  showsHorizontalScrollIndicator={false}
+                  keyExtractor={(item) => `${item.requestdetailid}-${item.requeststatus}`}
+                  renderItem={({ item }) => renderItem({
+                    item,
+                    token,
+                    router,
+                    pubnub,
+                    publishAcceptRequest
+                  })}
+                />
+              ) : (
+                <Box className="bg-blue-50 rounded-lg p-4 items-center">
+                  <AlertCircle color="#3b82f6" size={32} />
+                  <Text className="text-gray-600 mt-2 text-center">
+                    Hiện không có yêu cầu cứu hộ nào đang chờ
+                  </Text>
+                </Box>
+              )}
+            </Box>
+
+            {/* Return Requests Section */}
+            <Box className="bg-white rounded-2xl p-4 mt-4 shadow-sm">
+              <Box className="flex-row justify-between items-center mb-3">
+                <Text className="text-lg font-bold text-gray-800">
+                  Yêu cầu trả xe
+                  <Text className="text-green-600"> ({pendingReturnRequests?.length})</Text>
+                </Text>
+                <MapPin color="#4b5563" size={18} />
+              </Box>
+
+              {pendingReturnRequests?.length > 0 ? (
+                <FlatList
+                  data={pendingReturnRequests}
+                  showsHorizontalScrollIndicator={false}
+                  keyExtractor={(item) => `${item.requestdetailid}-${item.requeststatus}`}
+                  renderItem={({ item }) => renderItem({
+                    item,
+                    token,
+                    router,
+                    pubnub,
+                    publishAcceptRequest
+                  })}
+                  ItemSeparatorComponent={() => <View className="w-4" />}
+                />
+              ) : (
+                <Box className="bg-green-50 rounded-lg p-4 items-center">
+                  <Truck color="#10b981" size={32} />
+                  <Text className="text-gray-600 mt-2 text-center">
+                    Tất cả xe đã được trả đúng hẹn
+                  </Text>
+                </Box>
+              )}
+            </Box>
+
+            {/* Quick Actions Section */}
+            <Box className="bg-white rounded-2xl p-4 mt-4 shadow-sm">
+              <Text className="text-lg font-bold text-gray-800 mb-4">
+                Thao tác nhanh
               </Text>
+              <View className="flex-row justify-between">
+                <ServiceCard
+                  icon={Truck}
+                  title="Quản lý xe"
+                  color="#3b82f6"
+                />
+                <ServiceCard
+                  icon={MapPin}
+                  title="Vị trí hiện tại"
+                  color="#10b981"
+                />
+              </View>
             </Box>
-          )}
-        </Box>
 
-        {/* Return Requests Section */}
-        <Box className="bg-white rounded-2xl p-4 mt-4 shadow-sm">
-          <Box className="flex-row justify-between items-center mb-3">
-            <Text className="text-lg font-bold text-gray-800">
-              Yêu cầu trả xe
-              <Text className="text-green-600"> ({pendingReturnRequests?.length})</Text>
-            </Text>
-            <MapPin color="#4b5563" size={18} />
-          </Box>
-
-          {pendingReturnRequests?.length > 0 ? (
-            <FlatList
-              data={pendingReturnRequests}
-              showsHorizontalScrollIndicator={false}
-              keyExtractor={(item) => `${item.requestdetailid}-${item.requeststatus}`}
-              renderItem={({ item }) => renderItem({ 
-                item, 
-                token, 
-                router, 
-                pubnub, 
-                publishAcceptRequest 
-              })}
-              ItemSeparatorComponent={() => <View className="w-4" />}
-            />
-          ) : (
-            <Box className="bg-green-50 rounded-lg p-4 items-center">
-              <Truck color="#10b981" size={32} />
-              <Text className="text-gray-600 mt-2 text-center">
-                Tất cả xe đã được trả đúng hẹn
+            {/* Statistics Section */}
+            <Box className="bg-white rounded-2xl p-4 mt-4 mb-6 shadow-sm">
+              <Text className="text-lg font-bold text-gray-800 mb-4">
+                Thống kê hôm nay
               </Text>
+              <View className="flex-row justify-around">
+                <Box className="items-center">
+                  <Text className="text-2xl font-bold text-blue-600">5</Text>
+                  <Text className="text-gray-600 text-sm">Yêu cầu</Text>
+                </Box>
+                <Box className="items-center">
+                  <Text className="text-2xl font-bold text-green-600">4.8</Text>
+                  <Text className="text-gray-600 text-sm">Đánh giá</Text>
+                </Box>
+                <Box className="items-center">
+                  <Text className="text-2xl font-bold text-purple-600">98%</Text>
+                  <Text className="text-gray-600 text-sm">Hài lòng</Text>
+                </Box>
+              </View>
             </Box>
-          )}
-        </Box>
-
-        {/* Quick Actions Section */}
-        <Box className="bg-white rounded-2xl p-4 mt-4 shadow-sm">
-          <Text className="text-lg font-bold text-gray-800 mb-4">
-            Thao tác nhanh
-          </Text>
-          <View className="flex-row justify-between">
-            <ServiceCard 
-              icon={Truck} 
-              title="Quản lý xe" 
-              color="#3b82f6" 
-            />
-            <ServiceCard 
-              icon={MapPin} 
-              title="Vị trí hiện tại" 
-              color="#10b981" 
-            />
-          </View>
-        </Box>
-
-        {/* Statistics Section */}
-        <Box className="bg-white rounded-2xl p-4 mt-4 mb-6 shadow-sm">
-          <Text className="text-lg font-bold text-gray-800 mb-4">
-            Thống kê hôm nay
-          </Text>
-          <View className="flex-row justify-around">
-            <Box className="items-center">
-              <Text className="text-2xl font-bold text-blue-600">5</Text>
-              <Text className="text-gray-600 text-sm">Yêu cầu</Text>
-            </Box>
-            <Box className="items-center">
-              <Text className="text-2xl font-bold text-green-600">4.8</Text>
-              <Text className="text-gray-600 text-sm">Đánh giá</Text>
-            </Box>
-            <Box className="items-center">
-              <Text className="text-2xl font-bold text-purple-600">98%</Text>
-              <Text className="text-gray-600 text-sm">Hài lòng</Text>
-            </Box>
-          </View>
-        </Box>
-        </>
-      }
-      renderItem={() => null}
+          </>
+        }
+        renderItem={() => null}
       />
     </SafeAreaView>
   );
