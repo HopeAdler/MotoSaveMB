@@ -1,13 +1,12 @@
 import { AuthContext } from "@/app/context/AuthContext";
 import { useCameraZoom } from "@/app/hooks/useCameraZoom";
-import {
+import beAPI, {
   calculateFare,
   createEmergencyRescueRequest,
   createPayment,
   createTransaction,
   EmergencyRescueRequestPayload,
-  RescueRequestPayload,
-  updateRequestStatus,
+  updateRequestStatus
 } from "@/app/services/beAPI";
 import {
   geocodeAddress,
@@ -15,55 +14,36 @@ import {
   getDirections,
   getReverseGeocode,
 } from "@/app/services/goongAPI";
-import { decodePolyline } from "@/app/utils/utils";
-import { Box } from "@/components/ui/box";
-import { Input, InputField } from "@/components/ui/input";
-import { Pressable } from "@/components/ui/pressable";
-import MapboxGL from "@rnmapbox/maps";
-import { router } from "expo-router";
-import { getDistance } from "geolib";
-import {
-  ChevronLeft,
-  ChevronUp,
-  CircleChevronDown,
-  LocateFixed,
-  Cog,
-  MapPin,
-  Pen,
-  Pin,
-} from "lucide-react-native";
-import React, { useContext, useEffect, useRef, useState } from "react";
-import {
-  Alert,
-  FlatList,
-  NativeEventEmitter,
-  NativeModules,
-  Text,
-} from "react-native";
-import TrackingActionSheet from "@/components/custom/TrackingActionSheet";
-import TripDetailsActionSheet, {
-  CustomerVehicle,
-} from "@/components/custom/TripDetailsActionSheet";
 import {
   getCurrentLocation,
   requestLocationPermission,
   watchLocation,
 } from "@/app/services/locationService";
+import { usePubNubService } from "@/app/services/pubnubService";
 import {
   PayZaloEventData,
   processPayment,
   refundTransaction,
 } from "@/app/utils/payment";
-import { decodedToken } from "@/app/utils/utils";
-import MapViewComponent from "../../../../../components/custom/MapViewComponent";
-import { usePubNubService } from "@/app/services/pubnubService";
-import { User } from "../../../../context/formFields";
+import { decodedToken, decodePolyline } from "@/app/utils/utils";
+import { DestinationMarker, OriginMarker, renderStationMarkers } from "@/components/custom/CustomMapMarker";
 import StationSelect, { Station } from "@/components/custom/StationSelect";
-import beAPI from "@/app/services/beAPI";
-import { Filter } from "react-native-svg";
-import { OriginMarker, DestinationMarker, renderStationMarkers } from "@/components/custom/CustomMapMarker";
-import { BackButton, SearchInput, SearchResults, ActionSheetToggle } from "../../../../../components/custom/MapUIComponents";
+import TrackingActionSheet from "@/components/custom/TrackingActionSheet";
+import TripDetailsActionSheet from "@/components/custom/TripDetailsActionSheet";
+import { Box } from "@/components/ui/box";
+import MapboxGL from "@rnmapbox/maps";
+import { router } from "expo-router";
+import { getDistance } from "geolib";
+import React, { useContext, useEffect, useRef, useState } from "react";
+import {
+  Alert,
+  NativeEventEmitter,
+  NativeModules
+} from "react-native";
+import { ActionSheetToggle, BackButton, SearchInput, SearchResults } from "../../../../../components/custom/MapUIComponents";
+import MapViewComponent from "../../../../../components/custom/MapViewComponent";
 import VehicleAlertDialog from "../../../../../components/custom/VehicleAlertDialog";
+import { User } from "../../../../context/formFields";
 
 const { EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN } = process.env;
 MapboxGL.setAccessToken(`${EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN}`);
@@ -269,6 +249,59 @@ const EmergencyRescueMapScreen = () => {
     }
   }, [originCoordinates, destinationCoordinates, originSelected]);
 
+  //Fetching route based on driver progress:
+  const fetchRoute = () => {
+    if (acceptedDriverId && users.size > 0) {
+      if (
+        originSelected &&
+        originCoordinates.latitude &&
+        destinationCoordinates.latitude
+      ) {
+        const driverLoc = `${users.get(acceptedDriverId)?.latitude},${users.get(acceptedDriverId)?.longitude}`;
+        const originStr = `${originCoordinates.latitude},${originCoordinates.longitude}`;
+        const destinationStr = `${destinationCoordinates.latitude},${destinationCoordinates.longitude}`;
+        let startStr = "";
+        let endStr = "";
+
+        if (acceptedReqDetStatus === 'Done') return setRouteCoordinates([]);
+        switch (acceptedReqDetStatus) {
+          case "Accepted":
+            startStr = originStr;
+            endStr = destinationStr;
+            break;
+          case "Pickup":
+            startStr = driverLoc;
+            endStr = originStr;
+            break;
+          case "Processing":
+            startStr = driverLoc;
+            endStr = destinationStr;
+            break;
+        }
+
+        getDirections(startStr, endStr)
+          .then((data: any) => {
+            if (data.routes && data.routes.length > 0) {
+              const encodedPolyline = data.routes[0].overview_polyline.points;
+              const decoded = decodePolyline(encodedPolyline);
+              setRouteCoordinates(decoded);
+              if (data.routes[0].legs && data.routes[0].legs.length > 0) {
+                setDirectionsInfo(data.routes[0].legs[0]);
+                console.log("Switching route...");
+              }
+            } else {
+              console.log("No routes found:", data);
+            }
+          })
+          .catch((error: any) =>
+            console.error("Error fetching directions:", error)
+          );
+      }
+    }
+  };
+  useEffect(() => {
+    fetchRoute();
+  }, [currentLoc, acceptedReqDetStatus]);
   // Tính toán cước phí khi có thông tin đường đi
   useEffect(() => {
     if (directionsInfo && !showActionsheet) {
