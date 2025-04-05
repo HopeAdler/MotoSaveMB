@@ -9,17 +9,8 @@ import { Router } from "expo-router";
 import moment from "moment";
 import { Alert, View } from "react-native";
 import { MapPin } from "lucide-react-native";
+import { RequestItem } from "@/app/context/formFields";
 
-interface RequestItem {
-  requestid: string;
-  servicepackagename: string;
-  requestdetailid: string;
-  requesttype: string;
-  customername: string;
-  pickuplocation: string;
-  requeststatus: string;
-  createddate: string;
-}
 
 interface RequestItemProps {
   item: RequestItem;
@@ -70,7 +61,9 @@ export const renderItem = ({
       <HStack className="items-start space-x-2">
         <MapPin size={18} color="#2563EB" />
         <Text className="text-sm text-gray-700 flex-1 leading-5">
-          {item.pickuplocation}
+          {item.requesttype === 'Cứu hộ' ?
+            item.pickuplocation
+            : item.destination}
         </Text>
       </HStack>
     </VStack>

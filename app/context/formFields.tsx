@@ -29,6 +29,18 @@ export type User = {
   heading: number;
 };
 
+export interface RequestItem {
+  requestid: string;
+  servicepackagename: string;
+  requestdetailid: string;
+  requesttype: string;
+  customername: string;
+  customerphone: string;
+  pickuplocation?: string;
+  destination?: string;
+  requeststatus: string;
+  createddate: string;
+}
 
 export interface RequestDetail {
   fullname: string;
