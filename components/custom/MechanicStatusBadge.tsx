@@ -8,49 +8,49 @@ const getStatusStyleAndText = (status: string) => {
         backgroundColor: '#f3f4f6',
         color: '#374151',
         icon: 'search',
-        text: 'Đang kiểm tra'
+        text: 'Inspecting'
       };
     case 'waiting':
       return {
         backgroundColor: '#fff3cd',
         color: '#856404', 
         icon: 'hourglass-half',
-        text: 'Chờ chấp nhận'
+        text: 'Waiting'
       };
     case 'accepted':
       return {
         backgroundColor: '#d4edda',
         color: '#155724',
         icon: 'thumbs-up',
-        text: 'Đã chấp nhận'
+        text: 'Accepted'
       };
     case 'repairing':
       return {
         backgroundColor: '#cce5ff',
         color: '#004085',
         icon: 'wrench',
-        text: 'Đang sửa'
+        text: 'Repairing'
       };
     case 'done':
       return {
         backgroundColor: '#c3e6cb', 
         color: '#155724',
         icon: 'check-circle',
-        text: 'Hoàn thành'
+        text: 'Completed'
       };
     case 'cancel':
       return {
         backgroundColor: '#f8d7da',
         color: '#721c24',
         icon: 'ban',
-        text: 'Đã hủy'
+        text: 'Cancelled'
       };
     default:
       return {
         backgroundColor: '#d1ecf1',
         color: '#0c5460',
         icon: 'info-circle',
-        text: 'Chờ xử lý'
+        text: 'Pending'
       };
   }
 };

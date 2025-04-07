@@ -72,6 +72,15 @@ interface RepairQuote {
   max?: number;
 }
 
+const translatePaymentMethod = (method: string | undefined): string => {
+  if (!method) return "";
+  
+  switch (method) {
+    case "Tiền mặt": return "Cash";
+    default: return method;
+  }
+};
+
 export default function RepairDetailsScreen() {
   const { token } = useContext(AuthContext);
   const userId = decodedToken(token)?.id;
@@ -492,14 +501,14 @@ export default function RepairDetailsScreen() {
                   </Box>
                   <Box className="bg-black px-4 py-2 rounded-xl">
                     <Text className="text-white font-bold text-sm">
-                      {repairRequestDetail?.paymentmethod}
+                      {translatePaymentMethod(repairRequestDetail?.paymentmethod)}
                     </Text>
                   </Box>
                 </Box>
               </Box>
 
               {repairRequestDetail?.paymentstatus === "Unpaid" &&
-                repairRequestDetail?.paymentmethod === "Tiền mặt" &&
+                (repairRequestDetail?.paymentmethod === "Tiền mặt" || repairRequestDetail?.paymentmethod === "Cash") &&
                 (repairRequestDetail?.requeststatus === "Repairing" ||
                   repairRequestDetail?.requeststatus === "Done") && (
                   <Button
