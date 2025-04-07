@@ -1,14 +1,14 @@
 import { acceptRepairRequest } from "@/app/services/beAPI";
 import { Box } from "@/components/ui/box";
-import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
-import { VStack } from "@/components/ui/vstack";
 import { Router } from "expo-router";
 import moment from "moment";
-import { Alert } from "react-native";
-import RequestStatus from "./RequestItemStatusComponent";
+import { Alert, StyleSheet, TouchableOpacity } from "react-native";
+import { Clock, Phone, User } from "lucide-react-native";
+import { StatusBadge } from "@/components/custom/StatusBadge";
+import React from "react";
 
-interface RepairRequestItem {
+interface RepairRequestItemProps {
   requestid: string;
   customername: string;
   customerphone: string;
@@ -18,27 +18,45 @@ interface RepairRequestItem {
   requeststatus: string;
   createddate: string;
 }
-export const renderRepairRequestItem = ({
-  token,
-  item,
-  router
-}: {
-  token: string
-  item: RepairRequestItem;
+
+export const RepairRequestItem = React.memo((props: {
+  token: string;
+  item: RepairRequestItemProps;
   router: Router;
-}) => (
-  <Box className="bg-white p-4 mb-2 rounded-lg shadow relative">
-    <Text className="text-violet-500 text-lg font-bold">{item.servicepackagename}</Text>
-    <RequestStatus requestStatus={item?.requeststatus} />
-    <VStack space="sm">
-      <Text className="text-lg font-bold">{item.customername}</Text>
-      <Text className="text-gray-600">📞 {item.customerphone}</Text>
-      <Text className="text-gray-500">
-        🕒 {moment(item.createddate).format("DD/MM/YYYY HH:mm")}
-      </Text>
-      {item.requeststatus === "Pending" ?
-        <Button
-          className="bg-blue-500 p-2 rounded mt-2"
+}) => {
+  const { token, item, router } = props;
+  
+  return (
+    <Box className="bg-white p-5 mb-4 rounded-2xl shadow-sm border border-gray-100/50">
+      <Box className="flex-row items-center justify-between mb-3">
+        <Text className="text-[#fab753] text-lg font-bold flex-1 mr-2" numberOfLines={1}>{item.servicepackagename}</Text>
+        <StatusBadge status={item.requeststatus} />
+      </Box>
+      
+      <Box className="flex-row items-center mb-3">
+        <Box className="w-10 h-10 bg-[#1a3148]/5 rounded-xl items-center justify-center mr-3">
+          <User color="#1a3148" size={18} />
+        </Box>
+        <Text className="text-[#1a3148] text-lg font-bold flex-1" numberOfLines={1}>{item.customername}</Text>
+      </Box>
+      
+      <Box className="pl-1 mb-4">
+        <Box className="flex-row items-center mb-2">
+          <Phone size={16} color="#64748b" style={styles.icon} />
+          <Text className="text-gray-600" numberOfLines={1}>{item.customerphone}</Text>
+        </Box>
+        
+        <Box className="flex-row items-center">
+          <Clock size={16} color="#64748b" style={styles.icon} />
+          <Text className="text-gray-500" numberOfLines={1}>
+            {moment(item.createddate).format("DD/MM/YYYY HH:mm")}
+          </Text>
+        </Box>
+      </Box>
+      
+      {item.requeststatus === "Pending" ? (
+        <TouchableOpacity
+          style={styles.acceptButton}
           onPress={async () => {
             try {
               await acceptRepairRequest(item.requestdetailid, token);
@@ -48,11 +66,11 @@ export const renderRepairRequestItem = ({
             }
           }}
         >
-          <Text className="text-white text-center">Accept</Text>
-        </Button>
-        :
-        <Button
-          className="bg-green-500 p-2 rounded mt-2"
+          <Text style={styles.buttonText}>Accept Request</Text>
+        </TouchableOpacity>
+      ) : (
+        <TouchableOpacity
+          style={styles.viewButton}
           onPress={() =>
             router.push({
               pathname: "/user/mechanic/requests/repairRequestDetails",
@@ -60,9 +78,47 @@ export const renderRepairRequestItem = ({
             })
           }
         >
-          <Text className="text-white text-center">Details</Text>
-        </Button>
-      }
-    </VStack>
-  </Box>
-);
+          <Text style={styles.buttonText}>View Details</Text>
+        </TouchableOpacity>
+      )}
+    </Box>
+  );
+});
+
+export function renderRepairRequestItem(props: {
+  token: string;
+  item: RepairRequestItemProps;
+  router: Router;
+}) {
+  return <RepairRequestItem {...props} />;
+}
+
+const styles = StyleSheet.create({
+  icon: {
+    marginRight: 8
+  },
+  acceptButton: {
+    backgroundColor: "#1a3148",
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    width: "100%"
+  },
+  viewButton: {
+    backgroundColor: "#fab753",
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    width: "100%"
+  },
+  buttonText: {
+    color: "white",
+    fontWeight: "600",
+    fontSize: 16,
+    textAlign: "center"
+  }
+});
