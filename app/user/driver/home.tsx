@@ -13,6 +13,7 @@ import { FlatList, Pressable, View } from "react-native";
 import { Avatar } from "react-native-elements";
 import { SafeAreaView } from "react-native-safe-area-context";
 import LoadingScreen from "../../loading/loading";
+import { RequestItem } from "@/app/context/formFields";
 
 // interface ServiceCardProps {
 //   icon: LucideIcon;
@@ -23,18 +24,6 @@ import LoadingScreen from "../../loading/loading";
 interface LocationProps {
   name: string;
   distance: string;
-}
-
-interface RequestItem {
-  requestid: string;
-  servicepackagename: string;
-  requestdetailid: string;
-  requesttype: string;
-  customername: string;
-  customerphone: string;
-  pickuplocation: string;
-  requeststatus: string;
-  createddate: string;
 }
 
 const ServiceCard = ({ icon: Icon, title, color }: {
