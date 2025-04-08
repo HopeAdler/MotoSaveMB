@@ -94,6 +94,8 @@ export default function CustomerLayout() {
         <Tabs.Screen
           name="notification"
           options={{
+            href: null,
+            tabBarStyle: { display: "none" },
             tabBarLabel: "Notifications",
             tabBarIcon: (tabInfo) => (
               <Box
