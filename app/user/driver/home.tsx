@@ -245,8 +245,7 @@ export default function DHomeScreen() {
               </View>
             </Box>
 
-            {/* Statistics Section */}
-            <Box className="bg-white rounded-2xl p-4 mt-4 mb-6 shadow-sm">
+            {/* <Box className="bg-white rounded-2xl p-4 mt-4 mb-6 shadow-sm">
               <Text className="text-lg font-bold text-gray-800 mb-4">
                 Thống kê hôm nay
               </Text>
@@ -264,7 +263,7 @@ export default function DHomeScreen() {
                   <Text className="text-gray-600 text-sm">Hài lòng</Text>
                 </Box>
               </View>
-            </Box>
+            </Box> */}
           </>
         }
         renderItem={() => null}
