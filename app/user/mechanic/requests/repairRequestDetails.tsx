@@ -74,7 +74,7 @@ interface RepairQuote {
 
 const translatePaymentMethod = (method: string | undefined): string => {
   if (!method) return "";
-  
+
   switch (method) {
     case "Tiền mặt": return "Cash";
     default: return method;
@@ -136,7 +136,9 @@ export default function RepairDetailsScreen() {
 
   useEffect(() => {
     fetchData(true);
-
+    if (repairRequestDetail?.requeststatus === "Inspecting") {
+      createDirectChannel(repairRequestDetail.customerid, requestDetailId);
+    }
     // Only poll if in Waiting status
     if (repairRequestDetail?.requeststatus === "Waiting") {
       const interval = setInterval(() => fetchData(false), 5000);
@@ -269,9 +271,9 @@ export default function RepairDetailsScreen() {
 
       Alert.alert("Thành công", "Báo giá đã được gửi!");
       setIsNew(false);
-      if (repairRequestDetail) {
-        createDirectChannel(repairRequestDetail.customerid, requestDetailId);
-      }
+      // if (repairRequestDetail) {
+      //   createDirectChannel(repairRequestDetail.customerid, requestDetailId);
+      // }
     } catch (error) {
       console.error("Error sending repair quotes:", error);
       Alert.alert("Lỗi", "Đã có lỗi xảy ra khi gửi báo giá.");
