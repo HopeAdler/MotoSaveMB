@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Box } from "@/components/ui/box";
 import { Text } from "@/components/ui/text";
 import { Button } from "@/components/ui/button";
@@ -6,7 +6,6 @@ import { Input, InputField, InputIcon } from "@/components/ui/input";
 import { Pressable } from "@/components/ui/pressable";
 import { ChevronLeft, ChevronUp, Search, MapPin, X } from "lucide-react-native";
 import { FlatList } from "react-native";
-import { isDate } from "moment";
 
 // Back button component
 export const BackButton = ({ onPress }: { onPress: () => void }) => (
@@ -35,10 +34,23 @@ export const SearchInput = ({
   onClear,
   showClearButton = true,
   isDisabled
-}: SearchInputProps) => (
+}: SearchInputProps) => {
+  type SelectionState = { start : number } | null;
+  const [selectionState, setSelectionState] = useState<SelectionState>({ start: 0});
+  const handleFocus = () => {
+    setSelectionState(null);
+  };
+
+  const handleBlur = () => {
+    setSelectionState({ start: 0 });
+  };
+
+  const selectionProp = selectionState === null ? undefined : selectionState;
+
+  return (
   <Input
     variant="outline"
-    size="md"
+    size="lg"
     className="bg-white rounded-xl shadow-sm border-0"
     isDisabled={isDisabled}
   >
@@ -49,6 +61,9 @@ export const SearchInput = ({
       placeholder={placeholder}
       value={value}
       onChangeText={onChangeText}
+      selection={selectionProp}
+      onFocus={handleFocus}
+      onBlur={handleBlur}
     />
     {showClearButton && value.length > 0 && (
       <Pressable onPress={onClear} className="p-2">
@@ -56,7 +71,8 @@ export const SearchInput = ({
       </Pressable>
     )}
   </Input>
-);
+  );
+};
 
 // Search results component
 interface SearchResultsProps {
