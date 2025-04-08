@@ -72,6 +72,15 @@ interface RepairQuote {
   max?: number;
 }
 
+const translatePaymentMethod = (method: string | undefined): string => {
+  if (!method) return "";
+
+  switch (method) {
+    case "Tiền mặt": return "Cash";
+    default: return method;
+  }
+};
+
 export default function RepairDetailsScreen() {
   const { token } = useContext(AuthContext);
   const userId = decodedToken(token)?.id;
@@ -127,7 +136,9 @@ export default function RepairDetailsScreen() {
 
   useEffect(() => {
     fetchData(true);
-
+    if (repairRequestDetail?.requeststatus === "Inspecting") {
+      createDirectChannel(repairRequestDetail.customerid, requestDetailId);
+    }
     // Only poll if in Waiting status
     if (repairRequestDetail?.requeststatus === "Waiting") {
       const interval = setInterval(() => fetchData(false), 5000);
@@ -260,9 +271,9 @@ export default function RepairDetailsScreen() {
 
       Alert.alert("Thành công", "Báo giá đã được gửi!");
       setIsNew(false);
-      if (repairRequestDetail) {
-        createDirectChannel(repairRequestDetail.customerid, requestDetailId);
-      }
+      // if (repairRequestDetail) {
+      //   createDirectChannel(repairRequestDetail.customerid, requestDetailId);
+      // }
     } catch (error) {
       console.error("Error sending repair quotes:", error);
       Alert.alert("Lỗi", "Đã có lỗi xảy ra khi gửi báo giá.");
@@ -492,14 +503,14 @@ export default function RepairDetailsScreen() {
                   </Box>
                   <Box className="bg-black px-4 py-2 rounded-xl">
                     <Text className="text-white font-bold text-sm">
-                      {repairRequestDetail?.paymentmethod}
+                      {translatePaymentMethod(repairRequestDetail?.paymentmethod)}
                     </Text>
                   </Box>
                 </Box>
               </Box>
 
               {repairRequestDetail?.paymentstatus === "Unpaid" &&
-                repairRequestDetail?.paymentmethod === "Tiền mặt" &&
+                (repairRequestDetail?.paymentmethod === "Tiền mặt" || repairRequestDetail?.paymentmethod === "Cash") &&
                 (repairRequestDetail?.requeststatus === "Repairing" ||
                   repairRequestDetail?.requeststatus === "Done") && (
                   <Button
