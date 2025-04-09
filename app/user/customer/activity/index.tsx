@@ -1,11 +1,11 @@
-import React from 'react';
+import React from "react";
 import { Box } from "@/components/ui/box";
 import { Text } from "@/components/ui/text";
 import { RefreshControl, VirtualizedList } from "react-native";
 import { useState, useContext, useEffect, useCallback, useMemo } from "react";
 import axios from "axios";
 import { AuthContext } from "@/app/context/AuthContext";
-import { MapPin, Clock, Navigation2, AlertCircle} from "lucide-react-native";
+import { MapPin, Clock, Navigation2, AlertCircle } from "lucide-react-native";
 import { Pressable } from "@/components/ui/pressable";
 import { useRouter } from "expo-router";
 import { StatusBadge } from "@/components/custom/StatusBadge";
@@ -33,11 +33,11 @@ const LoadingSkeleton = () => (
     <Box className="pt-4 pb-6 px-5 bg-white border-b border-gray-100 mb-4">
       <Box className="h-8 w-48 bg-gray-200 rounded mb-2 animate-pulse" />
     </Box>
-    
+
     <Box className="px-4 space-y-4">
       {[1, 2, 3].map((i) => (
-        <Box 
-          key={i} 
+        <Box
+          key={i}
           className="bg-white rounded-xl p-4 shadow-sm border border-gray-100"
         >
           <Box className="flex-row items-center justify-between mb-3">
@@ -53,7 +53,7 @@ const LoadingSkeleton = () => (
               <Box className="w-8 h-8 rounded-full bg-gray-100 animate-pulse" />
               <Box className="h-4 flex-1 bg-gray-100 rounded ml-2 animate-pulse" />
             </Box>
-            
+
             <Box className="flex-row items-center">
               <Box className="w-8 h-8 rounded-full bg-gray-100 animate-pulse" />
               <Box className="h-4 flex-1 bg-gray-100 rounded ml-2 animate-pulse" />
@@ -75,94 +75,109 @@ const LoadingSkeleton = () => (
 const INITIAL_BATCH_SIZE = 10;
 const BATCH_SIZE = 5;
 
-const ActivityCard = React.memo(({ activity, onPress }: { 
-  activity: ActivityItem; 
-  onPress: (id: string) => void;
-}) => (
-  <Pressable
-    key={activity.requestdetailid}
-    className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 active:bg-gray-50 mb-3"
-    onPress={() => onPress(activity.requestdetailid)}
-    accessible={true}
-    accessibilityLabel={`View details for ${activity.servicepackagename}`}
-    accessibilityHint="Double tap to view request details"
-  >
-    <Box className="flex-row items-center justify-between mb-3">
-      <Box>
-        <Text className="text-base font-semibold text-[#1a3148]">
-          {activity.servicepackagename}
-        </Text>
-        <Text className="text-xs text-gray-500">
-          {activity.requesttype}
-        </Text>
-      </Box>
-      <StatusBadge status={activity.requeststatus} />
-    </Box>
-
-    <Box className="space-y-2">
-      <Box className="flex-row items-center">
-        <Box className="w-8 h-8 bg-[#1a3148]/5 rounded-full items-center justify-center">
-          <MapPin size={16} color="#1a3148" />
-        </Box>
-        <Text className="text-gray-600 ml-2 flex-1 text-sm">
-          {activity.pickuplocation}
-        </Text>
-      </Box>
-      
-      <Box className="flex-row items-center">
-        <Box className="w-8 h-8 bg-[#fab753]/10 rounded-full items-center justify-center">
-          <Navigation2 size={16} color="#fab753" />
-        </Box>
-        <Text className="text-gray-600 ml-2 flex-1 text-sm">
-          {activity.destination}
-        </Text>
-      </Box>
-
-      <Box className="flex-row items-center justify-between mt-3 pt-3 border-t border-gray-100">
-        <Box className="flex-row items-center">
-          <Clock size={16} color="#6B7280" />
-          <Text className="text-gray-500 text-sm ml-2">
-            {formatDate(activity.createddate)}
+const ActivityCard = React.memo(
+  ({
+    activity,
+    onPress,
+  }: {
+    activity: ActivityItem;
+    onPress: (id: string) => void;
+  }) => (
+    <Pressable
+      key={activity.requestdetailid}
+      className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 active:bg-gray-50 mb-3"
+      onPress={() => onPress(activity.requestdetailid)}
+      accessible={true}
+      accessibilityLabel={`View details for ${activity.servicepackagename}`}
+      accessibilityHint="Double tap to view request details"
+    >
+      <Box className="flex-row items-center justify-between mb-3">
+        <Box>
+          <Text className="text-base font-semibold text-[#1a3148]">
+            {activity.servicepackagename}
           </Text>
+          <Text className="text-xs text-gray-500">{activity.requesttype}</Text>
         </Box>
+        <StatusBadge status={activity.requeststatus} />
+      </Box>
 
-        {activity.drivername && (
-          <Box className="flex-row items-center bg-[#1a3148]/5 px-3 py-1 rounded-full">
-            <Text className="text-sm text-[#1a3148] font-medium">
-              Driver: {activity.drivername}
+      <Box className="space-y-2">
+        {activity.requesttype !== "Sửa xe" && (
+          <>
+            <Box className="flex-row items-center">
+              <Box className="w-8 h-8 bg-[#1a3148]/5 rounded-full items-center justify-center">
+                <MapPin size={16} color="#1a3148" />
+              </Box>
+              <Text className="text-gray-600 ml-2 flex-1 text-sm">
+                {activity.pickuplocation}
+              </Text>
+            </Box>
+
+            {activity.destination && (
+              <Box className="flex-row items-center">
+                <Box className="w-8 h-8 bg-[#fab753]/10 rounded-full items-center justify-center">
+                  <Navigation2 size={16} color="#fab753" />
+                </Box>
+                <Text className="text-gray-600 ml-2 flex-1 text-sm">
+                  {activity.destination}
+                </Text>
+              </Box>
+            )}
+          </>
+        )}
+
+        <Box className="flex-row items-center justify-between mt-3 pt-3 border-t border-gray-100">
+          <Box className="flex-row items-center">
+            <Clock size={16} color="#6B7280" />
+            <Text className="text-gray-500 text-sm ml-2">
+              {formatDate(activity.createddate)}
             </Text>
           </Box>
-        )}
-      </Box>
-    </Box>
-  </Pressable>
-));
 
-const DateGroup = React.memo(({ date, activities, displayCount, onPress }: {
-  date: string;
-  activities: ActivityItem[];
-  displayCount: number;
-  onPress: (id: string) => void;
-}) => (
-  <Box className="px-4 mb-2">
-    <Box className="flex-row items-center mb-3">
-      <Box className="h-px flex-1 bg-gray-200" />
-      <Box className="px-3 py-1 bg-[#1a3148]/5 rounded-full mx-2">
-        <Text className="text-sm font-semibold text-[#1a3148]">
-          {date}
-        </Text>
+          {activity.drivername && (
+            <Box className="flex-row items-center bg-[#1a3148]/5 px-3 py-1 rounded-full">
+              <Text className="text-sm text-[#1a3148] font-medium">
+                {activity.requesttype === "Sửa xe" ? "Mechanic:" : "Driver:"}{" "}
+                {activity.drivername}
+              </Text>
+            </Box>
+          )}
+        </Box>
       </Box>
-      <Box className="h-px flex-1 bg-gray-200" />
+    </Pressable>
+  )
+);
+
+const DateGroup = React.memo(
+  ({
+    date,
+    activities,
+    displayCount,
+    onPress,
+  }: {
+    date: string;
+    activities: ActivityItem[];
+    displayCount: number;
+    onPress: (id: string) => void;
+  }) => (
+    <Box className="px-4 mb-2">
+      <Box className="flex-row items-center mb-3">
+        <Box className="h-px flex-1 bg-gray-200" />
+        <Box className="px-3 py-1 bg-[#1a3148]/5 rounded-full mx-2">
+          <Text className="text-sm font-semibold text-[#1a3148]">{date}</Text>
+        </Box>
+        <Box className="h-px flex-1 bg-gray-200" />
+      </Box>
+      {activities.slice(0, displayCount).map((activity) => (
+        <ActivityCard
+          key={activity.requestdetailid}
+          activity={activity}
+          onPress={onPress}
+        />
+      ))}
     </Box>
-    {activities.slice(0, displayCount).map((activity) => (
-      <ActivityCard 
-        key={activity.requestdetailid} 
-        activity={activity} 
-        onPress={onPress}
-      />
-    ))}
-  </Box>
-));
+  )
+);
 
 export default function ActivityScreen() {
   const { token } = useContext(AuthContext);
@@ -198,7 +213,7 @@ export default function ActivityScreen() {
 
   const handleLoadMore = useCallback(() => {
     setIsLoadingMore(true);
-    setDisplayCount(prev => prev + BATCH_SIZE);
+    setDisplayCount((prev) => prev + BATCH_SIZE);
     setIsLoadingMore(false);
   }, []);
 
@@ -206,13 +221,19 @@ export default function ActivityScreen() {
     fetchActivities();
   }, []);
 
-  const handleActivityPress = useCallback((requestdetailid: string) => {
-    router.push(`/user/customer/activity/requestDetails?requestdetailid=${requestdetailid}`);
-  }, [router]);
+  const handleActivityPress = useCallback(
+    (requestdetailid: string) => {
+      router.push(
+        `/user/customer/activity/requestDetails?requestdetailid=${requestdetailid}`
+      );
+    },
+    [router]
+  );
 
   const sortedActivities = useMemo(() => {
-    return activities.sort((a, b) => 
-      new Date(b.createddate).getTime() - new Date(a.createddate).getTime()
+    return activities.sort(
+      (a, b) =>
+        new Date(b.createddate).getTime() - new Date(a.createddate).getTime()
     );
   }, [activities]);
 
@@ -221,7 +242,7 @@ export default function ActivityScreen() {
       <Box className="pt-4 pb-6 px-5 bg-white border-b border-gray-100">
         <Box className="flex-row items-center justify-between mb-2">
           <Box>
-            <Text 
+            <Text
               role="heading"
               aria-level={1}
               className="text-2xl font-bold text-[#1a3148]"
@@ -258,9 +279,17 @@ export default function ActivityScreen() {
           </Box>
         ) : (
           <VirtualizedList<ActivityGroup>
-            data={Object.entries(groupActivitiesByDate(sortedActivities)) as ActivityGroup[]}
+            data={
+              Object.entries(
+                groupActivitiesByDate(sortedActivities)
+              ) as ActivityGroup[]
+            }
             keyExtractor={(item: ActivityGroup) => item[0]}
-            renderItem={({ item: [date, activities] }: { item: ActivityGroup }) => (
+            renderItem={({
+              item: [date, activities],
+            }: {
+              item: ActivityGroup;
+            }) => (
               <DateGroup
                 date={date}
                 activities={activities}
@@ -273,8 +302,8 @@ export default function ActivityScreen() {
             onEndReached={handleLoadMore}
             onEndReachedThreshold={0.5}
             refreshControl={
-              <RefreshControl 
-                refreshing={refreshing} 
+              <RefreshControl
+                refreshing={refreshing}
                 onRefresh={onRefresh}
                 colors={["#fab753"]}
                 tintColor="#fab753"
