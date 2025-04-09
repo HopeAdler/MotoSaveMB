@@ -129,7 +129,7 @@ const TripDetailsActionSheet: React.FC<TripDetailsActionSheetProps> = ({
 
   useEffect(() => {
     fetchCustomerVehicles();
-  }, [token]);
+  }, []);
 
   // Callback khi xe mới được tạo thành công
   const handleVehicleCreated = () => {
@@ -195,15 +195,6 @@ const TripDetailsActionSheet: React.FC<TripDetailsActionSheetProps> = ({
                     {directionsInfo && (
                       <Box className="bg-gray-50 rounded-2xl p-4">
                         <Box className="flex-row justify-between">
-                          <Box className="w-[50%] items-center border-r border-gray-200">
-                            <Box className="flex-row items-center">
-                              <Clock size={20} color="#4B5563" />
-                              <Text className="text-gray-600 ml-2">Duration</Text>
-                            </Box>
-                            <Text className="text-xl font-bold mt-1">
-                              {directionsInfo?.duration?.text}
-                            </Text>
-                          </Box>
                           <Box className="w-[50%] items-center">
                             <Box className="flex-row items-center">
                               <Navigation2 size={20} color="#4B5563" />
@@ -211,6 +202,15 @@ const TripDetailsActionSheet: React.FC<TripDetailsActionSheetProps> = ({
                             </Box>
                             <Text className="text-xl font-bold mt-1">
                               {directionsInfo?.distance?.text}
+                            </Text>
+                          </Box>
+                          <Box className="w-[50%] items-center border-r border-gray-200">
+                            <Box className="flex-row items-center">
+                              <Clock size={20} color="#4B5563" />
+                              <Text className="text-gray-600 ml-2">Duration</Text>
+                            </Box>
+                            <Text className="text-xl font-bold mt-1">
+                              {directionsInfo?.duration?.text}
                             </Text>
                           </Box>
                         </Box>
