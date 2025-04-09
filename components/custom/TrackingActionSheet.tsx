@@ -308,19 +308,19 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
             </Box>
             <Box className="bg-gray-50 rounded-2xl p-4">
               <Box className="flex-row justify-between">
-                <Box className="items-center flex-1 border-r border-gray-200">
-                  <Box className="flex-row items-center">
-                    <Clock size={20} color="#4B5563" />
-                    <Text className="text-gray-600 ml-2">Time</Text>
-                  </Box>
-                  <Text className="text-xl font-bold mt-1">{eta}</Text>
-                </Box>
                 <Box className="items-center flex-1">
                   <Box className="flex-row items-center">
                     <Navigation2 size={20} color="#4B5563" />
                     <Text className="text-gray-600 ml-2">Distance</Text>
                   </Box>
                   <Text className="text-xl font-bold mt-1">{distance}</Text>
+                </Box>
+                <Box className="items-center flex-1 border-r border-gray-200">
+                  <Box className="flex-row items-center">
+                    <Clock size={20} color="#4B5563" />
+                    <Text className="text-gray-600 ml-2">Duration</Text>
+                  </Box>
+                  <Text className="text-xl font-bold mt-1">{eta}</Text>
                 </Box>
               </Box>
             </Box>

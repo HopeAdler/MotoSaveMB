@@ -1,6 +1,9 @@
 import { AuthContext } from "@/app/context/AuthContext";
 import LoadingScreen from "@/app/loading/loading";
-import { fetchStationOfAStaff, getPendingRepairRequests } from "@/app/services/beAPI";
+import {
+  fetchStationOfAStaff,
+  getPendingRepairRequests,
+} from "@/app/services/beAPI";
 import { renderRepairRequestItem } from "@/components/custom/RepairRequestItem";
 import { Box } from "@/components/ui/box";
 import { Button } from "@/components/ui/button";
@@ -11,7 +14,7 @@ import {
   GalleryThumbnails,
   LucideIcon,
   MapPinHouseIcon,
-  Wrench
+  Wrench,
 } from "lucide-react-native";
 import React, { useContext, useEffect, useState } from "react";
 import { FlatList, Pressable } from "react-native";
@@ -25,11 +28,11 @@ interface ServiceCardProps {
   color: string;
 }
 interface Station {
-  stationid: string,
-  stationname: string,
-  stationaddress: string,
-  stationlong: number,
-  stationlat: number
+  stationid: string;
+  stationname: string;
+  stationaddress: string;
+  stationlong: number;
+  stationlat: number;
 }
 
 interface StationProps {
@@ -67,7 +70,7 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
 const StationInfo: React.FC<StationProps> = ({ name, location }) => (
   <Pressable>
     <Box className="flex flex-row items-center p-3 border-b border-gray-100">
-      <MapPinHouseIcon color='blue' size={32} />
+      <MapPinHouseIcon color="blue" size={32} />
       <Box className="ml-5 flex-1">
         <Text className="font-medium">{name}</Text>
         <Text className="text-xs text-gray-500">{location} away</Text>
@@ -80,7 +83,9 @@ const StationInfo: React.FC<StationProps> = ({ name, location }) => (
 export default function MHomeScreen() {
   const { user, dispatch, token } = useContext(AuthContext);
   const [loading, setLoading] = useState(false);
-  const [pendingRepairRequests, setPendingRepairRequests] = useState<RepairRequest[]>([]);
+  const [pendingRepairRequests, setPendingRepairRequests] = useState<
+    RepairRequest[]
+  >([]);
   const [myStation, setMyStation] = useState<Station | null>();
   const fetchPendingRepairRequest = async (isInitialFetch = false) => {
     try {
@@ -90,10 +95,10 @@ export default function MHomeScreen() {
       setLoading(false);
       // Prevent unnecessary state updates
       setPendingRepairRequests((prevRepairRequests) => {
-        const isDataChanged = JSON.stringify(prevRepairRequests) !== JSON.stringify(results);
+        const isDataChanged =
+          JSON.stringify(prevRepairRequests) !== JSON.stringify(results);
         return isDataChanged ? results : prevRepairRequests;
       });
-
     } catch (error) {
       console.error("Error fetching requests:", error);
     } finally {
@@ -113,8 +118,8 @@ export default function MHomeScreen() {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setLoading(true)
-      fetchMyStationn()
+      setLoading(true);
+      fetchMyStationn();
       fetchPendingRepairRequest();
     }, 5000);
 
@@ -134,7 +139,7 @@ export default function MHomeScreen() {
                     size={52}
                     rounded
                     source={{ uri: user?.avatar }}
-                    containerStyle={{ borderWidth: 2, borderColor: 'white' }}
+                    containerStyle={{ borderWidth: 2, borderColor: "white" }}
                   />
                 ) : (
                   <Text className="text-lg font-bold text-white">
@@ -143,8 +148,12 @@ export default function MHomeScreen() {
                 )}
               </Box>
               <Box>
-                <Text className="text-[#fab753] text-sm">Welcome back, Mechanic</Text>
-                <Text className="text-white text-lg font-bold">{user?.username}</Text>
+                <Text className="text-[#fab753] text-sm">
+                  Welcome back, Mechanic
+                </Text>
+                <Text className="text-white text-lg font-bold">
+                  {user?.username}
+                </Text>
               </Box>
             </Box>
             <Pressable className="w-12 h-12 bg-white/10 rounded-xl items-center justify-center border border-white/20">
@@ -155,18 +164,24 @@ export default function MHomeScreen() {
 
         {/* Pending Requests */}
         <Box className="p-4">
-          <Text className="text-lg font-bold mb-4">Hàng chờ yêu cầu ({pendingRepairRequests?.length})</Text>
-          {loading ? (
-            <LoadingScreen />
-          ) : pendingRepairRequests?.length > 0 ? (
+          <Text className="text-lg font-bold mb-4">
+            Hàng chờ yêu cầu ({pendingRepairRequests?.length})
+          </Text>
+          {pendingRepairRequests?.length > 0 ? (
             <FlatList
               data={pendingRepairRequests}
-              keyExtractor={(item) => `${item.requestdetailid}-${item.requeststatus}`}
-              renderItem={({ item }) => renderRepairRequestItem({ token, item, router })}
+              keyExtractor={(item) =>
+                `${item.requestdetailid}-${item.requeststatus}`
+              }
+              renderItem={({ item }) =>
+                renderRepairRequestItem({ token, item, router })
+              }
               scrollEnabled={false}
             />
           ) : (
-            <Text className="text-gray-500 text-center">Hiện chưa có yêu cầu sửa xe nào</Text>
+            <Text className="text-gray-500 text-center">
+              Hiện chưa có yêu cầu sửa xe nào
+            </Text>
           )}
         </Box>
 
@@ -175,7 +190,11 @@ export default function MHomeScreen() {
           <Text className="text-lg font-bold mb-4">Nghiệp vụ liên quan</Text>
           <Box className="flex flex-row flex-wrap gap-4">
             <ServiceCard icon={Wrench} title="Sửa xe" color="#8b5cf6" />
-            <ServiceCard icon={GalleryThumbnails} title="Xe gửi tại trạm" color="#ff0000" />
+            <ServiceCard
+              icon={GalleryThumbnails}
+              title="Xe gửi tại trạm"
+              color="#ff0000"
+            />
           </Box>
         </Box>
 
@@ -183,13 +202,18 @@ export default function MHomeScreen() {
         <Box className="p-4">
           <Text className="text-lg font-bold mb-4">Trạm của tôi</Text>
           <Box className="bg-white rounded-lg shadow-sm p-4">
-            <StationInfo name={myStation?.stationname || ""} location={myStation?.stationaddress || ""} />
+            <StationInfo
+              name={myStation?.stationname || ""}
+              location={myStation?.stationaddress || ""}
+            />
             <Button
               variant="solid"
               className="bg-red-500 mt-4"
               onPress={() => router.navigate("/user/mechanic/requests/request")}
             >
-              <Text className="text-lg font-bold text-white">Chuyển qua danh sách yêu cầu</Text>
+              <Text className="text-lg font-bold text-white">
+                Chuyển qua danh sách yêu cầu
+              </Text>
             </Button>
           </Box>
         </Box>
@@ -197,4 +221,3 @@ export default function MHomeScreen() {
     </SafeAreaView>
   );
 }
-

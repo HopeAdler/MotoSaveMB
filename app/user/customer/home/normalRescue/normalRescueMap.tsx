@@ -792,7 +792,7 @@ const RescueMapScreen = () => {
       </Box>
 
       {/* Trip details action sheet */}
-      {showActionsheet && directionsInfo && (
+      {showActionsheet && directionsInfo && !requestDetailId && !acceptedReqDetId && (
         <TripDetailsActionSheet
           isOpen={showActionsheet}
           onClose={() => setShowActionsheet(false)}

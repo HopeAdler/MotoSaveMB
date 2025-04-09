@@ -812,7 +812,7 @@ const FloodRescueMapScreen = () => {
       </Box>
 
       {/* Trip details action sheet */}
-      {showActionsheet && (
+      {showActionsheet && !requestDetailId && !acceptedReqDetId && (
         <TripDetailsActionSheet
           isOpen={showActionsheet}
           onClose={() => setShowActionsheet(false)}
