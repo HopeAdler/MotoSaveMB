@@ -5,7 +5,7 @@ import { decodedToken } from "@/app/utils/utils";
 import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
 import "@/global.css";
 import { Tabs, useRouter, useSegments } from "expo-router";
-import { ChartArea, DollarSign, House, List, CircleUserRound } from "lucide-react-native";
+import { ChartArea, DollarSign, House, List, CircleUserRound, MapIcon } from "lucide-react-native";
 import { useContext, useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { getHeadingAsync } from "expo-location";
@@ -187,7 +187,7 @@ export default function DriverLayout() {
       router.setParams({
         jsonPendingReqDetailIds: JSON.stringify(Object.fromEntries(pendingReqDetailIds)),
       });
-    } else if (segment.includes("requestMap")) {
+    } else if (segment.includes("requestMap") || segment.includes("map")) {
       router.setParams({
         jsonCurLoc: JSON.stringify(currentLoc),
         jsonUsers: JSON.stringify(Object.fromEntries(users)),
@@ -204,6 +204,14 @@ export default function DriverLayout() {
             headerShown: false,
             tabBarLabel: "Trang chủ",
             tabBarIcon: (tabInfo) => <House size={24} color={tabInfo.color} />,
+          }}
+        />
+        <Tabs.Screen
+          name="map"
+          options={{
+            headerShown: false,
+            tabBarLabel: "Xem bản đồ",
+            tabBarIcon: (tabInfo) => <MapIcon size={24} color={tabInfo.color} />,
           }}
         />
         <Tabs.Screen
