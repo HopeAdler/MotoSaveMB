@@ -792,7 +792,7 @@ const RescueMapScreen = () => {
       </Box>
 
       {/* Trip details action sheet */}
-      {showActionsheet && directionsInfo && (
+      {showActionsheet && directionsInfo && !acceptedReqDetId && (
         <TripDetailsActionSheet
           isOpen={showActionsheet}
           onClose={() => setShowActionsheet(false)}
@@ -815,11 +815,12 @@ const RescueMapScreen = () => {
         <TrackingActionSheet
           isOpen={showTracking}
           onClose={() => setShowTracking(false)}
-          requestdetailid={requestDetailId}
+          // requestdetailid={requestDetailId}
           eta={directionsInfo?.duration?.text}
           distance={directionsInfo?.distance?.text}
           driverId={acceptedDriverId}
           setAcceptedReqDetStatus={setAcceptedReqDetStatus}
+          requestDetailIdState={[requestDetailId, setRequestDetailId]}
         />
       )}
 

@@ -61,7 +61,7 @@ const cancelReasons = [
 interface TrackingActionSheetProps {
   isOpen: boolean;
   onClose: () => void;
-  requestdetailid: string | null;
+  requestDetailIdState: [string, React.Dispatch<React.SetStateAction<string | null>>];
   eta: string;
   distance: string;
   driverId: string | null;
@@ -71,7 +71,7 @@ interface TrackingActionSheetProps {
 const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
   isOpen,
   onClose,
-  requestdetailid,
+  requestDetailIdState: [requestdetailid, setRequestDetailId],
   eta,
   distance,
   driverId,
@@ -119,20 +119,26 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
         onClose();
         if (requestDetail?.servicepackagename === "Cứu hộ đến trạm") {
           // router.push({
-          //   pathname: "/user/customer/home/emergencyRescue/repairRequest",
-          //   params: { requestid: requestDetail?.requestid },
-          // });
-          router.navigate("/user/customer/home/emergencyRescue/repairRequest")
+            //   pathname: "/user/customer/home/emergencyRescue/repairRequest",
+            //   params: { requestid: requestDetail?.requestid },
+            // });
+            router.navigate("/user/customer/home/emergencyRescue/repairRequest")
+            setRequestDetailId(null);
         } else {
           router.push({
             pathname: "/user/customer/home/feedback",
             params: { requestdetailid },
           });
+          setRequestDetailId(null);
         }
       }, 3000);
       return () => clearTimeout(timer);
     }
   }, [requestDetail?.requeststatus]);
+  console.log("Request Detail:", requestDetail?.requestdetailid);
+  console.log("Request Status:", requestDetail?.requeststatus);
+  console.log("Request ID:", requestDetail?.requestid);
+  console.log("request detail:", requestdetailid);
 
   const getStatusColor = () => {
     switch (requestDetail?.requeststatus) {
@@ -308,19 +314,19 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
             </Box>
             <Box className="bg-gray-50 rounded-2xl p-4">
               <Box className="flex-row justify-between">
-                <Box className="items-center flex-1 border-r border-gray-200">
-                  <Box className="flex-row items-center">
-                    <Clock size={20} color="#4B5563" />
-                    <Text className="text-gray-600 ml-2">Time</Text>
-                  </Box>
-                  <Text className="text-xl font-bold mt-1">{eta}</Text>
-                </Box>
                 <Box className="items-center flex-1">
                   <Box className="flex-row items-center">
                     <Navigation2 size={20} color="#4B5563" />
                     <Text className="text-gray-600 ml-2">Distance</Text>
                   </Box>
                   <Text className="text-xl font-bold mt-1">{distance}</Text>
+                </Box>
+                <Box className="items-center flex-1 border-r border-gray-200">
+                  <Box className="flex-row items-center">
+                    <Clock size={20} color="#4B5563" />
+                    <Text className="text-gray-600 ml-2">Duration</Text>
+                  </Box>
+                  <Text className="text-xl font-bold mt-1">{eta}</Text>
                 </Box>
               </Box>
             </Box>

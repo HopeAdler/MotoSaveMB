@@ -14,7 +14,7 @@ const ChatScreen = () => {
   return (
     <Box className="flex-1">
       <GoBackButton />
-      <Text className="text-center font-bold text-lg">Chat với tài xế</Text>
+      <Text className="text-center font-bold text-lg">Chat with staff</Text>
       <ChatViewComponent
         currentUserId={currentUserId as string}
         requestDetailId={requestDetailId as string}

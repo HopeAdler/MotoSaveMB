@@ -216,7 +216,7 @@ export default function RequestDetailsScreen() {
             <Box className="bg-white rounded-2xl shadow-sm overflow-hidden mb-4 border border-gray-100/50">
               <Box className="p-4">
                 <Text className="text-lg font-semibold text-[#1a3148] mb-4">
-                  Assigned Driver
+                  {requestDetail.requesttype === "Sửa xe" ? "Assigned Mechanic" : "Assigned Driver"}
                 </Text>
                 <Box className="space-y-4">
                   <Box className="flex-row items-center">
@@ -249,7 +249,7 @@ export default function RequestDetailsScreen() {
                     >
                       <Phone size={20} color="#1a3148" />
                       <Text className="ml-2 text-[#1a3148] font-medium">
-                        Call Driver
+                        Call
                       </Text>
                     </Pressable>
 
@@ -274,6 +274,7 @@ export default function RequestDetailsScreen() {
                 Service Information
               </Text>
               <Box className="space-y-4">
+                {requestDetail.requesttype !== "Sửa xe" && (
                 <Box className="flex-row items-center">
                   <Box className="w-10 h-10 rounded-xl bg-[#1a3148]/5 items-center justify-center">
                     <MapPin size={20} color="#1a3148" />
@@ -287,6 +288,7 @@ export default function RequestDetailsScreen() {
                     </Text>
                   </Box>
                 </Box>
+                )}
 
                 {requestDetail.destination && (
                   <Box className="flex-row items-center">

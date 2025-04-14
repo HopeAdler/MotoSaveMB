@@ -812,7 +812,7 @@ const FloodRescueMapScreen = () => {
       </Box>
 
       {/* Trip details action sheet */}
-      {showActionsheet && (
+      {showActionsheet && !acceptedReqDetId && (
         <TripDetailsActionSheet
           isOpen={showActionsheet}
           onClose={() => setShowActionsheet(false)}
@@ -837,7 +837,7 @@ const FloodRescueMapScreen = () => {
         <TrackingActionSheet
           isOpen={showTracking}
           onClose={() => setShowTracking(false)}
-          requestdetailid={requestDetailId}
+          requestDetailIdState={[requestDetailId, setRequestDetailId]}
           eta={directionsInfo?.duration?.text}
           distance={directionsInfo?.distance?.text}
           driverId={acceptedDriverId}
