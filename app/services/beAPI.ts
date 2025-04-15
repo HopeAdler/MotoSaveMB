@@ -513,6 +513,17 @@ export async function getUnpaidPaymentsByRequestId(requestId: string, token: str
   }
 }
 
+export async function getUndoneRequestDetailIds(token: string) {
+  try {
+    const response = await axios.get(`https://motor-save-be.vercel.app/api/v1/requests/driver/undone`,
+      { headers: { Authorization: "Bearer " + token } }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching unpaid payments:", error);
+  }
+}
+
 export async function cancelRequest(
   requestdetailid: string | any,
   token: string,
