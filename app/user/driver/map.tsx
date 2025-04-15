@@ -81,7 +81,7 @@ interface ICamera {
 }
 
 const RequestMap: React.FC = () => {
-  const [curReqDetId, setCurReqDetId] = useState<string | null>();
+  const [curReqDetId, setCurReqDetId] = useState<string | null>(null);
   const { token } = useContext(AuthContext);
   const userId = decodedToken(token)?.id;
   const { jsonCurLoc = '{"latitude":0,"longitude":0}', jsonUsers = "{}" } = useLocalSearchParams<any>();
@@ -131,7 +131,7 @@ const RequestMap: React.FC = () => {
     if (curReqDetId) {
       const result = await updateRequestStatus(curReqDetId, token, newStatus);
       fetchUndoneRequestDetails();
-      fetchRequestDetail();
+
       if (
         result &&
         requestDetail?.requeststatus === "Processing" &&
@@ -196,8 +196,9 @@ const RequestMap: React.FC = () => {
   const fetchUndoneRequestDetails = async () => {
     try {
       const results = await getUndoneRequestDetailIds(token);
-      console.log(results)
-      setCurReqDetId(results[0].requestdetailid);
+      if (results.length > 0) {
+        setCurReqDetId(results[0].requestdetailid);
+      }
     } catch (error) {
       console.error("Error fetching undone request details:", error);
     } finally {
@@ -206,7 +207,6 @@ const RequestMap: React.FC = () => {
   };
   const fetchRequestDetail = async () => {
     try {
-      console.log(curReqDetId)
       const response = await axios.get<RequestDetail>(
         `https://motor-save-be.vercel.app/api/v1/requests/driver/${curReqDetId}`,
         { headers: { Authorization: "Bearer " + token } }
@@ -233,6 +233,13 @@ const RequestMap: React.FC = () => {
       try {
         const results = await getUnpaidPaymentsByRequestId(requestId, token);
         setUnpaidPayments(results);
+        if (results.length <= 0) {
+          setCurReqDetId((prev) => prev === curReqDetId ? null : curReqDetId);
+          setRequestDetail(null);
+          setRouteCoordinates([]);
+          setOriginCoordinates({ latitude: 0, longitude: 0 });
+          setDestinationCoordinates({ latitude: 0, longitude: 0 });
+        }
       } catch (error: any) {
         console.error("Error fetching payments:", error);
       } finally {
@@ -241,9 +248,7 @@ const RequestMap: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchRequestDetail();
-    fetchUnpaidPayments();
-
+    if (curReqDetId === null) return;
     const interval = setInterval(() => {
       fetchRequestDetail();
       fetchUnpaidPayments();
@@ -253,6 +258,7 @@ const RequestMap: React.FC = () => {
   }, [curReqDetId, token]);
 
   const fetchRoute = () => {
+    if (curReqDetId === null) return;
     const currentLocStr = `${currentLoc.latitude},${currentLoc.longitude}`;
     const originStr = `${originCoordinates.latitude},${originCoordinates.longitude}`;
     const destinationStr = `${destinationCoordinates.latitude},${destinationCoordinates.longitude}`;
@@ -295,7 +301,7 @@ const RequestMap: React.FC = () => {
   useEffect(() => {
     try {
       setCurrentLoc(JSON.parse(jsonCurLoc));
-      console.log(jsonCurLoc)
+      // console.log(jsonCurLoc)
     } catch (error) {
       console.error("Failed to parse jsonCurLoc:", error, jsonCurLoc);
       setCurrentLoc({ latitude: 0, longitude: 0, heading: 0 });
@@ -365,7 +371,7 @@ const RequestMap: React.FC = () => {
     <Box className="flex-1">
       {loading ? (
         <ActivityIndicator size="large" color="#fab753" />
-      ) : requestDetail?.requeststatus === "Done" ? (
+      ) : (requestDetail?.requeststatus === "Done" && curReqDetId) ? (
         <DriverRequestDetail
           requestDetail={requestDetail}
           changeButtonTitle={changeButtonTitle}
@@ -431,168 +437,172 @@ const RequestMap: React.FC = () => {
             )}
           </MapViewComponent>
 
-          <Actionsheet
-            isOpen={isActionSheetOpen}
-            onClose={() => setIsActionSheetOpen(false)}
-          >
-            <ActionsheetBackdrop />
-            <ActionsheetContent className="bg-white rounded-t-3xl px-0 pt-2 pb-6">
-              <ActionsheetDragIndicatorWrapper>
-                <ActionsheetDragIndicator className="bg-gray-300" />
-              </ActionsheetDragIndicatorWrapper>
+          {curReqDetId &&
+            <Actionsheet
+              isOpen={isActionSheetOpen}
+              onClose={() => setIsActionSheetOpen(false)}
+            >
+              <ActionsheetBackdrop />
+              <ActionsheetContent className="bg-white rounded-t-3xl px-0 pt-2 pb-6">
+                <ActionsheetDragIndicatorWrapper>
+                  <ActionsheetDragIndicator className="bg-gray-300" />
+                </ActionsheetDragIndicatorWrapper>
 
-              {loading ? (
-                <ActivityIndicator size="large" color="#fab753" />
-              ) : (
-                <Box className="space-y-4 px-4 w-full">
-                  <Box className="flex-row items-center justify-between w-full">
-                    <Box className="flex-1">
-                      <Text className="text-2xl font-bold text-[#1a3148] mb-1">
-                        {requestDetail?.customername}
-                      </Text>
-                    </Box>
-
-                    <Box className="flex-row gap-3 pb-2">
-                      <Button
-                        variant="solid"
-                        onPress={() => handlePhoneCall(requestDetail?.customerphone)}
-                        className={`rounded-xl h-12 w-12 items-center justify-center ${requestDetail?.requeststatus === "Done"
-                          ? "bg-gray-200"
-                          : "bg-[#1a3148]"
-                          }`}
-                        disabled={requestDetail?.requeststatus === "Done"}
-                      >
-                        <Phone size={22} color={requestDetail?.requeststatus === "Done" ? "#9CA3AF" : "white"} />
-                      </Button>
-                      <Button
-                        variant="solid"
-                        onPress={toChatScreen}
-                        className={`rounded-xl h-12 w-12 items-center justify-center ${requestDetail?.requeststatus === "Done"
-                          ? "bg-gray-200"
-                          : "bg-[#fab753]"
-                          }`}
-                        disabled={requestDetail?.requeststatus === "Done"}
-                      >
-                        <MessageSquare size={22} color={requestDetail?.requeststatus === "Done" ? "#9CA3AF" : "white"} />
-                      </Button>
-                    </Box>
-                  </Box>
-
-                  {directionsInfo && (
-                    <Box className="flex-row w-full bg-[#f8fafc] rounded-xl p-4">
-                      <Box className="flex-1 items-center">
-                        <Box className="flex-row items-center mb-2">
-                          <Box className="w-12 h-12 bg-[#1a3148]/5 rounded-xl items-center justify-center">
-                            <Navigation2 size={24} color="#1a3148" />
-                          </Box>
-                          <Box className="ml-3">
-                            <Text className="text-sm text-gray-500">Distance</Text>
-                            <Text className="text-xl font-bold text-[#1a3148]">
-                              {directionsInfo?.distance?.text}
-                            </Text>
-                          </Box>
-                        </Box>
-                      </Box>
-
-                      <Box className="w-[1px] h-16 bg-gray-200 mx-2 self-center" />
-
-                      <Box className="flex-1 items-center">
-                        <Box className="flex-row items-center mb-2">
-                          <Box className="w-12 h-12 bg-[#1a3148]/5 rounded-xl items-center justify-center">
-                            <Clock size={24} color="#1a3148" />
-                          </Box>
-                          <Box className="ml-3">
-                            <Text className="text-sm text-gray-500">Duration</Text>
-                            <Text className="text-xl font-bold text-[#1a3148]">
-                              {directionsInfo?.duration?.text}
-                            </Text>
-                          </Box>
-                        </Box>
-                      </Box>
-                    </Box>
-                  )}
-
-                  <Box className="bg-[#f8fafc] rounded-xl p-4 space-y-3 w-full relative">
-                    {requestDetail?.destination && (
-                      <Box className="absolute left-[31px] top-[60px] w-[1.5px] h-[28px] bg-black/10" />
-                    )}
-                    <Box className="flex-row items-center w-full">
-                      <Box className="w-10 h-10 bg-[#1a3148]/5 rounded-lg items-center justify-center">
-                        <MapPin size={20} color="#1a3148" />
-                      </Box>
-                      <Box className="ml-3 flex-1">
-                        <Text className="text-sm text-gray-500">Pickup Location</Text>
-                        <Text className="text-base font-medium text-[#1a3148]">
-                          {requestDetail?.pickuplocation}
+                {loading ? (
+                  <ActivityIndicator size="large" color="#fab753" />
+                ) : (
+                  <Box className="space-y-4 px-4 w-full">
+                    <Box className="flex-row items-center justify-between w-full">
+                      <Box className="flex-1">
+                        <Text className="text-2xl font-bold text-[#1a3148] mb-1">
+                          {requestDetail?.customername}
                         </Text>
                       </Box>
+
+                      <Box className="flex-row gap-3 pb-2">
+                        <Button
+                          variant="solid"
+                          onPress={() => handlePhoneCall(requestDetail?.customerphone)}
+                          className={`rounded-xl h-12 w-12 items-center justify-center ${requestDetail?.requeststatus === "Done"
+                            ? "bg-gray-200"
+                            : "bg-[#1a3148]"
+                            }`}
+                          disabled={requestDetail?.requeststatus === "Done"}
+                        >
+                          <Phone size={22} color={requestDetail?.requeststatus === "Done" ? "#9CA3AF" : "white"} />
+                        </Button>
+                        <Button
+                          variant="solid"
+                          onPress={toChatScreen}
+                          className={`rounded-xl h-12 w-12 items-center justify-center ${requestDetail?.requeststatus === "Done"
+                            ? "bg-gray-200"
+                            : "bg-[#fab753]"
+                            }`}
+                          disabled={requestDetail?.requeststatus === "Done"}
+                        >
+                          <MessageSquare size={22} color={requestDetail?.requeststatus === "Done" ? "#9CA3AF" : "white"} />
+                        </Button>
+                      </Box>
                     </Box>
 
-                    {requestDetail?.destination && (
+                    {directionsInfo && (
+                      <Box className="flex-row w-full bg-[#f8fafc] rounded-xl p-4">
+                        <Box className="flex-1 items-center">
+                          <Box className="flex-row items-center mb-2">
+                            <Box className="w-12 h-12 bg-[#1a3148]/5 rounded-xl items-center justify-center">
+                              <Navigation2 size={24} color="#1a3148" />
+                            </Box>
+                            <Box className="ml-3">
+                              <Text className="text-sm text-gray-500">Distance</Text>
+                              <Text className="text-xl font-bold text-[#1a3148]">
+                                {directionsInfo?.distance?.text}
+                              </Text>
+                            </Box>
+                          </Box>
+                        </Box>
+
+                        <Box className="w-[1px] h-16 bg-gray-200 mx-2 self-center" />
+
+                        <Box className="flex-1 items-center">
+                          <Box className="flex-row items-center mb-2">
+                            <Box className="w-12 h-12 bg-[#1a3148]/5 rounded-xl items-center justify-center">
+                              <Clock size={24} color="#1a3148" />
+                            </Box>
+                            <Box className="ml-3">
+                              <Text className="text-sm text-gray-500">Duration</Text>
+                              <Text className="text-xl font-bold text-[#1a3148]">
+                                {directionsInfo?.duration?.text}
+                              </Text>
+                            </Box>
+                          </Box>
+                        </Box>
+                      </Box>
+                    )}
+
+                    <Box className="bg-[#f8fafc] rounded-xl p-4 space-y-3 w-full relative">
+                      {requestDetail?.destination && (
+                        <Box className="absolute left-[31px] top-[60px] w-[1.5px] h-[28px] bg-black/10" />
+                      )}
                       <Box className="flex-row items-center w-full">
-                        <Box className="w-10 h-10 bg-[#fab753]/10 rounded-lg items-center justify-center">
-                          {requestDetail?.requeststatus === "Done" ? (
-                            <MapPinCheckInsideIcon size={20} color="#fab753" />
-                          ) : (
-                            <AlertCircle size={20} color="#fab753" />
-                          )}
+                        <Box className="w-10 h-10 bg-[#1a3148]/5 rounded-lg items-center justify-center">
+                          <MapPin size={20} color="#1a3148" />
                         </Box>
                         <Box className="ml-3 flex-1">
-                          <Text className="text-sm text-gray-500">Destination</Text>
+                          <Text className="text-sm text-gray-500">Pickup Location</Text>
                           <Text className="text-base font-medium text-[#1a3148]">
-                            {requestDetail?.destination}
+                            {requestDetail?.pickuplocation}
                           </Text>
                         </Box>
                       </Box>
-                    )}
-                  </Box>
 
-                  <Box className="w-full bg-[#f8fafc] rounded-xl p-4">
-                    <Box className="flex-row items-center justify-between">
-                      <Box>
-                        <Box className="flex-row items-center mb-1">
-                          <CreditCard size={18} color="#1a3148" />
-                          <Text className="text-sm text-gray-500 ml-2">Total Price</Text>
+                      {requestDetail?.destination && (
+                        <Box className="flex-row items-center w-full">
+                          <Box className="w-10 h-10 bg-[#fab753]/10 rounded-lg items-center justify-center">
+                            {requestDetail?.requeststatus === "Done" ? (
+                              <MapPinCheckInsideIcon size={20} color="#fab753" />
+                            ) : (
+                              <AlertCircle size={20} color="#fab753" />
+                            )}
+                          </Box>
+                          <Box className="ml-3 flex-1">
+                            <Text className="text-sm text-gray-500">Destination</Text>
+                            <Text className="text-base font-medium text-[#1a3148]">
+                              {requestDetail?.destination}
+                            </Text>
+                          </Box>
                         </Box>
-                        <Text className="text-xl font-bold text-[#1a3148]">
-                          {requestDetail?.totalprice.toLocaleString()} VND
-                        </Text>
-                      </Box>
-                      <Box className="bg-black px-4 py-2 rounded-lg">
-                        <Text className="text-white font-bold">
-                          {requestDetail?.paymentmethod}
-                        </Text>
+                      )}
+                    </Box>
+
+                    <Box className="w-full bg-[#f8fafc] rounded-xl p-4">
+                      <Box className="flex-row items-center justify-between">
+                        <Box>
+                          <Box className="flex-row items-center mb-1">
+                            <CreditCard size={18} color="#1a3148" />
+                            <Text className="text-sm text-gray-500 ml-2">Total Price</Text>
+                          </Box>
+                          <Text className="text-xl font-bold text-[#1a3148]">
+                            {requestDetail?.totalprice.toLocaleString()} VND
+                          </Text>
+                        </Box>
+                        <Box className="bg-black px-4 py-2 rounded-lg">
+                          <Text className="text-white font-bold">
+                            {requestDetail?.paymentmethod}
+                          </Text>
+                        </Box>
                       </Box>
                     </Box>
+
+                    <Button
+                      className={`h-14 rounded-xl ${changeButtonColor()} active:opacity-80 shadow-sm`}
+                      onPress={changeRequestStatus}
+                      disabled={requestDetail?.requeststatus === "Done"}
+                    >
+                      <ButtonText className={`font-bold text-lg ${requestDetail?.requeststatus === "Pickup" ||
+                        requestDetail?.requeststatus === "Processing" ||
+                        requestDetail?.requeststatus === "Done"
+                        ? "text-white"
+                        : "text-[#1a3148]"
+                        }`}>
+                        {changeButtonTitle()}
+                      </ButtonText>
+                    </Button>
                   </Box>
+                )}
+              </ActionsheetContent>
+            </Actionsheet>
+          }
 
-                  <Button
-                    className={`h-14 rounded-xl ${changeButtonColor()} active:opacity-80 shadow-sm`}
-                    onPress={changeRequestStatus}
-                    disabled={requestDetail?.requeststatus === "Done"}
-                  >
-                    <ButtonText className={`font-bold text-lg ${requestDetail?.requeststatus === "Pickup" ||
-                      requestDetail?.requeststatus === "Processing" ||
-                      requestDetail?.requeststatus === "Done"
-                      ? "text-white"
-                      : "text-[#1a3148]"
-                      }`}>
-                      {changeButtonTitle()}
-                    </ButtonText>
-                  </Button>
-                </Box>
-              )}
-            </ActionsheetContent>
-          </Actionsheet>
-
-          <TouchableOpacity
-            onPress={() => setIsActionSheetOpen(true)}
-            className="absolute bottom-24 right-5 w-12 h-12 bg-white rounded-full items-center justify-center shadow-lg"
-          >
-            <Box className="rotate-180">
-              <Icon name="chevron-down" size={24} color="#1a3148" />
-            </Box>
-          </TouchableOpacity>
+          {curReqDetId &&
+            <TouchableOpacity
+              onPress={() => setIsActionSheetOpen(true)}
+              className="absolute bottom-24 right-5 w-12 h-12 bg-white rounded-full items-center justify-center shadow-lg"
+            >
+              <Box className="rotate-180">
+                <Icon name="chevron-down" size={24} color="#1a3148" />
+              </Box>
+            </TouchableOpacity>
+          }
         </>
       )}
     </Box>
