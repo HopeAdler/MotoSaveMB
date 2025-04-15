@@ -130,7 +130,7 @@ const RequestMap: React.FC = () => {
     }
     if (curReqDetId) {
       const result = await updateRequestStatus(curReqDetId, token, newStatus);
-      if (result) fetchUndoneRequestDetails();
+      if (result) fetchRequestDetail();
 
       if (
         result &&
@@ -200,7 +200,6 @@ const RequestMap: React.FC = () => {
         if (results.length > 1)
           setCurReqDetId(results[1].requestdetailid);
         else setCurReqDetId(results[0].requestdetailid);
-
       }
     } catch (error) {
       console.error("Error fetching undone request details:", error);
@@ -239,11 +238,11 @@ const RequestMap: React.FC = () => {
         const results = await getUnpaidPaymentsByRequestId(requestId, token);
         setUnpaidPayments(results);
         if (results.length <= 0) {
-          setCurReqDetId((prev) => prev === curReqDetId ? null : curReqDetId);
           setRequestDetail(null);
           setRouteCoordinates([]);
           setOriginCoordinates({ latitude: 0, longitude: 0 });
           setDestinationCoordinates({ latitude: 0, longitude: 0 });
+          fetchUndoneRequestDetails();
         }
       } catch (error: any) {
         console.error("Error fetching payments:", error);
