@@ -739,8 +739,9 @@ const EmergencyRescueMapScreen = () => {
     );
     subscribeToRescueChannel((msg: any) => {
       if (
-        msg?.message?.senderRole === "Driver" &&
-        msg?.message?.reqStatus === "Accepted"
+        msg?.message?.requestDetailId === requestDetailId
+        && msg?.message?.senderRole === "Driver"
+        && msg?.message?.reqStatus === "Accepted"
       ) {
         setAcceptedReqDetStatus(msg.message.reqStatus);
         setAcceptedReqDetId(msg.message.requestDetailId);
