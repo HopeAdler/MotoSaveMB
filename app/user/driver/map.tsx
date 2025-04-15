@@ -130,7 +130,7 @@ const RequestMap: React.FC = () => {
     }
     if (curReqDetId) {
       const result = await updateRequestStatus(curReqDetId, token, newStatus);
-      fetchUndoneRequestDetails();
+      if (result) fetchUndoneRequestDetails();
 
       if (
         result &&
@@ -197,7 +197,10 @@ const RequestMap: React.FC = () => {
     try {
       const results = await getUndoneRequestDetailIds(token);
       if (results.length > 0) {
-        setCurReqDetId(results[0].requestdetailid);
+        if (results.length > 1)
+          setCurReqDetId(results[1].requestdetailid);
+        else setCurReqDetId(results[0].requestdetailid);
+
       }
     } catch (error) {
       console.error("Error fetching undone request details:", error);
@@ -207,6 +210,8 @@ const RequestMap: React.FC = () => {
   };
   const fetchRequestDetail = async () => {
     try {
+      if (curReqDetId === null) return;
+      console.log('curReq: ' + curReqDetId)
       const response = await axios.get<RequestDetail>(
         `https://motor-save-be.vercel.app/api/v1/requests/driver/${curReqDetId}`,
         { headers: { Authorization: "Bearer " + token } }
@@ -251,7 +256,9 @@ const RequestMap: React.FC = () => {
     if (curReqDetId === null) return;
     const interval = setInterval(() => {
       fetchRequestDetail();
-      fetchUnpaidPayments();
+      if (requestDetail?.requeststatus === "Done") {
+        fetchUnpaidPayments();
+      }
     }, 5000);
 
     return () => clearInterval(interval);
@@ -324,6 +331,7 @@ const RequestMap: React.FC = () => {
 
   useEffect(() => {
     fetchUndoneRequestDetails();
+    fetchRequestDetail();
     fetchRoute();
   }, [currentLoc, requestDetail?.requeststatus]);
 
@@ -354,24 +362,11 @@ const RequestMap: React.FC = () => {
     });
   };
 
-  useEffect(() => {
-    if (requestDetail?.requeststatus === "Done" && unpaidPayments.length > 0) {
-      setIsActionSheetOpen(false);
-      router.push({
-        pathname: "/user/driver/requests/payments",
-        params: {
-          requestId: requestDetail.requestid,
-          unpaidPayments: JSON.stringify(unpaidPayments),
-        },
-      });
-    }
-  }, [requestDetail?.requeststatus]);
-
   return (
     <Box className="flex-1">
       {loading ? (
         <ActivityIndicator size="large" color="#fab753" />
-      ) : (requestDetail?.requeststatus === "Done" && curReqDetId) ? (
+      ) : (requestDetail?.requeststatus === "Done" && curReqDetId != null) ? (
         <DriverRequestDetail
           requestDetail={requestDetail}
           changeButtonTitle={changeButtonTitle}
