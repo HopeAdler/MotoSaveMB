@@ -661,8 +661,8 @@ const RescueMapScreen = () => {
     );
     subscribeToRescueChannel((msg: any) => {
       if (
-        msg?.message?.requestDetailId === requestDetailId
-        && msg?.message?.senderRole === "Driver"
+        // msg?.message?.requestDetailId === requestDetailId
+        msg?.message?.senderRole === "Driver"
         && msg?.message?.reqStatus === "Accepted"
       ) {
         console.log(msg)
