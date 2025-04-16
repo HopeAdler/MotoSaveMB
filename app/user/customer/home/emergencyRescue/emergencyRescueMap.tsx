@@ -642,6 +642,7 @@ const EmergencyRescueMapScreen = () => {
           }
         );
       }
+      setRequestDetailId(null);
     } catch (error) {
       console.error("Error cancelling request:", error);
     }
@@ -750,7 +751,7 @@ const EmergencyRescueMapScreen = () => {
       }
     });
     return () => { };
-  }, []);
+  }, [requestDetailId]);
 
   useEffect(() => {
     hereNow();
