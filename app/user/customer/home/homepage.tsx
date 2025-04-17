@@ -6,10 +6,8 @@ import axios from "axios";
 import { router } from "expo-router";
 import {
   Ambulance,
-  Battery,
   Bell,
   Car,
-  Fuel,
   Search,
   Wrench,
 } from "lucide-react-native";
@@ -35,7 +33,12 @@ interface LatestRequestDetail {
   requesttype: string;
 }
 
-const ServiceCard: React.FC<ServiceCardProps> = ({ icon: Icon, title, color, onPress }) => (
+const ServiceCard: React.FC<ServiceCardProps> = ({
+  icon: Icon,
+  title,
+  color,
+  onPress,
+}) => (
   <Pressable onPress={onPress} className="mr-3">
     <Box className="w-[150px] bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
       <Box
@@ -124,18 +127,18 @@ export default function CHomeScreen() {
           <Box className="flex-row items-center justify-between mb-6">
             <Box className="flex-row items-center">
               <Box className="w-12 h-12 bg-white/10 rounded-xl items-center justify-center mr-4 border border-white/20">
-              {user?.avatar ?
-                <Avatar
-                  size={52}
-                  rounded
-                  source={{ uri: user?.avatar }}
-                  containerStyle={{ borderWidth: 2, borderColor: 'white' }}
-                />
-                :
+                {user?.avatar ? (
+                  <Avatar
+                    size={52}
+                    rounded
+                    source={{ uri: user?.avatar }}
+                    containerStyle={{ borderWidth: 2, borderColor: "white" }}
+                  />
+                ) : (
                   <Text className="text-lg font-bold text-white">
                     {user?.username?.[0]?.toUpperCase()}
                   </Text>
-              }
+                )}
               </Box>
               <Box>
                 <Text className="text-[#fab753] text-sm">Welcome back,</Text>
@@ -148,13 +151,6 @@ export default function CHomeScreen() {
               <Bell color="#fab753" size={22} />
             </Pressable>
           </Box>
-
-          <Pressable className="bg-white/10 rounded-xl flex-row items-center px-4 py-3.5 border border-white/20">
-            <Search size={22} color="#fab753" className="mr-3" />
-            <Text className="text-white/90 text-base font-medium">
-              Find nearby rescue
-            </Text>
-          </Pressable>
         </Box>
       </Box>
 
@@ -168,24 +164,30 @@ export default function CHomeScreen() {
             <Text className="text-xl font-bold text-[#1a3148] mb-4">
               Emergency Services
             </Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="gap-4">
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              className="gap-4"
+            >
               <ServiceCard
                 icon={Car}
                 title="Normal Rescue"
                 color="#1a3148"
-                onPress={() => router.navigate("/user/customer/home/normalRescue/normalRescueMap")}
+                onPress={() =>
+                  router.navigate(
+                    "/user/customer/home/normalRescue/normalRescueMap"
+                  )
+                }
               />
               <ServiceCard
                 icon={Ambulance}
                 title="Emergency"
                 color="#fab753"
-                onPress={() => router.navigate("/user/customer/home/emergencyRescue/emergencyRescueMap")}
-              />
-              <ServiceCard
-                icon={Wrench}
-                title="Flood Rescue"
-                color="#1a3148"
-                onPress={() => router.navigate("/user/customer/home/floodRescue/floodRescueMap")}
+                onPress={() =>
+                  router.navigate(
+                    "/user/customer/home/emergencyRescue/emergencyRescueMap"
+                  )
+                }
               />
             </ScrollView>
           </Box>
@@ -197,20 +199,19 @@ export default function CHomeScreen() {
           </Text>
           <Box className="flex-row space-x-4">
             <Pressable className="flex-1 bg-white p-5 rounded-2xl border border-gray-100/50 shadow-sm">
-              <Box className="w-14 h-14 bg-[#1a3148]/5 rounded-xl items-center justify-center mb-3">
-                <Battery color="#1a3148" size={24} />
-              </Box>
-              <Box className="p-1">
-                <Text className="text-[15px] font-semibold text-[#1a3148]">
-                  Battery Jump
-                </Text>
-                <Text className="text-xs text-gray-500 mt-1">
-                  Quick assistance
-                </Text>
-              </Box>
+              <ServiceCard
+                icon={Wrench}
+                title="Flood Rescue"
+                color="#1a3148"
+                onPress={() =>
+                  router.navigate(
+                    "/user/customer/home/floodRescue/floodRescueMap"
+                  )
+                }
+              />
             </Pressable>
 
-            <Pressable className="flex-1 bg-white p-5 rounded-2xl border border-gray-100/50 shadow-sm">
+            {/* <Pressable className="flex-1 bg-white p-5 rounded-2xl border border-gray-100/50 shadow-sm">
               <Box className="w-14 h-14 bg-[#fab753]/10 rounded-xl items-center justify-center mb-3">
                 <Fuel color="#fab753" size={24} />
               </Box>
@@ -222,11 +223,12 @@ export default function CHomeScreen() {
                   Emergency fuel
                 </Text>
               </Box>
-            </Pressable>
+            </Pressable> */}
           </Box>
         </Box>
 
-        {requestId !== null && latestRequestDetail?.requeststatus !== "Done" &&
+        {requestId !== null &&
+          latestRequestDetail?.requeststatus !== "Done" &&
           latestRequestDetail?.requeststatus !== "Cancel" && (
             <Box className="flex-row justify-center my-6">
               <Text
