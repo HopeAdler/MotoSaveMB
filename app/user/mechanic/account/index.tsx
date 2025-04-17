@@ -81,18 +81,6 @@ export default function MSettingscreen() {
       subtitle: "Update your personal information",
       color: "#1a3148",
       onPress: handleAccountSettings
-    },
-    {
-      icon: Shield,
-      title: "Privacy & Security",
-      subtitle: "Manage your security preferences",
-      color: "#fab753"
-    },
-    {
-      icon: HelpCircle,
-      title: "Help & Support",
-      subtitle: "Get help with your account",
-      color: "#1a3148"
     }
   ];
 
