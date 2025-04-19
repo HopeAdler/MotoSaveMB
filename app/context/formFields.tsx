@@ -1,6 +1,7 @@
 export const registerForm = {
   username: "",
   password: "",
+  confirmPassword: "",
   fullName: "",
   phone: "",
 };
