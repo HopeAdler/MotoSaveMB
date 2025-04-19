@@ -8,6 +8,7 @@ export const translateFieldName = (field: string): string => {
   const fieldTranslations: any = {
     username: "Tên người dùng",
     password: "Mật khẩu",
+    confirmPassword: "Xác nhận mật khẩu",
     fullName: "Họ và tên",
     phone: "Số điện thoại",
     identifier: "Tên đăng nhập/ Số điện thoại",
@@ -44,7 +45,7 @@ export const shortifiedFieldName = (field: string): string => {
 
 
 
-export const validateField = (field: string, value: string): string => {
+export const validateField = (field: string, value: string, formData?:any): string => {
   if (!value.trim()) {
     return `Vui lòng nhập ${translateFieldName(field).toLowerCase()}.`; // Dịch tự động
   }
@@ -55,6 +56,11 @@ export const validateField = (field: string, value: string): string => {
         return "Mật khẩu phải có ít nhất 6 ký tự.";
       }
       break;
+    
+    case "confirmPassword":
+      if (value !== formData?.password) return "Mật khẩu không khớp.";
+      return "";
+
     case "phone":
       if (value.length < 10) {
         return "Số điện thoại phải là 10 chữ số";
