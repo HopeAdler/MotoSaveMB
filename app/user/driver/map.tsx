@@ -4,7 +4,6 @@ import { getDirections } from "@/app/services/goongAPI";
 import { decodedToken, decodePolyline, handlePhoneCall } from "@/app/utils/utils";
 import { DestinationMarker, OriginMarker } from "@/components/custom/CustomMapMarker";
 import DriverRequestDetail from "@/components/custom/DriverRequestDetail";
-import { GoBackButton } from "@/components/custom/GoBackButton";
 import MapViewComponent from "@/components/custom/MapViewComponent";
 import {
   Actionsheet,
@@ -201,6 +200,7 @@ const RequestMap: React.FC = () => {
           setCurReqDetId(results[1].requestdetailid);
         else setCurReqDetId(results[0].requestdetailid);
       }
+      else setCurReqDetId(null);
     } catch (error) {
       console.error("Error fetching undone request details:", error);
     } finally {
@@ -209,7 +209,7 @@ const RequestMap: React.FC = () => {
   };
   const fetchRequestDetail = async () => {
     try {
-      if (curReqDetId === null) return;
+      if (!curReqDetId) return;
       console.log('curReq: ' + curReqDetId)
       const response = await axios.get<RequestDetail>(
         `https://motor-save-be.vercel.app/api/v1/requests/driver/${curReqDetId}`,
@@ -232,6 +232,7 @@ const RequestMap: React.FC = () => {
   };
 
   const fetchUnpaidPayments = async () => {
+    if (!curReqDetId) return;
     const requestId = requestDetail?.requestid;
     if (requestId)
       try {
@@ -252,9 +253,8 @@ const RequestMap: React.FC = () => {
   };
 
   useEffect(() => {
-    if (curReqDetId === null) return;
+    if (!curReqDetId) return;
     const interval = setInterval(() => {
-      fetchRequestDetail();
       if (requestDetail?.requeststatus === "Done") {
         fetchUnpaidPayments();
       }
@@ -365,7 +365,7 @@ const RequestMap: React.FC = () => {
     <Box className="flex-1">
       {loading ? (
         <ActivityIndicator size="large" color="#fab753" />
-      ) : (requestDetail?.requeststatus === "Done" && curReqDetId != null) ? (
+      ) : (requestDetail?.requeststatus === "Done" && curReqDetId) ? (
         <DriverRequestDetail
           requestDetail={requestDetail}
           changeButtonTitle={changeButtonTitle}

@@ -642,6 +642,7 @@ const EmergencyRescueMapScreen = () => {
           }
         );
       }
+      setRequestDetailId(null);
     } catch (error) {
       console.error("Error cancelling request:", error);
     }
@@ -739,8 +740,8 @@ const EmergencyRescueMapScreen = () => {
     );
     subscribeToRescueChannel((msg: any) => {
       if (
-        // msg?.message?.requestDetailId === requestDetailId
-        msg?.message?.senderRole === "Driver"
+        msg?.message?.requestDetailId === requestDetailId
+        && msg?.message?.senderRole === "Driver"
         && msg?.message?.reqStatus === "Accepted"
       ) {
         setAcceptedReqDetStatus(msg.message.reqStatus);
@@ -750,7 +751,7 @@ const EmergencyRescueMapScreen = () => {
       }
     });
     return () => { };
-  }, []);
+  }, [requestDetailId]);
 
   useEffect(() => {
     hereNow();
