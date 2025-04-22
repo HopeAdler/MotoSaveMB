@@ -34,7 +34,7 @@ const RepairCostPreviewSelect: React.FC<RepairSelectProps> = ({
   selectedRepair,
 }) => {
   const [selectedValue, setSelectedValue] = useState<string>(selectedRepair || "");
-
+  const [accessories, setAccessories] = useState<RepairCostPreview[]>([]);
   useEffect(() => {
     if (selectedRepair) {
       setSelectedValue(selectedRepair);
@@ -49,12 +49,24 @@ const RepairCostPreviewSelect: React.FC<RepairSelectProps> = ({
     }
   };
 
+  useEffect(() => {
+    console.log(selectedValue)
+  }, [repairOptions]);
   return (
     <Select selectedValue={selectedValue} onValueChange={handleValueChange}>
-      <SelectTrigger variant="outline" size="md">
-        <SelectInput placeholder="Chọn hạng mục sửa chữa" />
-        <SelectIcon as={ChevronDownIcon} />
+      <SelectTrigger
+        variant="outline"
+        size="md"
+        className="items-start h-auto min-h-[44px] py-2"
+      >
+        <SelectInput
+          placeholder="Chọn hạng mục sửa chữa"
+          className="whitespace-normal break-words flex-wrap h-auto"
+          multiline={true}
+        />
+        <SelectIcon as={ChevronDownIcon} className="mt-1" />
       </SelectTrigger>
+
       <SelectPortal>
         <SelectBackdrop />
         <SelectContent>

@@ -81,6 +81,7 @@ const FloodRescueMapScreen = () => {
   const { PayZaloBridge } = NativeModules;
   const userId = decodedToken(token)?.id;
   // Các state chính
+  const [focusOnMe, setFocusOnMe] = useState<boolean>(true);
   const [currentLoc, setCurrentLoc] = useState({ latitude: 0, longitude: 0, heading: 0 });
   const [originCoordinates, setOriginCoordinates] = useState({
     latitude: 0,
@@ -767,7 +768,7 @@ const FloodRescueMapScreen = () => {
           users={users}
           currentLoc={currentLoc}
           isActionSheetOpen={showActionsheet}
-          focusMode={[true, () => { }]}
+          focusMode={[focusOnMe, setFocusOnMe]}
         >
           {originCoordinates.latitude !== 0 && (
             <MapboxGL.Camera

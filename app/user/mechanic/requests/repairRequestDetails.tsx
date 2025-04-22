@@ -448,7 +448,7 @@ export default function RepairDetailsScreen() {
                     </Text>
                   </Button>
 
-                  {repairQuotes.length > 0 && (
+                  {/* {repairQuotes.length > 0 && (
                     <Button
                       onPress={handleConfirmSend}
                       disabled={isSubmitDisabled}
@@ -457,7 +457,7 @@ export default function RepairDetailsScreen() {
                     >
                       <Text className="text-white font-bold">Send Quote</Text>
                     </Button>
-                  )}
+                  )} */}
                 </Box>
               </Box>
             )}
