@@ -35,7 +35,6 @@ interface FormData {
   gender: string | undefined;
   dob: string | null;
   address: string | null;
-  licenseplate: string | null;
   avatar: string | null;
 }
 
@@ -45,7 +44,6 @@ interface UpdateProfilePayload {
   gender: string | undefined;
   dob: string | null;
   address: string | null;
-  licenseplate: string | null;
   avatar: string | null;
 }
 
@@ -79,7 +77,6 @@ export default function EditProfile() {
     gender: params.gender as string || undefined,
     dob: params.dob ? formatDateString(params.dob as string) : null,
     address: params.address as string | null,
-    licenseplate: params.licenseplate as string | null,
     avatar: params.avatar as string | null,
   }));
 
@@ -108,7 +105,6 @@ export default function EditProfile() {
         fullname: () => updates.fullname !== params.fullname,
         dob: () => updates.dob !== (params.dob ? formatDateString(params.dob as string) : null),
         address: () => updates.address !== params.address,
-        licenseplate: () => updates.licenseplate !== params.licenseplate,
         avatar: () => updates.avatar !== params.avatar
       };
 
@@ -165,19 +161,37 @@ export default function EditProfile() {
     }
   };
 
+  const isValidEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  }
+
   // Modify handleSubmit to validate first
   const handleSubmit = async () => {
     try {
       const errors = [];
       if (!form.fullname.trim()) {
         errors.push("Full name is required");
+      } else if (form.fullname.trim().length > 50) {
+        errors.push("Full name must not be longer than 50 characters");
       }
       if (form.dob && !isValidDate(form.dob)) {
         errors.push("Invalid date format. Use YYYY-MM-DD");
       }
+      if (form.email) {
+        if (!isValidEmail(form.email)) {
+          errors.push("Invalid email format");
+        } else if (form.email.trim().length > 50) {
+          errors.push("Email must not be longer than 50 characters");
+        }
+      }
+      if (form.address && form.address.trim().length > 100) {
+        errors.push("Address must not be longer than 100 characters");
+      }
+
 
       if (errors.length > 0) {
-        Alert.alert("Validation Error", errors.join("\n"));
+        Alert.alert("Error", errors.join("\n"));
         return;
       }
 
@@ -208,7 +222,6 @@ export default function EditProfile() {
         gender: form.gender?.trim() || undefined,
         dob: form.dob?.trim() || null,
         address: form.address?.trim() || null,
-        licenseplate: form.licenseplate?.trim() || null,
         avatar: avatarUrl || null,
       };
 
@@ -239,7 +252,6 @@ export default function EditProfile() {
           gender: form.gender,
           dob: form.dob,
           address: form.address,
-          licenseplate: form.licenseplate,
           avatar: avatarUrl,
         };
         router.setParams(params);
@@ -445,20 +457,6 @@ export default function EditProfile() {
                     onChangeText={(text: string) => updateForm({ address: text || null })}
                     className="h-12 px-3 text-base"
                     placeholder="Enter your address (optional)"
-                  />
-                </Input>
-              </Box>
-
-              <Box>
-                <Text className="text-sm font-medium text-[#1a3148] mb-1.5">
-                  License Plate
-                </Text>
-                <Input className="bg-[#f8fafc] rounded-xl border-0 shadow-sm">
-                  <InputField
-                    value={form.licenseplate || ''}
-                    onChangeText={(text: string) => updateForm({ licenseplate: text || null })}
-                    className="h-12 px-3 text-base"
-                    placeholder="Enter license plate number (optional)"
                   />
                 </Input>
               </Box>
