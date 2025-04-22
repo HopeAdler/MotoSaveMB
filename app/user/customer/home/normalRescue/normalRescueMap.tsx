@@ -12,11 +12,10 @@ import { getDistance } from "geolib";
 import React, { useContext, useEffect, useRef, useState } from "react";
 import { Alert, NativeEventEmitter, NativeModules } from "react-native";
 // Các import liên quan đến PubNub và Payment
-import { getCurrentLocation, requestLocationPermission, watchLocation } from "@/app/services/locationService";
+import { useSmoothedLocation } from "@/app/hooks/useUpdateLocation";
 import { usePubNubService } from "@/app/services/pubnubService"; // ✅ Use the custom hook
 import { PayZaloEventData, processPayment, refundTransaction } from "@/app/utils/payment";
 import { decodedToken } from "@/app/utils/utils";
-import { getHeadingAsync } from "expo-location";
 import { DestinationMarker, OriginMarker } from "../../../../../components/custom/CustomMapMarker";
 import { ActionSheetToggle, BackButton, SearchInput, SearchResults } from "../../../../../components/custom/MapUIComponents";
 import MapViewComponent from "../../../../../components/custom/MapViewComponent";
@@ -29,14 +28,30 @@ const MAX_RADIUS = 20000;    // 15 km
 const MAX_WARN_PICKUP_DISTANCE = 2000;       // 2 km cho điểm đón
 const MAX_WARN_DESTINATION_DISTANCE = 50000;   // 50 km cho điểm đến
 const RescueMapScreen = () => {
-  const { publishLocation, publishRescueRequest, subscribeToChannel, subscribeToRescueChannel, hereNow, } = usePubNubService();
+  const { publishRescueRequest, subscribeToChannel, subscribeToRescueChannel, hereNow, } = usePubNubService();
   const { user, token } = useContext(AuthContext);
   const { PayZaloBridge } = NativeModules;
   const userId = decodedToken(token)?.id;
   // Các state chính
   const [focusOnMe, setFocusOnMe] = useState<boolean>(true);
-  const [currentLoc, setCurrentLoc] = useState({ latitude: 0, longitude: 0, heading: 0 });
-  const [originCoordinates, setOriginCoordinates] = useState({ latitude: 0, longitude: 0 });
+  const currentLoc = useSmoothedLocation();
+
+  const [originCoordinates, setOriginCoordinates] = useState({
+    latitude: 0,
+    longitude: 0
+  });
+
+  useEffect(() => {
+    // if origin is still at the default, and currentLoc is now non-zero, set it:
+    if (
+      originCoordinates.latitude === 0 &&
+      originCoordinates.longitude === 0 &&
+      currentLoc.latitude !== 0 &&
+      currentLoc.longitude !== 0
+    ) {
+      setOriginCoordinates(currentLoc);
+    }
+  }, [currentLoc, originCoordinates]);
   const [destinationCoordinates, setDestinationCoordinates] = useState({ latitude: 0, longitude: 0 });
   const [originQuery, setOriginQuery] = useState("");
   const [destinationQuery, setDestinationQuery] = useState("");
@@ -591,46 +606,6 @@ const RescueMapScreen = () => {
     }
   };
   // --- PubNub Integration ---
-
-  const updateLocation = async (locationSubscription: any) => {
-    if (await requestLocationPermission() && userId) {
-      const location = await getCurrentLocation();
-      const bearing = await getHeadingAsync();
-      // console.log(bearing);
-      if (!location?.coords) return;
-
-      setCurrentLoc({
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-        heading: bearing.trueHeading,
-      });
-
-      setOriginCoordinates((prev) => {
-        if (prev.latitude === 0 && prev.longitude === 0) {
-          console.log("Origin reset", location.coords);
-          return location.coords;
-        }
-        return prev;
-      });
-
-      publishLocation(userId, user, location.coords.latitude, location.coords.longitude, currentLoc.heading);
-
-      locationSubscription = await watchLocation((position: any) => {
-        setCurrentLoc(position.coords);
-        publishLocation(userId, user, position.coords.latitude, position.coords.longitude, currentLoc.heading);
-      });
-    }
-  };
-
-  useEffect(() => {
-    let locationSubscription: any;
-    updateLocation(locationSubscription);
-    const intervalId = setInterval(updateLocation, 10000);
-    return () => {
-      clearInterval(intervalId);
-      if (locationSubscription) locationSubscription.remove();
-    };
-  }, []);
 
   useEffect(() => {
     subscribeToChannel(
