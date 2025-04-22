@@ -88,6 +88,9 @@ export interface RepairQuote {
   requestdetailid: string;
 }
 
+// export interface Accessory{
+
+// }
 const formFields = {
   registerForm,
   loginForm,
