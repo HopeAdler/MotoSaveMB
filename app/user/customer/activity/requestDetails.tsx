@@ -119,11 +119,11 @@ export default function RequestDetailsScreen() {
     }
   }, [requestdetailid, token]);
 
-  const handleCallDriver = useCallback(() => {
-    if (requestDetail?.driverphone) {
-      Linking.openURL(`tel:${requestDetail.driverphone}`);
-    }
-  }, [requestDetail?.driverphone]);
+  // const handleCallDriver = useCallback(() => {
+  //   if (requestDetail?.driverphone) {
+  //     Linking.openURL(`tel:${requestDetail.driverphone}`);
+  //   }
+  // }, [requestDetail?.driverphone]);
 
   const handleCall = useCallback(() => {
     if (requestDetail?.driverphone) {
@@ -183,6 +183,7 @@ export default function RequestDetailsScreen() {
   }
 
   const statusColorClass = getStatusColor(requestDetail.requeststatus);
+  const isRequestDone = requestDetail.requeststatus === "Done";
 
   return (
     <Box className="flex-1 bg-[#f1f5f9]">
@@ -245,7 +246,8 @@ export default function RequestDetailsScreen() {
                   <Box className="flex-row space-x-3 mt-2 pt-4 border-t border-gray-100">
                     <Pressable
                       onPress={handleCall}
-                      className="flex-1 flex-row items-center justify-center bg-[#1a3148]/5 p-3 rounded-xl active:opacity-80"
+                      className={`flex-1 flex-row items-center justify-center bg-[#1a3148]/5 p-3 rounded-xl active:opacity-80 ${isRequestDone ? 'opacity-50' : ''}`}
+                      disabled={isRequestDone}
                     >
                       <Phone size={20} color="#1a3148" />
                       <Text className="ml-2 text-[#1a3148] font-medium">
@@ -255,7 +257,8 @@ export default function RequestDetailsScreen() {
 
                     <Pressable
                       onPress={handleChat}
-                      className="flex-1 flex-row items-center justify-center bg-[#fab753]/10 p-3 rounded-xl active:opacity-80"
+                      className={`flex-1 flex-row items-center justify-center bg-[#fab753]/10 p-3 rounded-xl active:opacity-80 ${isRequestDone ? 'opacity-50' : ''}`}
+                      disabled={isRequestDone}
                     >
                       <MessageSquare size={20} color="#fab753" />
                       <Text className="ml-2 text-[#fab753] font-medium">
