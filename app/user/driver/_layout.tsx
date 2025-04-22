@@ -234,9 +234,11 @@ export default function DriverLayout() {
         <Tabs.Screen
           name="performance"
           options={{
+            href: null,
             headerShown: false,
             tabBarLabel: "Thống kê",
-            tabBarIcon: (tabInfo) => <ChartArea size={24} color={tabInfo.color} />,
+            tabBarIcon: (tabInfo) => <ChartArea size={24} color={tabInfo.color}
+             />,
           }}
         />
         <Tabs.Screen

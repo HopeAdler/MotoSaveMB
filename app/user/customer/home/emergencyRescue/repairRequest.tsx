@@ -679,18 +679,20 @@ const RepairRequestScreen = () => {
         {/* Phone and chat button */}
         {requestDetail?.requeststatus !== "Pending" && (
           <>
-            <Pressable
-              onPress={handleCall}
-              className="absolute top-20 right-5 w-10 h-10 bg-blue-500 rounded-full items-center justify-center shadow-sm"
-            >
-              <Phone size={18} color="white" />
-            </Pressable>
-            <Pressable
-              onPress={toChatScreen}
-              className="absolute top-40 right-5 w-10 h-10 bg-blue-500 rounded-full items-center justify-center shadow-sm"
-            >
-              <MessageSquare size={18} color="white" />
-            </Pressable>
+            <Box className="absolute right-5 top-20 flex-col space-y-2 gap-2">
+              <Pressable
+                onPress={handleCall}
+                className="w-10 h-10 bg-blue-500 rounded-full items-center justify-center shadow-sm"
+              >
+                <Phone size={18} color="white" />
+              </Pressable>
+              <Pressable
+                onPress={toChatScreen}
+                className="w-10 h-10 bg-blue-500 rounded-full items-center justify-center shadow-sm"
+              >
+                <MessageSquare size={18} color="white" />
+              </Pressable>
+            </Box>
           </>
         )}
         {/* Cancellation Actionsheet */}
