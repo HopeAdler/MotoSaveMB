@@ -145,14 +145,14 @@ const CreateVehicleModal: React.FC<CreateVehicleModalProps> = ({
         <ModalBody>
           <FormControl isInvalid={false} isRequired>
             <FormControlLabel>
-              <FormControlLabelText>Chọn thương hiệu xe</FormControlLabelText>
+              <FormControlLabelText size="lg">Chọn thương hiệu xe</FormControlLabelText>
             </FormControlLabel>
             <Select
               selectedValue={selectedBrand}
               onValueChange={(value) => setSelectedBrand(value)}
             >
-              <SelectTrigger className="border border-gray-200 rounded-xl p-3 flex-row items-center justify-between bg-gray-50">
-                <SelectInput placeholder="Chọn thương hiệu" />
+              <SelectTrigger className="border border-gray-200 rounded-xl p-3 flex-row items-center justify-between bg-gray-50" size="xl">
+                <SelectInput placeholder="Chọn thương hiệu"/>
                 <SelectIcon as={ChevronDownIcon} />
               </SelectTrigger>
               <SelectPortal>
@@ -171,9 +171,9 @@ const CreateVehicleModal: React.FC<CreateVehicleModalProps> = ({
           </FormControl>
           <FormControl isInvalid={isInvalid} isRequired className="mt-4">
             <FormControlLabel>
-              <FormControlLabelText>Biển số xe</FormControlLabelText>
+              <FormControlLabelText size="lg">Biển số xe</FormControlLabelText>
             </FormControlLabel>
-            <Input variant="outline" size="md">
+            <Input variant="outline" size="xl">
               <InputField
                 placeholder="Nhập biển số xe"
                 value={licensePlate}
