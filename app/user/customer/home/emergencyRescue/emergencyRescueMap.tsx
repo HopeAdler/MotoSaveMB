@@ -68,6 +68,7 @@ const EmergencyRescueMapScreen = () => {
   const userId = decodedToken(token)?.id;
 
   // Các state chính
+  const [focusOnMe, setFocusOnMe] = useState<boolean>(true);
   const [currentLoc, setCurrentLoc] = useState({ latitude: 0, longitude: 0 });
   const [originCoordinates, setOriginCoordinates] = useState({
     latitude: 0,
@@ -804,7 +805,7 @@ const EmergencyRescueMapScreen = () => {
           users={users}
           currentLoc={currentLoc}
           isActionSheetOpen={showActionsheet}
-          focusMode={[true, () => { }]}
+          focusMode={[focusOnMe, setFocusOnMe]}
         >
           {originCoordinates.latitude !== 0 && (
             <MapboxGL.Camera
@@ -893,7 +894,7 @@ const EmergencyRescueMapScreen = () => {
       </Box>
 
       {/* Action Sheets */}
-      {showActionsheet && directionsInfo && !acceptedReqDetId &&  (
+      {showActionsheet && directionsInfo && !acceptedReqDetId && (
         <TripDetailsActionSheet
           isOpen={showActionsheet}
           onClose={() => setShowActionsheet(false)}
