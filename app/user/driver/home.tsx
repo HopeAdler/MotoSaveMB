@@ -226,8 +226,7 @@ export default function DHomeScreen() {
               )}
             </Box>
 
-            {/* Quick Actions Section */}
-            <Box className="bg-white rounded-2xl p-4 mt-4 shadow-sm">
+            {/* <Box className="bg-white rounded-2xl p-4 mt-4 shadow-sm">
               <Text className="text-lg font-bold text-gray-800 mb-4">
                 Thao tác nhanh
               </Text>
@@ -243,7 +242,7 @@ export default function DHomeScreen() {
                   color="#10b981"
                 />
               </View>
-            </Box>
+            </Box> */}
 
             {/* <Box className="bg-white rounded-2xl p-4 mt-4 mb-6 shadow-sm">
               <Text className="text-lg font-bold text-gray-800 mb-4">
