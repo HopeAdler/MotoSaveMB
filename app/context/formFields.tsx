@@ -82,15 +82,37 @@ export interface RepairRequestDetail {
 
 export interface RepairQuote {
   id: string;
+  requestdetailid: string;
+  repairpackagename: string;
   repairname: string;
   detail: string;
+  partcategoryname: string;
+  accessoryname: string;
   cost: number;
-  requestdetailid: string;
+  wagerate: number;
+  wage: number;
+  total: number;
 }
 
-// export interface Accessory{
+export interface RepairCostPreview {
+  id: string;
+  name: string;
+  description: string;
+  min: number;
+  max: number;
+  wage: number;
+  repairpackageid: number;
+  rate: number;
+  partcategoryid: number;
+}
+export interface Accessory {
+  id: number,
+  partcategoryname: string;
+  brandname: string,
+  accessoryname: string;
+  cost: number;
+}
 
-// }
 const formFields = {
   registerForm,
   loginForm,

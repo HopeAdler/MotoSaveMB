@@ -60,16 +60,6 @@ export const usePubNubService = () => {
       message: (msg: any) => {
         if (msg.channel === "global") {
           messageCallback(msg);
-          pubnub.objects.setUUIDMetadata({
-            data: {
-              name: user.username,
-              email: user.email,
-              custom: {
-                fullname: user.fullname,
-                role: user.role,
-              },
-            },
-          });
         }
       },
       presence: (event: any) => {

@@ -502,6 +502,16 @@ export async function getRepairCostPreview() {
   }
 }
 
+export async function getAcsrByBrandAndParCat(parCatId: number, brandId: number) {
+  try {
+    const response = await axios.get(`
+      https://motor-save-be.vercel.app/api/v1/accessories/parcatandbrand?parCatId=${parCatId}&brandId=${brandId}     `);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching accessories:", error);
+  }
+}
+
 export async function getUnpaidPaymentsByRequestId(requestId: string, token: string) {
   try {
     const response = await axios.get(`https://motor-save-be.vercel.app/api/v1/transactions/payment/unpaid/request/${requestId}`,

@@ -1,4 +1,5 @@
 import AuthContext from "@/app/context/AuthContext";
+import { Accessory, RepairCostPreview } from "@/app/context/formFields";
 import LoadingScreen from "@/app/loading/loading";
 import {
   createRepairQuote,
@@ -12,7 +13,7 @@ import { usePubNubService } from "@/app/services/pubnubService";
 import { decodedToken, formatMoney, handlePhoneCall } from "@/app/utils/utils";
 import { GoBackButton } from "@/components/custom/GoBackButton";
 import { RepairStatusBadge } from "@/components/custom/MechanicStatusBadge";
-import PriceInput from "@/components/custom/PriceInput";
+// import PriceInput from "@/components/custom/PriceInput";
 import RepairCostPreviewSelect from "@/components/custom/RepairCostPreviewSelect";
 import { CustomerInfo } from "@/components/custom/RepairCustomerInfo";
 import { VehicleInfoBox } from "@/components/custom/VehicleInfoBox";
@@ -44,32 +45,28 @@ interface RepairRequestDetail {
   customerphone: string;
   customeravatar: string;
   vehicleid: string;
+  brandid: number;
+  brandname: string;
   licenseplate: string;
   vehiclephoto: string;
   vehiclecondition: string;
   paymentmethod: string;
   paymentstatus: string;
 }
-interface RepairCostPreview {
-  id: string;
-  name: string;
-  description: string;
-  min: number;
-  max: number;
-}
 
 interface RepairQuote {
   id?: string;
   index: number;
+  requestdetailid: string;
   repairname?: string;
   detail: string;
   cost: number;
-  requestdetailid: string;
   repaircostpreviewid: number;
+  accessoryid?: number;
+  wage: number;
+  total: number;
   createddate?: string;
   updateddate?: string;
-  min?: number;
-  max?: number;
 }
 
 const translatePaymentMethod = (method: string | undefined): string => {
@@ -101,6 +98,8 @@ export default function RepairDetailsScreen() {
       cost: 0,
       requestdetailid: requestDetailId,
       repaircostpreviewid: 0,
+      wage: 0,
+      total: 0,
     },
   ]);
   const [isNew, setIsNew] = useState<boolean>(true);
@@ -170,6 +169,8 @@ export default function RepairDetailsScreen() {
           cost: 0,
           requestdetailid: requestDetailId,
           repaircostpreviewid: 0,
+          wage: 0,
+          total: 0,
         },
       ];
     });
@@ -182,20 +183,24 @@ export default function RepairDetailsScreen() {
   const isAddDisabled = repairQuotes.some(
     (item) => item.cost === 0 || !item.repairname
   );
-  const isSubmitDisabled = repairQuotes.some(
-    (item) =>
-      (item.min !== undefined &&
-        item.max !== undefined &&
-        (item.cost < item.min || item.cost > item.max)) ||
-      !item.repairname
-  );
+  // const isSubmitDisabled = repairQuotes.some(
+  //   (item) =>
+  //     (item.min !== undefined &&
+  //       item.max !== undefined &&
+  //       (item.cost < item.min || item.cost > item.max)) ||
+  //     !item.repairname
+  // );
 
+  // add the extra parameters here too
   const handleRepairSelection = (
     index: number,
-    selectedRepair: RepairCostPreview
+    selectedRepair: RepairCostPreview,
+    accessory?: Accessory,
+    wage?: number,
+    total?: number
   ) => {
-    setRepairQuotes((prev) =>
-      prev.map((item) =>
+    setRepairQuotes(prev =>
+      prev.map(item =>
         item.index === index
           ? {
             ...item,
@@ -203,12 +208,19 @@ export default function RepairDetailsScreen() {
             repaircostpreviewid: parseInt(selectedRepair.id),
             min: selectedRepair.min,
             max: selectedRepair.max,
-            cost: selectedRepair.min
+            cost: selectedRepair.min,
+            accessoryid: accessory?.id,
+            wage: wage ?? selectedRepair.wage,
+            total: total ?? selectedRepair.wage,
           }
           : item
       )
     );
   };
+
+  useEffect(() => {
+    console.log(repairQuotes)
+  }, [repairQuotes])
 
   const handlePriceChange = useCallback(
     (index: number, costStr: string) => {
@@ -223,26 +235,26 @@ export default function RepairDetailsScreen() {
   );
 
   // When the input loses focus, round the value and validate.
-  const handlePriceBlur = useCallback((index: number) => {
-    setRepairQuotes((prev) =>
-      prev.map((item) => {
-        if (item.index === index) {
-          // Round up to the next 1000 (e.g., 19500 or 19100 become 20000)
-          const roundedCost = Math.ceil(item.cost / 1000) * 1000;
-          return {
-            ...item,
-            cost: roundedCost,
-            isValid:
-              item.min !== undefined &&
-              item.max !== undefined &&
-              roundedCost >= item.min &&
-              roundedCost <= item.max,
-          };
-        }
-        return item;
-      })
-    );
-  }, []);
+  // const handlePriceBlur = useCallback((index: number) => {
+  //   setRepairQuotes((prev) =>
+  //     prev.map((item) => {
+  //       if (item.index === index) {
+  //         // Round up to the next 1000 (e.g., 19500 or 19100 become 20000)
+  //         const roundedCost = Math.ceil(item.cost / 1000) * 1000;
+  //         return {
+  //           ...item,
+  //           cost: roundedCost,
+  //           isValid:
+  //             item.min !== undefined &&
+  //             item.max !== undefined &&
+  //             roundedCost >= item.min &&
+  //             roundedCost <= item.max,
+  //         };
+  //       }
+  //       return item;
+  //     })
+  //   );
+  // }, []);
 
 
   const handleConfirmSend = () => {
@@ -388,6 +400,7 @@ export default function RepairDetailsScreen() {
                   <Box className="mb-3">
                     {isNew ? (
                       <RepairCostPreviewSelect
+                        brandId={repairRequestDetail?.brandid}
                         repairOptions={repairCostPreviews.filter(
                           (repair) =>
                             !repairQuotes.some(
@@ -395,8 +408,19 @@ export default function RepairDetailsScreen() {
                             )
                         )}
                         selectedRepair={item.detail}
-                        onSelectRepair={(repair) =>
-                          handleRepairSelection(item.index, repair)
+                        onSelectRepair={(
+                          repair: RepairCostPreview,
+                          accessory?: Accessory,
+                          wage?: number,
+                          total?: number
+                        ) =>
+                          handleRepairSelection(
+                            item.index,
+                            repair,
+                            accessory,
+                            wage,
+                            total
+                          )
                         }
                       />
                     ) : (
@@ -408,12 +432,12 @@ export default function RepairDetailsScreen() {
 
                   {isNew ? (
                     <Box className="flex-row items-center">
-                      <PriceInput
+                      {/* <PriceInput
                         key={item.index}
                         item={item}
                         onPriceChange={handlePriceChange}
                         onBlur={handlePriceBlur}
-                      />
+                      /> */}
                       {repairQuotes.length > 1 && (
                         <Button
                           className="bg-red-500 h-12 w-12 rounded-xl items-center justify-center"
