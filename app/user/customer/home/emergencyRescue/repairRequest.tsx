@@ -40,7 +40,7 @@ import {
   getAutocomplete,
   getDirections,
 } from "@/app/services/goongAPI";
-import { decodedToken, handlePhoneCall } from "@/app/utils/utils";
+import { decodedToken, formatMoney, handlePhoneCall } from "@/app/utils/utils";
 import { PayZaloEventData, processPayment } from "@/app/utils/payment";
 import {
   acceptRepairQuote,
@@ -452,20 +452,18 @@ const RepairRequestScreen = () => {
             <Box key={step.status} className="items-center flex-1">
               <Box className="h-8 flex items-center justify-center relative z-10">
                 <Box
-                  className={`w-8 h-8 rounded-full ${
-                    index <= currentStepIndex ? getStatusColor() : "bg-gray-200"
-                  } items-center justify-center`}
+                  className={`w-8 h-8 rounded-full ${index <= currentStepIndex ? getStatusColor() : "bg-gray-200"
+                    } items-center justify-center`}
                 >
                   <CheckCircle2 size={16} color="white" />
                 </Box>
               </Box>
               <Box className="h-12 justify-start pt-2">
                 <Text
-                  className={`text-xs text-center px-1 ${
-                    index <= currentStepIndex
-                      ? "text-gray-900"
-                      : "text-gray-500"
-                  }`}
+                  className={`text-xs text-center px-1 ${index <= currentStepIndex
+                    ? "text-gray-900"
+                    : "text-gray-500"
+                    }`}
                   numberOfLines={2}
                 >
                   {step.title}
@@ -569,14 +567,29 @@ const RepairRequestScreen = () => {
                 renderItem={({ item }) => (
                   <Box className="flex-row justify-between items-center py-3 border-b border-gray-500">
                     <Box>
-                      <Text className="text-base font-medium text-gray-900">
-                        {item.repairname}
+                      <Text className="text-base font-semibold text-[#1a3148]">
+                        {item.repairname || "No repair name found"}
                       </Text>
-                      {/* <Text className="text-sm text-gray-500">{item.detail}</Text> */}
+                      {item.accessoryname && (
+                        <Text className="text-base font-semibold text-[#1a3148]">
+                          {item.accessoryname || "No repair name found"}
+                        </Text>
+                      )}
                     </Box>
-                    <Text className="text-base font-semibold text-gray-900">
-                      {item.cost.toLocaleString()} VND
-                    </Text>
+                    <Box className="flex-row flex-wrap gap-2 mt-4">
+                      <Text className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
+                        Cost: {formatMoney(item.cost)}
+                      </Text>
+                      <Text className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
+                        Rate: {item.wagerate}x
+                      </Text>
+                      <Text className="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full">
+                        Wage: {formatMoney(item.wage)}
+                      </Text>
+                      <Text className="bg-orange-100 text-orange-800 text-sm font-medium px-3 py-1 rounded-full">
+                        Total: {formatMoney(item.total)}
+                      </Text>
+                    </Box>
                   </Box>
                 )}
               />

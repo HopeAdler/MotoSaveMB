@@ -60,6 +60,9 @@ export interface RepairQuote {
   cost: number;
   requestdetailid: string,
   repaircostpreviewid: number,
+  accessoryid: number | null, 
+  wage: number, 
+  total: number,
 }
 
 // Hàm fetch danh sách station

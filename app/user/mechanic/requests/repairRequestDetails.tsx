@@ -20,7 +20,7 @@ import { VehicleInfoBox } from "@/components/custom/VehicleInfoBox";
 import { Box } from "@/components/ui/box";
 import { Button } from "@/components/ui/button";
 import { router, useLocalSearchParams } from "expo-router";
-import { CreditCard } from "lucide-react-native";
+import { BookX, CreditCard } from "lucide-react-native";
 import React, { useCallback, useContext, useEffect, useState } from "react";
 import {
   Alert,
@@ -28,7 +28,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Text
+  Text,
+  View
 } from "react-native";
 
 interface RepairRequestDetail {
@@ -59,10 +60,12 @@ interface RepairQuote {
   index: number;
   requestdetailid: string;
   repairname?: string;
+  wagerate?: number;
+  accessoryname?: string;
   detail: string;
   cost: number;
   repaircostpreviewid: number;
-  accessoryid?: number;
+  accessoryid: number | null;
   wage: number;
   total: number;
   createddate?: string;
@@ -98,6 +101,7 @@ export default function RepairDetailsScreen() {
       cost: 0,
       requestdetailid: requestDetailId,
       repaircostpreviewid: 0,
+      accessoryid: null,
       wage: 0,
       total: 0,
     },
@@ -169,6 +173,7 @@ export default function RepairDetailsScreen() {
           cost: 0,
           requestdetailid: requestDetailId,
           repaircostpreviewid: 0,
+          accessoryid: null,
           wage: 0,
           total: 0,
         },
@@ -181,15 +186,13 @@ export default function RepairDetailsScreen() {
   };
 
   const isAddDisabled = repairQuotes.some(
-    (item) => item.cost === 0 || !item.repairname
+    (item) => item.total === 0 || !item.repairname
   );
-  // const isSubmitDisabled = repairQuotes.some(
-  //   (item) =>
-  //     (item.min !== undefined &&
-  //       item.max !== undefined &&
-  //       (item.cost < item.min || item.cost > item.max)) ||
-  //     !item.repairname
-  // );
+  const isSubmitDisabled = repairQuotes.some(
+    (item) =>
+    (item.total === 0 ||
+      !item.repairname)
+  );
 
   // add the extra parameters here too
   const handleRepairSelection = (
@@ -206,10 +209,10 @@ export default function RepairDetailsScreen() {
             ...item,
             repairname: selectedRepair.name,
             repaircostpreviewid: parseInt(selectedRepair.id),
-            min: selectedRepair.min,
-            max: selectedRepair.max,
-            cost: selectedRepair.min,
-            accessoryid: accessory?.id,
+            // min: selectedRepair.min,
+            // max: selectedRepair.max,
+            cost: accessory?.cost || 0,
+            accessoryid: accessory?.id || null,
             wage: wage ?? selectedRepair.wage,
             total: total ?? selectedRepair.wage,
           }
@@ -258,16 +261,16 @@ export default function RepairDetailsScreen() {
 
 
   const handleConfirmSend = () => {
-    Alert.alert("Xác nhận gửi báo giá", "Bạn có chắc chắn muốn gửi báo giá?", [
-      { text: "Hủy", style: "cancel" },
-      { text: "Xác nhận", onPress: handleSendRepairQuote },
+    Alert.alert("Confirm sending repair quote", "Are you sure to send this quote to customer?", [
+      { text: "No", style: "cancel" },
+      { text: "Yes", onPress: handleSendRepairQuote },
     ]);
   };
 
   const sendRepairQuote = async (repairQuote: RepairQuote) => {
-    const { detail, cost, requestdetailid, repaircostpreviewid } = repairQuote;
-    const payload = { detail, cost, requestdetailid, repaircostpreviewid };
-
+    const { detail, cost, requestdetailid, repaircostpreviewid, accessoryid, wage, total } = repairQuote;
+    const payload = { detail, cost, requestdetailid, repaircostpreviewid, accessoryid, wage, total };
+    console.log(payload)
     // Remove try-catch to let errors propagate
     const results = await createRepairQuote(payload, token);
     console.log(results);
@@ -365,7 +368,7 @@ export default function RepairDetailsScreen() {
           </Box>
         </Box>
 
-        <Box className="flex-1 px-5 -mt-6">
+        <Box className="flex-1 px-2">
           <Box className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
             <CustomerInfo
               repairRequestDetail={repairRequestDetail}
@@ -424,9 +427,16 @@ export default function RepairDetailsScreen() {
                         }
                       />
                     ) : (
-                      <Text className="text-base font-semibold text-[#1a3148]">
-                        {item.repairname || "No repair name found"}
-                      </Text>
+                      <Box>
+                        <Text className="text-base font-semibold text-[#1a3148]">
+                          {item.repairname || "No repair name found"}
+                        </Text>
+                        {item.accessoryname && (
+                          <Text className="text-base font-semibold text-[#1a3148]">
+                            {item.accessoryname || "No repair name found"}
+                          </Text>
+                        )}
+                      </Box>
                     )}
                   </Box>
 
@@ -450,13 +460,33 @@ export default function RepairDetailsScreen() {
                       )}
                     </Box>
                   ) : (
-                    <Text className="text-xl font-bold text-[#fab753]">
-                      {formatMoney(item.cost)}
-                    </Text>
+                    <Box className="flex-row flex-wrap gap-2 mt-4">
+                      <Text className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
+                        Cost: {formatMoney(item.cost)}
+                      </Text>
+                      <Text className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
+                        Rate: {item.wagerate}x
+                      </Text>
+                      <Text className="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full">
+                        Wage: {formatMoney(item.wage)}
+                      </Text>
+                      <Text className="bg-orange-100 text-orange-800 text-sm font-medium px-3 py-1 rounded-full">
+                        Total: {formatMoney(item.total)}
+                      </Text>
+                    </Box>
                   )}
                 </Box>
               )}
             />
+            <Box className="flex-row items-center mt-5">
+              <CreditCard size={18} color="#1a3148" />
+              <Text className="text-xs uppercase tracking-wider text-gray-500 ml-2">
+                Total Amount
+              </Text>
+              <Text className="text-xs uppercase tracking-wider text-gray-500 ml-2">
+                {formatMoney(repairQuotes.reduce((sum, r) => sum + r.total, 0))}
+              </Text>
+            </Box>
 
             {isNew && (
               <Box className="mt-6">
@@ -472,7 +502,7 @@ export default function RepairDetailsScreen() {
                     </Text>
                   </Button>
 
-                  {/* {repairQuotes.length > 0 && (
+                  {repairQuotes.length > 0 && (
                     <Button
                       onPress={handleConfirmSend}
                       disabled={isSubmitDisabled}
@@ -481,7 +511,7 @@ export default function RepairDetailsScreen() {
                     >
                       <Text className="text-white font-bold">Send Quote</Text>
                     </Button>
-                  )} */}
+                  )}
                 </Box>
               </Box>
             )}
