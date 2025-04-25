@@ -1,14 +1,11 @@
 import { AuthContext } from "@/app/context/AuthContext";
 import { useCameraZoom } from "@/app/hooks/useCameraZoom";
 import {
-  calculateFare,
   createFloodRescueRequest,
   createPayment,
-  createRescueRequest,
   createTransaction,
   FloodRescueRequestPayload,
-  RescueRequestPayload,
-  updateRequestStatus,
+  updateRequestStatus
 } from "@/app/services/beAPI";
 import {
   geocodeAddress,
@@ -17,52 +14,33 @@ import {
   getReverseGeocode,
 } from "@/app/services/goongAPI";
 import { decodePolyline } from "@/app/utils/utils";
+import TrackingActionSheet from "@/components/custom/TrackingActionSheet";
+import TripDetailsActionSheet from "@/components/custom/TripDetailsActionSheet";
 import { Box } from "@/components/ui/box";
-import { Input, InputField } from "@/components/ui/input";
-import { Pressable } from "@/components/ui/pressable";
 import MapboxGL from "@rnmapbox/maps";
 import { router } from "expo-router";
 import { getDistance } from "geolib";
-import {
-  ChevronLeft,
-  ChevronUp,
-  CircleChevronDown,
-  LocateFixed,
-} from "lucide-react-native";
 import React, { useContext, useEffect, useRef, useState } from "react";
 import {
   Alert,
-  FlatList,
-  Linking,
   NativeEventEmitter,
-  NativeModules,
-  Text,
-  View,
+  NativeModules
 } from "react-native";
-import TrackingActionSheet from "@/components/custom/TrackingActionSheet";
-import TripDetailsActionSheet from "@/components/custom/TripDetailsActionSheet";
 // Các import liên quan đến PubNub và Payment
-import {
-  getCurrentLocation,
-  requestLocationPermission,
-  watchLocation,
-} from "@/app/services/locationService";
+import { useSmoothedLocation } from "@/app/hooks/useUpdateLocation";
+import { usePubNubService } from "@/app/services/pubnubService"; // ✅ Use the custom hook
 import {
   PayZaloEventData,
   processPayment,
   refundTransaction,
 } from "@/app/utils/payment";
 import { decodedToken } from "@/app/utils/utils";
+import { OriginMarker } from "../../../../../components/custom/CustomMapMarker";
+import { ActionSheetToggle, BackButton, SearchInput, SearchResults } from "../../../../../components/custom/MapUIComponents";
 import MapViewComponent from "../../../../../components/custom/MapViewComponent";
-import { usePubNubService } from "@/app/services/pubnubService"; // ✅ Use the custom hook
-import { usePubNub } from "../../../../context/PubNubContext";
+import { User } from "../../../../context/formFields";
 const { EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN } = process.env;
 MapboxGL.setAccessToken(`${EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN}`);
-import { User } from "../../../../context/formFields";
-import { GoBackButton } from "@/components/custom/GoBackButton";
-import { OriginMarker } from "../../../../../components/custom/CustomMapMarker";
-import { BackButton, SearchInput, SearchResults, ActionSheetToggle } from "../../../../../components/custom/MapUIComponents";
-import { getHeadingAsync } from "expo-location";
 const INITIAL_RADIUS = 5000; // 5 km
 const MAX_RADIUS = 20000; // 15 km
 // Các hằng số cảnh báo khoảng cách (đơn vị mét)
@@ -70,7 +48,6 @@ const MAX_WARN_PICKUP_DISTANCE = 2000; // 2 km cho điểm đón
 const MAX_WARN_DESTINATION_DISTANCE = 50000; // 50 km cho điểm đến
 const FloodRescueMapScreen = () => {
   const {
-    publishLocation,
     publishRescueRequest,
     subscribeToChannel,
     subscribeToRescueChannel,
@@ -82,11 +59,23 @@ const FloodRescueMapScreen = () => {
   const userId = decodedToken(token)?.id;
   // Các state chính
   const [focusOnMe, setFocusOnMe] = useState<boolean>(true);
-  const [currentLoc, setCurrentLoc] = useState({ latitude: 0, longitude: 0, heading: 0 });
+  const currentLoc = useSmoothedLocation();
+
   const [originCoordinates, setOriginCoordinates] = useState({
     latitude: 0,
     longitude: 0,
   });
+    useEffect(() => {
+      // if origin is still at the default, and currentLoc is now non-zero, set it:
+      if (
+        originCoordinates.latitude === 0 &&
+        originCoordinates.longitude === 0 &&
+        currentLoc.latitude !== 0 &&
+        currentLoc.longitude !== 0
+      ) {
+        setOriginCoordinates(currentLoc);
+      }
+    }, [currentLoc, originCoordinates]);
   // const [destinationCoordinates, setDestinationCoordinates] = useState({ latitude: 0, longitude: 0 });
   const [originQuery, setOriginQuery] = useState("");
   // const [destinationQuery, setDestinationQuery] = useState("");
@@ -578,57 +567,6 @@ const FloodRescueMapScreen = () => {
     }
   };
   // --- PubNub Integration ---
-
-  const updateLocation = async (locationSubscription: any) => {
-    if ((await requestLocationPermission()) && userId) {
-      const location = await getCurrentLocation();
-      const bearing = await getHeadingAsync();
-      if (!location?.coords) return;
-
-      setCurrentLoc({
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-        heading: bearing.trueHeading,
-      });
-
-      setOriginCoordinates((prev) => {
-        if (prev.latitude === 0 && prev.longitude === 0) {
-          console.log("Origin reset", location.coords);
-          return location.coords;
-        }
-        return prev;
-      });
-
-      publishLocation(
-        userId,
-        user,
-        location.coords.latitude,
-        location.coords.longitude,
-        currentLoc.heading
-      );
-
-      locationSubscription = await watchLocation((position: any) => {
-        setCurrentLoc(position.coords);
-        publishLocation(
-          userId,
-          user,
-          position.coords.latitude,
-          position.coords.longitude,
-          currentLoc.heading
-        );
-      });
-    }
-  };
-
-  useEffect(() => {
-    let locationSubscription: any;
-    updateLocation(locationSubscription);
-    const intervalId = setInterval(updateLocation, 10000);
-    return () => {
-      clearInterval(intervalId);
-      if (locationSubscription) locationSubscription.remove();
-    };
-  }, []);
 
   useEffect(() => {
     subscribeToChannel(

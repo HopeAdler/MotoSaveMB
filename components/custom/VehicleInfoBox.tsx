@@ -27,6 +27,10 @@ export const VehicleInfoBox = ({ repairRequestDetail }: any) => {
             <Text className="text-[#1a3148] font-bold text-base">
               {repairRequestDetail?.licenseplate || "N/A"}
             </Text>
+            <Text className="text-gray-500 text-sm mb-1">Brand</Text>
+            <Text className="text-[#1a3148] font-bold text-base">
+              {repairRequestDetail?.brandname || "N/A"}
+            </Text>
           </View>
         </View>
       </View>

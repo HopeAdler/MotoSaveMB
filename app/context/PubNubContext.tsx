@@ -18,7 +18,7 @@ const PubNubContext = createContext<PubNubContextType | undefined>(undefined);
 export const PubNubProvider: React.FC<PubNubProviderProps> = ({ children }) => {
   const [pubnub, setPubnub] = useState<PubNub | null>(null);
   const [chat, setChat] = useState<Chat | null>(null);
-  const { token } = useContext(AuthContext);
+  const { user, token } = useContext(AuthContext);
   const userId = decodedToken(token)?.id;
 
   useEffect(() => {
@@ -29,6 +29,17 @@ export const PubNubProvider: React.FC<PubNubProviderProps> = ({ children }) => {
           publishKey: process.env.EXPO_PUBLIC_PUBNUB_PUBLISH_KEY,
           subscribeKey: process.env.EXPO_PUBLIC_PUBNUB_SUBSCRIBE_KEY || "",
           uuid: userId,
+        });
+        pubnubInstance.objects.setUUIDMetadata({
+          data: {
+            name: user.username,
+            email: user.email,
+            profileUrl: user?.avatar,
+            custom: {
+              fullname: user.fullname,
+              role: user.role,
+            },
+          },
         });
         setPubnub(pubnubInstance);
 

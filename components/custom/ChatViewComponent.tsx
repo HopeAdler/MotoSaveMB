@@ -110,7 +110,7 @@ const ChatViewComponent: React.FC<ChatViewComponentProps> = ({
         <View className="flex-row items-center mb-1">
           {!isCurrentUser && messageUser && (
             <Image
-              source={{ uri: `${messageUser.custom?.avatar || null}` }}
+              source={{ uri: `${messageUser?.profileUrl || null}` }}
               className="w-10 h-10 rounded-full border-2 border-green-400 mr-2"
             />
           )}

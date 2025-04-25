@@ -60,6 +60,9 @@ export interface RepairQuote {
   cost: number;
   requestdetailid: string,
   repaircostpreviewid: number,
+  accessoryid: number | null, 
+  wage: number, 
+  total: number,
 }
 
 // Hàm fetch danh sách station
@@ -499,6 +502,16 @@ export async function getRepairCostPreview() {
     return response.data;
   } catch (error) {
     console.error("Error fetching repaircostpreviews:", error);
+  }
+}
+
+export async function getAcsrByBrandAndParCat(parCatId: number, brandId: number) {
+  try {
+    const response = await axios.get(`
+      https://motor-save-be.vercel.app/api/v1/accessories/parcatandbrand?parCatId=${parCatId}&brandId=${brandId}     `);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching accessories:", error);
   }
 }
 
