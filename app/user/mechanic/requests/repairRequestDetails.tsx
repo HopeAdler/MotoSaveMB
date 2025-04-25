@@ -1,4 +1,5 @@
 import AuthContext from "@/app/context/AuthContext";
+import { Accessory, RepairCostPreview } from "@/app/context/formFields";
 import LoadingScreen from "@/app/loading/loading";
 import {
   createRepairQuote,
@@ -12,14 +13,14 @@ import { usePubNubService } from "@/app/services/pubnubService";
 import { decodedToken, formatMoney, handlePhoneCall } from "@/app/utils/utils";
 import { GoBackButton } from "@/components/custom/GoBackButton";
 import { RepairStatusBadge } from "@/components/custom/MechanicStatusBadge";
-import PriceInput from "@/components/custom/PriceInput";
+// import PriceInput from "@/components/custom/PriceInput";
 import RepairCostPreviewSelect from "@/components/custom/RepairCostPreviewSelect";
 import { CustomerInfo } from "@/components/custom/RepairCustomerInfo";
 import { VehicleInfoBox } from "@/components/custom/VehicleInfoBox";
 import { Box } from "@/components/ui/box";
 import { Button } from "@/components/ui/button";
 import { router, useLocalSearchParams } from "expo-router";
-import { CreditCard } from "lucide-react-native";
+import { BookX, CreditCard } from "lucide-react-native";
 import React, { useCallback, useContext, useEffect, useState } from "react";
 import {
   Alert,
@@ -27,7 +28,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Text
+  Text,
+  View
 } from "react-native";
 
 interface RepairRequestDetail {
@@ -44,32 +46,30 @@ interface RepairRequestDetail {
   customerphone: string;
   customeravatar: string;
   vehicleid: string;
+  brandid: number;
+  brandname: string;
   licenseplate: string;
   vehiclephoto: string;
   vehiclecondition: string;
   paymentmethod: string;
   paymentstatus: string;
 }
-interface RepairCostPreview {
-  id: string;
-  name: string;
-  description: string;
-  min: number;
-  max: number;
-}
 
 interface RepairQuote {
   id?: string;
   index: number;
+  requestdetailid: string;
   repairname?: string;
+  wagerate?: number;
+  accessoryname?: string;
   detail: string;
   cost: number;
-  requestdetailid: string;
   repaircostpreviewid: number;
+  accessoryid: number | null;
+  wage: number;
+  total: number;
   createddate?: string;
   updateddate?: string;
-  min?: number;
-  max?: number;
 }
 
 const translatePaymentMethod = (method: string | undefined): string => {
@@ -101,6 +101,9 @@ export default function RepairDetailsScreen() {
       cost: 0,
       requestdetailid: requestDetailId,
       repaircostpreviewid: 0,
+      accessoryid: null,
+      wage: 0,
+      total: 0,
     },
   ]);
   const [isNew, setIsNew] = useState<boolean>(true);
@@ -170,6 +173,9 @@ export default function RepairDetailsScreen() {
           cost: 0,
           requestdetailid: requestDetailId,
           repaircostpreviewid: 0,
+          accessoryid: null,
+          wage: 0,
+          total: 0,
         },
       ];
     });
@@ -180,35 +186,44 @@ export default function RepairDetailsScreen() {
   };
 
   const isAddDisabled = repairQuotes.some(
-    (item) => item.cost === 0 || !item.repairname
+    (item) => item.total === 0 || !item.repairname
   );
   const isSubmitDisabled = repairQuotes.some(
     (item) =>
-      (item.min !== undefined &&
-        item.max !== undefined &&
-        (item.cost < item.min || item.cost > item.max)) ||
-      !item.repairname
+    (item.total === 0 ||
+      !item.repairname)
   );
 
+  // add the extra parameters here too
   const handleRepairSelection = (
     index: number,
-    selectedRepair: RepairCostPreview
+    selectedRepair: RepairCostPreview,
+    accessory?: Accessory,
+    wage?: number,
+    total?: number
   ) => {
-    setRepairQuotes((prev) =>
-      prev.map((item) =>
+    setRepairQuotes(prev =>
+      prev.map(item =>
         item.index === index
           ? {
             ...item,
             repairname: selectedRepair.name,
             repaircostpreviewid: parseInt(selectedRepair.id),
-            min: selectedRepair.min,
-            max: selectedRepair.max,
-            cost: selectedRepair.min
+            // min: selectedRepair.min,
+            // max: selectedRepair.max,
+            cost: accessory?.cost || 0,
+            accessoryid: accessory?.id || null,
+            wage: wage ?? selectedRepair.wage,
+            total: total ?? selectedRepair.wage,
           }
           : item
       )
     );
   };
+
+  useEffect(() => {
+    console.log(repairQuotes)
+  }, [repairQuotes])
 
   const handlePriceChange = useCallback(
     (index: number, costStr: string) => {
@@ -223,39 +238,39 @@ export default function RepairDetailsScreen() {
   );
 
   // When the input loses focus, round the value and validate.
-  const handlePriceBlur = useCallback((index: number) => {
-    setRepairQuotes((prev) =>
-      prev.map((item) => {
-        if (item.index === index) {
-          // Round up to the next 1000 (e.g., 19500 or 19100 become 20000)
-          const roundedCost = Math.ceil(item.cost / 1000) * 1000;
-          return {
-            ...item,
-            cost: roundedCost,
-            isValid:
-              item.min !== undefined &&
-              item.max !== undefined &&
-              roundedCost >= item.min &&
-              roundedCost <= item.max,
-          };
-        }
-        return item;
-      })
-    );
-  }, []);
+  // const handlePriceBlur = useCallback((index: number) => {
+  //   setRepairQuotes((prev) =>
+  //     prev.map((item) => {
+  //       if (item.index === index) {
+  //         // Round up to the next 1000 (e.g., 19500 or 19100 become 20000)
+  //         const roundedCost = Math.ceil(item.cost / 1000) * 1000;
+  //         return {
+  //           ...item,
+  //           cost: roundedCost,
+  //           isValid:
+  //             item.min !== undefined &&
+  //             item.max !== undefined &&
+  //             roundedCost >= item.min &&
+  //             roundedCost <= item.max,
+  //         };
+  //       }
+  //       return item;
+  //     })
+  //   );
+  // }, []);
 
 
   const handleConfirmSend = () => {
-    Alert.alert("Xác nhận gửi báo giá", "Bạn có chắc chắn muốn gửi báo giá?", [
-      { text: "Hủy", style: "cancel" },
-      { text: "Xác nhận", onPress: handleSendRepairQuote },
+    Alert.alert("Confirm sending repair quote", "Are you sure to send this quote to customer?", [
+      { text: "No", style: "cancel" },
+      { text: "Yes", onPress: handleSendRepairQuote },
     ]);
   };
 
   const sendRepairQuote = async (repairQuote: RepairQuote) => {
-    const { detail, cost, requestdetailid, repaircostpreviewid } = repairQuote;
-    const payload = { detail, cost, requestdetailid, repaircostpreviewid };
-
+    const { detail, cost, requestdetailid, repaircostpreviewid, accessoryid, wage, total } = repairQuote;
+    const payload = { detail, cost, requestdetailid, repaircostpreviewid, accessoryid, wage, total };
+    console.log(payload)
     // Remove try-catch to let errors propagate
     const results = await createRepairQuote(payload, token);
     console.log(results);
@@ -353,7 +368,7 @@ export default function RepairDetailsScreen() {
           </Box>
         </Box>
 
-        <Box className="flex-1 px-5 -mt-6">
+        <Box className="flex-1 px-2">
           <Box className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
             <CustomerInfo
               repairRequestDetail={repairRequestDetail}
@@ -388,6 +403,7 @@ export default function RepairDetailsScreen() {
                   <Box className="mb-3">
                     {isNew ? (
                       <RepairCostPreviewSelect
+                        brandId={repairRequestDetail?.brandid}
                         repairOptions={repairCostPreviews.filter(
                           (repair) =>
                             !repairQuotes.some(
@@ -395,25 +411,43 @@ export default function RepairDetailsScreen() {
                             )
                         )}
                         selectedRepair={item.detail}
-                        onSelectRepair={(repair) =>
-                          handleRepairSelection(item.index, repair)
+                        onSelectRepair={(
+                          repair: RepairCostPreview,
+                          accessory?: Accessory,
+                          wage?: number,
+                          total?: number
+                        ) =>
+                          handleRepairSelection(
+                            item.index,
+                            repair,
+                            accessory,
+                            wage,
+                            total
+                          )
                         }
                       />
                     ) : (
-                      <Text className="text-base font-semibold text-[#1a3148]">
-                        {item.repairname || "No repair name found"}
-                      </Text>
+                      <Box>
+                        <Text className="text-base font-semibold text-[#1a3148]">
+                          {item.repairname || "No repair name found"}
+                        </Text>
+                        {item.accessoryname && (
+                          <Text className="text-base font-semibold text-[#1a3148]">
+                            {item.accessoryname || "No repair name found"}
+                          </Text>
+                        )}
+                      </Box>
                     )}
                   </Box>
 
                   {isNew ? (
                     <Box className="flex-row items-center">
-                      <PriceInput
+                      {/* <PriceInput
                         key={item.index}
                         item={item}
                         onPriceChange={handlePriceChange}
                         onBlur={handlePriceBlur}
-                      />
+                      /> */}
                       {repairQuotes.length > 1 && (
                         <Button
                           className="bg-red-500 h-12 w-12 rounded-xl items-center justify-center"
@@ -426,13 +460,33 @@ export default function RepairDetailsScreen() {
                       )}
                     </Box>
                   ) : (
-                    <Text className="text-xl font-bold text-[#fab753]">
-                      {formatMoney(item.cost)}
-                    </Text>
+                    <Box className="flex-row flex-wrap gap-2 mt-4">
+                      <Text className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
+                        Cost: {formatMoney(item.cost)}
+                      </Text>
+                      <Text className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
+                        Rate: {item.wagerate}x
+                      </Text>
+                      <Text className="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full">
+                        Wage: {formatMoney(item.wage)}
+                      </Text>
+                      <Text className="bg-orange-100 text-orange-800 text-sm font-medium px-3 py-1 rounded-full">
+                        Total: {formatMoney(item.total)}
+                      </Text>
+                    </Box>
                   )}
                 </Box>
               )}
             />
+            <Box className="flex-row items-center mt-5">
+              <CreditCard size={18} color="#1a3148" />
+              <Text className="text-xs uppercase tracking-wider text-gray-500 ml-2">
+                Total Amount
+              </Text>
+              <Text className="text-xs uppercase tracking-wider text-gray-500 ml-2">
+                {formatMoney(repairQuotes.reduce((sum, r) => sum + r.total, 0))}
+              </Text>
+            </Box>
 
             {isNew && (
               <Box className="mt-6">
@@ -448,7 +502,7 @@ export default function RepairDetailsScreen() {
                     </Text>
                   </Button>
 
-                  {/* {repairQuotes.length > 0 && (
+                  {repairQuotes.length > 0 && (
                     <Button
                       onPress={handleConfirmSend}
                       disabled={isSubmitDisabled}
@@ -457,7 +511,7 @@ export default function RepairDetailsScreen() {
                     >
                       <Text className="text-white font-bold">Send Quote</Text>
                     </Button>
-                  )} */}
+                  )}
                 </Box>
               </Box>
             )}

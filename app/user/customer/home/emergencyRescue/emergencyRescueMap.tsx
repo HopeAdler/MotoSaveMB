@@ -1,5 +1,6 @@
 import { AuthContext } from "@/app/context/AuthContext";
 import { useCameraZoom } from "@/app/hooks/useCameraZoom";
+import { useSmoothedLocation } from "@/app/hooks/useUpdateLocation";
 import beAPI, {
   calculateFare,
   createEmergencyRescueRequest,
@@ -14,11 +15,6 @@ import {
   getDirections,
   getReverseGeocode,
 } from "@/app/services/goongAPI";
-import {
-  getCurrentLocation,
-  requestLocationPermission,
-  watchLocation,
-} from "@/app/services/locationService";
 import { usePubNubService } from "@/app/services/pubnubService";
 import {
   PayZaloEventData,
@@ -69,11 +65,22 @@ const EmergencyRescueMapScreen = () => {
 
   // Các state chính
   const [focusOnMe, setFocusOnMe] = useState<boolean>(true);
-  const [currentLoc, setCurrentLoc] = useState({ latitude: 0, longitude: 0 });
+  const currentLoc = useSmoothedLocation();
   const [originCoordinates, setOriginCoordinates] = useState({
     latitude: 0,
     longitude: 0,
   });
+  useEffect(() => {
+    // if origin is still at the default, and currentLoc is now non-zero, set it:
+    if (
+      originCoordinates.latitude === 0 &&
+      originCoordinates.longitude === 0 &&
+      currentLoc.latitude !== 0 &&
+      currentLoc.longitude !== 0
+    ) {
+      setOriginCoordinates(currentLoc);
+    }
+  }, [currentLoc, originCoordinates]);
   const [destinationCoordinates, setDestinationCoordinates] = useState({
     latitude: 0,
     longitude: 0,
@@ -669,54 +676,6 @@ const EmergencyRescueMapScreen = () => {
       }
     }
   };
-
-  // Cập nhật vị trí qua PubNub
-  const updateLocation = async (locationSubscription: any) => {
-    if ((await requestLocationPermission()) && userId) {
-      const location = await getCurrentLocation();
-      if (!location?.coords) return;
-      setCurrentLoc({
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-      });
-      setOriginCoordinates((prev) => {
-        if (prev.latitude === 0 && prev.longitude === 0) {
-          return location.coords;
-        }
-        return prev;
-      });
-      publishLocation(
-        userId,
-        user,
-        location.coords.latitude,
-        location.coords.longitude,
-        location.coords.heading ?? 0,
-      );
-      locationSubscription = await watchLocation((position: any) => {
-        setCurrentLoc(position.coords);
-        publishLocation(
-          userId,
-          user,
-          position.coords.latitude,
-          position.coords.longitude,
-          location.coords.heading ?? 0,
-        );
-      });
-    }
-  };
-
-  useEffect(() => {
-    let locationSubscription: any;
-    updateLocation(locationSubscription);
-    const intervalId = setInterval(
-      () => updateLocation(locationSubscription),
-      10000
-    );
-    return () => {
-      clearInterval(intervalId);
-      if (locationSubscription) locationSubscription.remove();
-    };
-  }, []);
 
   // PubNub subscriptions
   const [users, setUsers] = useState(new Map<string, User>());
