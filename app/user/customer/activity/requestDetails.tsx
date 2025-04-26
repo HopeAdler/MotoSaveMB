@@ -336,8 +336,9 @@ export default function RequestDetailsScreen() {
                         Total Price
                       </Text>
                     </Box>
+                    {/* Error ngay toLocaleString() sua lai cho gia tri default 00000VND */}
                     <Text className="text-xl font-bold text-[#1a3148]">
-                      {requestDetail?.totalprice.toLocaleString("vi-VN")} VND
+                      {requestDetail?.totalprice?.toLocaleString("vi-VN")} VND
                     </Text>
                   </Box>
                   {requestDetail?.paymentmethod && (

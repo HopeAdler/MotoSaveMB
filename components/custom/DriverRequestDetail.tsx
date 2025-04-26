@@ -126,7 +126,7 @@ const DriverRequestDetail: React.FC<DriverRequestDetailProps> = ({
                   <Text className="text-xs uppercase tracking-wider text-gray-500 ml-2">Total Amount</Text>
                 </Box>
                 <Text className="text-xl font-bold text-[#1a3148]">
-                  {requestDetail?.totalprice.toLocaleString()} VND
+                  {requestDetail?.totalprice?.toLocaleString()} VND
                 </Text>
               </Box>
               <Box className="bg-black px-4 py-2 rounded-xl">

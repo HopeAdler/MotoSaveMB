@@ -78,7 +78,7 @@ export default function CHomeScreen() {
     if (requestId !== null) {
       fetchRequestDetail();
     }
-  }, []);
+  }, [requestId]);
 
   if (!user) {
     router.replace("/auth/login");
