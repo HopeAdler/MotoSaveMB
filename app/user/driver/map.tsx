@@ -4,6 +4,7 @@ import { getDirections } from "@/app/services/goongAPI";
 import { decodedToken, decodePolyline, handlePhoneCall } from "@/app/utils/utils";
 import { DestinationMarker, OriginMarker } from "@/components/custom/CustomMapMarker";
 import DriverRequestDetail from "@/components/custom/DriverRequestDetail";
+import { tripReducer, TripState, TripAction } from "../../utils/fareCal";
 import MapViewComponent from "@/components/custom/MapViewComponent";
 import {
   Actionsheet,
@@ -19,7 +20,7 @@ import MapboxGL from "@rnmapbox/maps";
 import axios from "axios";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { AlertCircle, Clock, CreditCard, MapPin, MapPinCheckInsideIcon, MessageSquare, Navigation2, Phone } from "lucide-react-native";
-import React, { useContext, useEffect, useRef, useState } from "react";
+import React, { useContext, useEffect, useReducer, useRef, useState } from "react";
 import { ActivityIndicator, TouchableOpacity } from "react-native";
 import Icon from "react-native-vector-icons/Feather";
 
@@ -79,12 +80,25 @@ interface ICamera {
   setCamera(options: CameraOptions): void;
 }
 
-const RequestMap: React.FC = () => {
+
+// Trước chỗ useState cho currentLoc/users, thêm:
+const initialTrip: TripState = {
+  status: 'idle',
+  lastTime: 0,
+  lastCoords: { latitude: 0, longitude: 0 },  // ← phải có cả latitude và longitude
+  distance: 0,
+  waiting: 0,
+  fare: 0,
+};
+
+const GenMap: React.FC = () => {
   const [curReqDetId, setCurReqDetId] = useState<string | null>(null);
   const { token } = useContext(AuthContext);
   const userId = decodedToken(token)?.id;
   const { jsonCurLoc = '{"latitude":0,"longitude":0}', jsonUsers = "{}" } = useLocalSearchParams<any>();
   const router = useRouter();
+
+  const [trip, dispatch] = useReducer(tripReducer, initialTrip);
 
   const [users, setUsers] = useState<Map<string, User>>(new Map(Object.entries(JSON.parse(jsonUsers))));
   const [currentLoc, setCurrentLoc] = useState({ latitude: 0, longitude: 0, heading: 0 });
@@ -335,6 +349,31 @@ const RequestMap: React.FC = () => {
   }, [currentLoc, requestDetail?.requeststatus]);
 
   useEffect(() => {
+    if (!requestDetail || requestDetail.servicepackagename !== 'Cứu hộ nước ngập') return;
+    if (requestDetail.requeststatus === 'Pickup') {
+      dispatch({
+        type: 'START',
+        timestamp: Date.now(),
+        coords: currentLoc
+      } as TripAction);
+    }
+    if (requestDetail.requeststatus === 'Done'|| requestDetail.requeststatus === 'Cancel') {
+      dispatch({ type: 'END' } as TripAction);
+    }
+  }, [requestDetail, currentLoc]);
+
+  // On every loc update, if running, dispatch UPDATE
+  useEffect(() => {
+    if (trip.status === 'running') {
+      dispatch({
+        type: 'UPDATE',
+        timestamp: Date.now(),
+        coords: { latitude: currentLoc.latitude, longitude: currentLoc.longitude },
+      } as TripAction);
+    }
+  }, [currentLoc]);
+
+  useEffect(() => {
     if (routeCoordinates.length > 0 && camera.current) {
       const lats = routeCoordinates.map((coord) => coord[1]);
       const lngs = routeCoordinates.map((coord) => coord[0]);
@@ -430,6 +469,14 @@ const RequestMap: React.FC = () => {
               </MapboxGL.ShapeSource>
             )}
           </MapViewComponent>
+
+          {/* Fare meter panel, only for flood service */}
+          {requestDetail?.servicepackagename === 'Cứu hộ nước ngập' && (
+            <Box className="p-4 bg-white absolute bottom-0 w-full">
+              <Text className="text-gray-500">Cước ước tính:</Text>
+              <Text className="text-2xl font-bold">{trip.fare?.toLocaleString()} VND</Text>
+            </Box>
+          )}
 
           {curReqDetId &&
             <Actionsheet
@@ -556,7 +603,8 @@ const RequestMap: React.FC = () => {
                             <Text className="text-sm text-gray-500 ml-2">Total Price</Text>
                           </Box>
                           <Text className="text-xl font-bold text-[#1a3148]">
-                            {requestDetail?.totalprice.toLocaleString()} VND
+                            {/* {requestDetail?.totalprice.toLocaleString()} VND */}
+                            <Text className="text-2xl font-bold">{trip.fare?.toLocaleString()} VND</Text>
                           </Text>
                         </Box>
                         <Box className="bg-black px-4 py-2 rounded-lg">
@@ -603,4 +651,4 @@ const RequestMap: React.FC = () => {
   );
 };
 
-export default RequestMap;
+export default GenMap;
