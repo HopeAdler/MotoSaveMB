@@ -357,7 +357,7 @@ const GenMap: React.FC = () => {
         coords: currentLoc
       } as TripAction);
     }
-    if (requestDetail.requeststatus === 'Done'|| requestDetail.requeststatus === 'Cancel') {
+    if (requestDetail.requeststatus === 'Done' || requestDetail.requeststatus === 'Cancel') {
       dispatch({ type: 'END' } as TripAction);
     }
   }, [requestDetail, currentLoc]);
@@ -603,8 +603,12 @@ const GenMap: React.FC = () => {
                             <Text className="text-sm text-gray-500 ml-2">Total Price</Text>
                           </Box>
                           <Text className="text-xl font-bold text-[#1a3148]">
-                            {/* {requestDetail?.totalprice.toLocaleString()} VND */}
-                            <Text className="text-2xl font-bold">{trip.fare?.toLocaleString()} VND</Text>
+                            <Text className="text-2xl font-bold">
+                              {requestDetail?.servicepackagename === 'Cứu hộ nước ngập' ?
+                                formatMoney(trip?.fare) :
+                                formatMoney(requestDetail?.totalprice)
+                              }
+                            </Text>
                           </Text>
                         </Box>
                         <Box className="bg-black px-4 py-2 rounded-lg">
