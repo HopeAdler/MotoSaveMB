@@ -1,7 +1,7 @@
 import { AuthContext } from "@/app/context/AuthContext";
 import { createRepairRequest, getUndoneRequestDetailIds, getUnpaidPaymentsByRequestId, updateRequestStatus } from "@/app/services/beAPI";
 import { getDirections } from "@/app/services/goongAPI";
-import { decodedToken, decodePolyline, handlePhoneCall } from "@/app/utils/utils";
+import { decodedToken, decodePolyline, formatMoney, handlePhoneCall } from "@/app/utils/utils";
 import { DestinationMarker, OriginMarker } from "@/components/custom/CustomMapMarker";
 import DriverRequestDetail from "@/components/custom/DriverRequestDetail";
 import { tripReducer, TripState, TripAction } from "../../utils/fareCal";
@@ -606,7 +606,7 @@ const GenMap: React.FC = () => {
                             <Text className="text-2xl font-bold">
                               {requestDetail?.servicepackagename === 'Cứu hộ nước ngập' ?
                                 formatMoney(trip?.fare) :
-                                formatMoney(requestDetail?.totalprice)
+                                formatMoney(requestDetail?.totalprice || 0)
                               }
                             </Text>
                           </Text>
