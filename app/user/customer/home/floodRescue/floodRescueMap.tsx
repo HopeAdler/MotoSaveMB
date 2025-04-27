@@ -65,17 +65,17 @@ const FloodRescueMapScreen = () => {
     latitude: 0,
     longitude: 0,
   });
-    useEffect(() => {
-      // if origin is still at the default, and currentLoc is now non-zero, set it:
-      if (
-        originCoordinates.latitude === 0 &&
-        originCoordinates.longitude === 0 &&
-        currentLoc.latitude !== 0 &&
-        currentLoc.longitude !== 0
-      ) {
-        setOriginCoordinates(currentLoc);
-      }
-    }, [currentLoc, originCoordinates]);
+  useEffect(() => {
+    // if origin is still at the default, and currentLoc is now non-zero, set it:
+    if (
+      originCoordinates.latitude === 0 &&
+      originCoordinates.longitude === 0 &&
+      currentLoc.latitude !== 0 &&
+      currentLoc.longitude !== 0
+    ) {
+      setOriginCoordinates(currentLoc);
+    }
+  }, [currentLoc, originCoordinates]);
   // const [destinationCoordinates, setDestinationCoordinates] = useState({ latitude: 0, longitude: 0 });
   const [originQuery, setOriginQuery] = useState("");
   // const [destinationQuery, setDestinationQuery] = useState("");
@@ -85,7 +85,7 @@ const FloodRescueMapScreen = () => {
     []
   );
   const [directionsInfo, setDirectionsInfo] = useState<any>(null);
-  const [fare, setFare] = useState<number | null>(15000);
+  const [fare, setFare] = useState<number | null>(0);
   // const [fareLoading, setFareLoading] = useState<boolean>(false);
   const [paymentLoading, setPaymentLoading] = useState<boolean>(false);
   const [originSelected, setOriginSelected] = useState(false);
@@ -231,7 +231,7 @@ const FloodRescueMapScreen = () => {
       pickuplong: originCoordinates.longitude,
       pickuplat: originCoordinates.latitude,
       pickuplocation: originQuery,
-      totalprice: fare || 0,
+      totalprice: 0,
     };
     try {
       const result = await createFloodRescueRequest(payload, token);
@@ -786,7 +786,7 @@ const FloodRescueMapScreen = () => {
       )}
 
       {/* Action sheet toggle buttons */}
-      {!showActionsheet && (
+      {!showActionsheet && currentLoc.latitude != 0 && (
         <ActionSheetToggle
           onPress={() => setShowActionsheet(true)}
           visible={!showActionsheet}
