@@ -84,7 +84,6 @@ const RescueMapScreen = () => {
     createDirectChannel
   } = usePubNubService();
   const [acceptedDriverId, setAcceptedDriverId] = useState<string | null>(null);
-  // const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   // State để lưu vehicle id đã chọn
   const [selectedVehicleId, setSelectedVehicleId] = useState<string>("");
   const isSearchingRef = useRef(isSearching);
@@ -362,7 +361,6 @@ const RescueMapScreen = () => {
       const payZaloEmitter = new NativeEventEmitter(PayZaloBridge);
       const subscription = payZaloEmitter.addListener("EventPayZalo", async (data: PayZaloEventData) => {
         if (data.returnCode === "1") {
-          // router.navigate("/user/customer/home/normalRescue/rescueMap");
           console.log("Payment successful:", data);
           setZpTransId(data.transactionId || null);
           try {
@@ -377,7 +375,6 @@ const RescueMapScreen = () => {
               token
             );
             if (transactionResponse) {
-              // handleRequestSuccess(reqId);
               isSearchingRef.current = true;
               setIsSearching(true);
               setDriverAccepted(false);
@@ -507,10 +504,8 @@ const RescueMapScreen = () => {
       // Trước khi đệ quy, kiểm tra ngay trạng thái tìm kiếm
       if (!isSearchingRef.current) {
         console.log("Search has been canceled. Exiting.");
-        // handleCancelSearch();
         return;
       }
-      // if (newRadius <= MAX_RADIUS) {
       setTimeout(() => {
         // Kiểm tra lại trước khi gọi đệ quy trong callback
         if (!isSearchingRef.current) {
@@ -567,6 +562,7 @@ const RescueMapScreen = () => {
 
       console.log("Request đã được hủy thành công");
       // Cập nhật UI nếu cần
+      setRequestDetailId(null);
     } catch (error) {
       console.error("Lỗi chi tiết khi hủy request:", error);
       // Xử lý lỗi (có thể thử hủy lại hoặc hiển thị thông báo)
@@ -637,11 +633,13 @@ const RescueMapScreen = () => {
     );
     subscribeToRescueChannel((msg: any) => {
       if (
-        // msg?.message?.requestDetailId === requestDetailId
+        msg?.message?.requestDetailId === requestDetailId &&
         msg?.message?.senderRole === "Driver"
         && msg?.message?.reqStatus === "Accepted"
       ) {
-        console.log(msg)
+        // console.log(msg)
+        console.log(msg.message.requestDetailId)
+        console.log(requestDetailId)
         setAcceptedReqDetStatus(msg.message.reqStatus)
         setAcceptedReqDetId(msg.message.requestDetailId)
         console.log('Driver has accept the requet: ' + msg.message.requestDetailId)
@@ -654,7 +652,7 @@ const RescueMapScreen = () => {
       // pubnub?.unsubscribeAll();
       // pubnub?.destroy();
     };
-  }, []);
+  }, [requestDetailId]);
   useEffect(() => {
     hereNow();
   }, []);

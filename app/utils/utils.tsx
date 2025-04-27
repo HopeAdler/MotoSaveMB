@@ -6,7 +6,7 @@ import { Alert, Linking, Platform } from "react-native";
 export const translateFieldName = (field: string): string => {
   // const fieldTranslations: Record<string, string> = {
   const fieldTranslations: any = {
-    username: "Tên người dùng",
+    username: "Tên tài khoản",
     password: "Mật khẩu",
     confirmPassword: "Xác nhận mật khẩu",
     fullName: "Họ và tên",

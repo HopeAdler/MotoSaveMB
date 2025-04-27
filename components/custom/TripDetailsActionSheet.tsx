@@ -221,6 +221,7 @@ const TripDetailsActionSheet: React.FC<TripDetailsActionSheetProps> = ({
                         <Text className="text-gray-600 mb-1">Estimated Fare</Text>
                         <Text className="text-2xl font-bold text-blue-600">
                           {fare?.toLocaleString()} VND
+                          {/* ssss */}
                         </Text>
                       </Box>
                     </Box>
