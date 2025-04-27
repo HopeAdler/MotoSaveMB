@@ -20,7 +20,7 @@ import { VehicleInfoBox } from "@/components/custom/VehicleInfoBox";
 import { Box } from "@/components/ui/box";
 import { Button } from "@/components/ui/button";
 import { router, useLocalSearchParams } from "expo-router";
-import { BookX, CreditCard } from "lucide-react-native";
+import { CreditCard } from "lucide-react-native";
 import React, { useCallback, useContext, useEffect, useState } from "react";
 import {
   Alert,
@@ -28,8 +28,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Text,
-  View
+  Text
 } from "react-native";
 
 interface RepairRequestDetail {
@@ -221,9 +220,9 @@ export default function RepairDetailsScreen() {
     );
   };
 
-  useEffect(() => {
-    console.log(repairQuotes)
-  }, [repairQuotes])
+  // useEffect(() => {
+  //   console.log(repairQuotes)
+  // }, [repairQuotes])
 
   const handlePriceChange = useCallback(
     (index: number, costStr: string) => {
@@ -450,7 +449,7 @@ export default function RepairDetailsScreen() {
                       /> */}
                       {repairQuotes.length > 1 && (
                         <Button
-                          className="bg-red-500 h-12 w-12 rounded-xl items-center justify-center"
+                          className="bg-red-500 h-12 w-full rounded-xl items-center justify-center"
                           onPress={() => removeRepairItem(item.index)}
                         >
                           <Text className="text-white text-xl font-bold">

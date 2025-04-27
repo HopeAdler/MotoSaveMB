@@ -98,12 +98,14 @@ export interface RepairCostPreview {
   id: string;
   name: string;
   description: string;
+  repairpackageid: number;
+  repairpackagename?: string;
+  partcategoryid: number;
+  partcategoryname?: string;
   min: number;
   max: number;
   wage: number;
-  repairpackageid: number;
   rate: number;
-  partcategoryid: number;
 }
 export interface Accessory {
   id: number,
