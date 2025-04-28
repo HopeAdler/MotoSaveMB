@@ -4,13 +4,7 @@ import { Box } from "@/components/ui/box";
 import { Text } from "@/components/ui/text";
 import axios from "axios";
 import { router } from "expo-router";
-import {
-  Ambulance,
-  Bell,
-  Car,
-  Search,
-  Wrench,
-} from "lucide-react-native";
+import { Ambulance, Bell, Car, Search, Wrench } from "lucide-react-native";
 import React, { useContext, useEffect, useState } from "react";
 import { Pressable, ScrollView } from "react-native";
 import { Avatar } from "react-native-elements";
@@ -48,7 +42,7 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
         <Icon color={color} size={24} />
       </Box>
       <Text className="text-[15px] font-semibold text-[#1a3148]">{title}</Text>
-      <Text className="text-xs text-gray-500">Available 24/7</Text>
+      <Text className="text-xs text-gray-500">Hỗ trợ 24/7</Text>
     </Box>
   </Pressable>
 );
@@ -141,7 +135,9 @@ export default function CHomeScreen() {
                 )}
               </Box>
               <Box>
-                <Text className="text-[#fab753] text-sm">Welcome back,</Text>
+                <Text className="text-[#fab753] text-sm">
+                  Chào mừng trở lại,
+                </Text>
                 <Text className="text-white text-lg font-bold">
                   {user?.username}
                 </Text>
@@ -162,7 +158,7 @@ export default function CHomeScreen() {
         <Box className="bg-white rounded-2xl shadow-sm border border-gray-100/50">
           <Box className="p-5 mb-6">
             <Text className="text-xl font-bold text-[#1a3148] mb-4">
-              Emergency Services
+              Dịch vụ khẩn cấp
             </Text>
             <ScrollView
               horizontal
@@ -171,7 +167,7 @@ export default function CHomeScreen() {
             >
               <ServiceCard
                 icon={Car}
-                title="Normal Rescue"
+                title="Cứu hộ thường"
                 color="#1a3148"
                 onPress={() =>
                   router.navigate(
@@ -181,7 +177,7 @@ export default function CHomeScreen() {
               />
               <ServiceCard
                 icon={Ambulance}
-                title="Emergency"
+                title="Cứu hộ khẩn cấp"
                 color="#fab753"
                 onPress={() =>
                   router.navigate(
@@ -195,13 +191,13 @@ export default function CHomeScreen() {
 
         <Box className="mt-6">
           <Text className="text-xl font-bold text-[#1a3148] mb-4">
-            Quick Services
+            Dịch vụ nhanh
           </Text>
           <Box className="flex-row space-x-4">
             <Pressable className="flex-1 bg-white p-5 rounded-2xl border border-gray-100/50 shadow-sm">
               <ServiceCard
                 icon={Wrench}
-                title="Flood Rescue"
+                title="Cứu hộ ngập nước"
                 color="#1a3148"
                 onPress={() =>
                   router.navigate(
@@ -235,7 +231,7 @@ export default function CHomeScreen() {
                 className="text-base font-medium text-[#1a3148]"
                 onPress={handleNavigate}
               >
-                Your recent request is not done yet. Continue?
+                Yêu cầu gần đây của bạn chưa hoàn thành. Tiếp tục?
               </Text>
             </Box>
           )}
@@ -249,7 +245,7 @@ export default function CHomeScreen() {
               <Text className="text-xl font-bold text-white">SOS</Text>
             </Box>
             <Text className="text-lg font-bold text-white">
-              Emergency Assistance
+              Hỗ Trợ Khẩn Cấp
             </Text>
           </Box>
         </Pressable>

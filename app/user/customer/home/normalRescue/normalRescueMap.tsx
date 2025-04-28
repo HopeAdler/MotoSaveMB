@@ -282,7 +282,7 @@ const RescueMapScreen = () => {
     if (directionsInfo && !acceptedDriverId && !showActionsheet && servicePackage) {
       const distanceValue = directionsInfo.distance?.value || 0;
       setFareLoading(true);
-      calculateFare(distanceValue, servicePackage?.rate)
+      calculateFare(distanceValue, servicePackage?.rate, 0)
         .then((money) => {
           setFare(money);
           setShowActionsheet(true);
@@ -676,7 +676,7 @@ const RescueMapScreen = () => {
           <SearchInput
             value={originQuery}
             onChangeText={handleOriginChange}
-            placeholder="Search origin"
+            placeholder="Vui lòng nhập điểm đón"
             onClear={() => setOriginQuery("")}
           />
           <SearchResults
@@ -691,7 +691,7 @@ const RescueMapScreen = () => {
             <SearchInput
               value={destinationQuery}
               onChangeText={handleDestinationChange}
-              placeholder="Search destination"
+              placeholder="Vui lòng nhập điểm đến"
               onClear={() => setDestinationQuery("")}
               isDisabled={!originSelected}
             />

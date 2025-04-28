@@ -137,7 +137,7 @@ const ActivityCard = React.memo(
           {activity.drivername && (
             <Box className="flex-row items-center bg-[#1a3148]/5 px-3 py-1 rounded-full">
               <Text className="text-sm text-[#1a3148] font-medium">
-                {activity.requesttype === "Sửa xe" ? "Mechanic:" : "Driver:"}{" "}
+                {activity.requesttype === "Sửa xe" ? "Thợ sửa:" : "Tài xế:"}{" "}
                 {activity.drivername}
               </Text>
             </Box>
@@ -247,7 +247,7 @@ export default function ActivityScreen() {
               aria-level={1}
               className="text-2xl font-bold text-[#1a3148]"
             >
-              Activity History
+              Lịch sử hoạt động
             </Text>
           </Box>
         </Box>
@@ -271,10 +271,10 @@ export default function ActivityScreen() {
               <Clock size={32} color="#1a3148" />
             </Box>
             <Text className="text-[#1a3148] font-bold text-lg mb-1">
-              No Activities Yet
+              Chưa có hoạt động
             </Text>
             <Text className="text-gray-500 text-center mx-8">
-              Your rescue request history will appear here
+              Lịch sử yêu cầu cứu hộ của bạn sẽ xuất hiện tại đây
             </Text>
           </Box>
         ) : (
