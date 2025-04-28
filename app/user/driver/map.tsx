@@ -357,7 +357,7 @@ const GenMap: React.FC = () => {
         coords: currentLoc
       } as TripAction);
     }
-    if (requestDetail.requeststatus === 'Done' || requestDetail.requeststatus === 'Cancel') {
+    if (requestDetail.requeststatus === 'Done'|| requestDetail.requeststatus === 'Cancel') {
       dispatch({ type: 'END' } as TripAction);
     }
   }, [requestDetail, currentLoc]);

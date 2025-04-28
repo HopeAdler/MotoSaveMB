@@ -95,7 +95,7 @@ const EmergencyRescueMapScreen = () => {
     []
   );
   const [directionsInfo, setDirectionsInfo] = useState<any>(null);
-  const [fare, setFare] = useState<number | null>(null);
+  const [fare, setFare] = useState<number>(0);
   const [fareLoading, setFareLoading] = useState<boolean>(false);
   const [paymentLoading, setPaymentLoading] = useState<boolean>(false);
   const [originSelected, setOriginSelected] = useState(false);
@@ -730,7 +730,7 @@ const EmergencyRescueMapScreen = () => {
     <Box className="flex-1">
       {/* Header & Back button */}
       <Box className="absolute top-4 left-4 z-20">
-        <BackButton onPress={() => router.navigate("/user/customer/home/servicePackage")} />
+        <BackButton onPress={() => router.back()} />
       </Box>
 
       {/* Input container with enhanced styling */}
@@ -778,10 +778,10 @@ const EmergencyRescueMapScreen = () => {
           {originCoordinates.latitude !== 0 && (
             <MapboxGL.Camera
               ref={camera}
-              centerCoordinate={[
-                originCoordinates.longitude,
-                originCoordinates.latitude,
-              ]}
+              // centerCoordinate={[
+              //   originCoordinates.longitude,
+              //   originCoordinates.latitude,
+              // ]}
             />
           )}
 
