@@ -1,14 +1,26 @@
 import AuthContext from "@/app/context/AuthContext";
-import { getCurrentLocation, requestLocationPermission, watchLocation } from "@/app/services/locationService";
+import {
+  getCurrentLocation,
+  requestLocationPermission,
+  watchLocation,
+} from "@/app/services/locationService";
 import { usePubNubService } from "@/app/services/pubnubService"; // ✅ Use the custom hook
 import { decodedToken } from "@/app/utils/utils";
 import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
 import "@/global.css";
 import { Tabs, useRouter, useSegments } from "expo-router";
-import { ChartArea, DollarSign, House, List, CircleUserRound, MapIcon } from "lucide-react-native";
+import {
+  ChartArea,
+  DollarSign,
+  House,
+  List,
+  CircleUserRound,
+  MapIcon,
+} from "lucide-react-native";
 import { useContext, useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { getHeadingAsync } from "expo-location";
+import { Box } from "@/components/ui/box";
 
 type User = {
   uuid: string;
@@ -30,15 +42,21 @@ export default function DriverLayout() {
   } = usePubNubService(); // ✅ Get service functions
   const { user, token } = useContext(AuthContext);
 
-  const [currentLoc, setCurrentLoc] = useState({ latitude: 0, longitude: 0, heading: 0 });
+  const [currentLoc, setCurrentLoc] = useState({
+    latitude: 0,
+    longitude: 0,
+    heading: 0,
+  });
   const lastLocation = useRef({ latitude: 0, longitude: 0, heading: 0 });
 
   const userId = decodedToken(token)?.id;
   const [users, setUsers] = useState(new Map<string, User>());
-  const [pendingReqDetailIds, setPendingReqDetailIds] = useState(new Map<string, string>());
+  const [pendingReqDetailIds, setPendingReqDetailIds] = useState(
+    new Map<string, string>()
+  );
 
   const updateLocation = async (locationSubscription: any) => {
-    if (await requestLocationPermission() && userId) {
+    if ((await requestLocationPermission()) && userId) {
       const location = await getCurrentLocation();
       const { latitude, longitude } = location.coords;
       const bearing = await getHeadingAsync();
@@ -52,9 +70,11 @@ export default function DriverLayout() {
       // Ensure `currentLoc` has valid values before smoothing
       if (currentLoc?.latitude && currentLoc?.longitude) {
         var smoothedLatitude =
-          currentLoc.latitude + SMOOTHING_FACTOR * (newLocation.latitude - currentLoc.latitude);
+          currentLoc.latitude +
+          SMOOTHING_FACTOR * (newLocation.latitude - currentLoc.latitude);
         var smoothedLongitude =
-          currentLoc.longitude + SMOOTHING_FACTOR * (newLocation.longitude - currentLoc.longitude);
+          currentLoc.longitude +
+          SMOOTHING_FACTOR * (newLocation.longitude - currentLoc.longitude);
       } else {
         // If currentLoc is null, use raw values
         smoothedLatitude = latitude;
@@ -62,7 +82,13 @@ export default function DriverLayout() {
       }
 
       // ✅ Use smoothed values when publishing
-      publishLocation(userId, user, smoothedLatitude, smoothedLongitude, newLocation.heading);
+      publishLocation(
+        userId,
+        user,
+        smoothedLatitude,
+        smoothedLongitude,
+        newLocation.heading
+      );
 
       // ✅ Use smoothed values when updating state
       const smoothedLocation = {
@@ -93,9 +119,13 @@ export default function DriverLayout() {
 
         // Smooth location updates
         const smoothedLatitude =
-          lastLocation.current.latitude + SMOOTHING_FACTOR * (updatedLocation.latitude - lastLocation.current.latitude);
+          lastLocation.current.latitude +
+          SMOOTHING_FACTOR *
+            (updatedLocation.latitude - lastLocation.current.latitude);
         const smoothedLongitude =
-          lastLocation.current.longitude + SMOOTHING_FACTOR * (updatedLocation.longitude - lastLocation.current.longitude);
+          lastLocation.current.longitude +
+          SMOOTHING_FACTOR *
+            (updatedLocation.longitude - lastLocation.current.longitude);
 
         const smoothedUpdatedLocation = {
           latitude: smoothedLatitude,
@@ -105,7 +135,8 @@ export default function DriverLayout() {
 
         if (
           smoothedUpdatedLocation.latitude !== lastLocation.current.latitude ||
-          smoothedUpdatedLocation.longitude !== lastLocation.current.longitude ||
+          smoothedUpdatedLocation.longitude !==
+            lastLocation.current.longitude ||
           smoothedUpdatedLocation.heading !== lastLocation.current.heading
         ) {
           lastLocation.current = smoothedUpdatedLocation;
@@ -115,17 +146,15 @@ export default function DriverLayout() {
     }
   };
 
-
-
-
-
   useEffect(() => {
     if (token) {
-      axios.get("https://motor-save-be.vercel.app/api/v1/auth/profile", {
-        headers: { Authorization: `Bearer ${token}` },
-      }).catch(err => {
-        console.log('Prefetch error:', err);
-      });
+      axios
+        .get("https://motor-save-be.vercel.app/api/v1/auth/profile", {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        .catch((err) => {
+          console.log("Prefetch error:", err);
+        });
     }
   }, [token]);
 
@@ -163,7 +192,10 @@ export default function DriverLayout() {
 
     // Listen to requests from PubNub
     subscribeToRescueChannel((msg: any) => {
-      if (msg.message.senderRole === "Customer" && msg.message.driverId === userId) {
+      if (
+        msg.message.senderRole === "Customer" &&
+        msg.message.driverId === userId
+      ) {
         setPendingReqDetailIds((prev) => {
           const updatedMap = new Map(prev);
           updatedMap.set(msg.publisher, msg.message.requestDetailId);
@@ -190,7 +222,9 @@ export default function DriverLayout() {
     if (segment.includes("home")) {
       router.setParams({
         ...params,
-        jsonPendingReqDetailIds: JSON.stringify(Object.fromEntries(pendingReqDetailIds)),
+        jsonPendingReqDetailIds: JSON.stringify(
+          Object.fromEntries(pendingReqDetailIds)
+        ),
       });
     } else if (segment.includes("requestMap") || segment.includes("map")) {
       router.setParams({
@@ -200,16 +234,50 @@ export default function DriverLayout() {
     }
   }, [pendingReqDetailIds, currentLoc, users, segment]);
 
-
   return (
     <GluestackUIProvider mode="light">
-      <Tabs screenOptions={{ headerShown: false }}>
+      <Tabs
+        screenOptions={{
+          headerShown: false,
+          tabBarStyle: {
+            backgroundColor: "white",
+            borderTopWidth: 1,
+            borderTopColor: "rgba(0,0,0,0.1)",
+            height: 64,
+            paddingTop: 8,
+            paddingBottom: 8,
+          },
+          tabBarActiveTintColor: "#fab753",
+          tabBarInactiveTintColor: "#1a3148",
+          tabBarLabelStyle: {
+            fontSize: 11,
+            fontWeight: "500",
+            marginTop: 1,
+          },
+        }}
+      >
         <Tabs.Screen
           name="home"
           options={{
             headerShown: false,
             tabBarLabel: "Trang chủ",
-            tabBarIcon: (tabInfo) => <House size={24} color={tabInfo.color} />,
+            tabBarIcon: (tabInfo) => (
+              <Box
+                style={{
+                  padding: 8,
+                  borderRadius: 12,
+                  backgroundColor: tabInfo.focused
+                    ? "rgba(250, 183, 83, 0.1)"
+                    : "transparent",
+                }}
+              >
+                <House
+                  size={22}
+                  color={tabInfo.focused ? "#fab753" : "#1a3148"}
+                  strokeWidth={tabInfo.focused ? 2.5 : 2}
+                />
+              </Box>
+            ),
           }}
         />
         <Tabs.Screen
@@ -217,7 +285,21 @@ export default function DriverLayout() {
           options={{
             headerShown: false,
             tabBarLabel: "Xem bản đồ",
-            tabBarIcon: (tabInfo) => <MapIcon size={24} color={tabInfo.color} />,
+            tabBarIcon: (tabInfo) => (
+              <Box
+                style={{
+                  padding: 8,
+                  borderRadius: 12,
+                  backgroundColor: tabInfo.focused ? 'rgba(250, 183, 83, 0.1)' : 'transparent',
+                }}
+              >
+                <MapIcon
+                  size={22}
+                  color={tabInfo.focused ? "#fab753" : "#1a3148"}
+                  strokeWidth={tabInfo.focused ? 2.5 : 2}
+                />
+              </Box>
+            ),
           }}
         />
         <Tabs.Screen
@@ -225,7 +307,21 @@ export default function DriverLayout() {
           options={{
             headerShown: false,
             tabBarLabel: "Yêu cầu",
-            tabBarIcon: (tabInfo) => <List size={24} color={tabInfo.color} />,
+            tabBarIcon: (tabInfo) => (
+              <Box
+                style={{
+                  padding: 8,
+                  borderRadius: 12,
+                  backgroundColor: tabInfo.focused ? 'rgba(250, 183, 83, 0.1)' : 'transparent',
+                }}
+              >
+                <List
+                  size={22}
+                  color={tabInfo.focused ? "#fab753" : "#1a3148"}
+                  strokeWidth={tabInfo.focused ? 2.5 : 2}
+                />
+              </Box>
+            ),
           }}
         />
         {/* <Tabs.Screen name="requestMap" options={{ headerShown: false, href: null }} /> */}
@@ -234,7 +330,9 @@ export default function DriverLayout() {
           options={{
             headerShown: false,
             tabBarLabel: "Lịch sử giao dịch",
-            tabBarIcon: (tabInfo) => <DollarSign size={24} color={tabInfo.color} />,
+            tabBarIcon: (tabInfo) => (
+              <DollarSign size={24} color={tabInfo.color} />
+            ),
           }}
         />
         <Tabs.Screen
@@ -243,16 +341,29 @@ export default function DriverLayout() {
             href: null,
             headerShown: false,
             tabBarLabel: "Thống kê",
-            tabBarIcon: (tabInfo) => <ChartArea size={24} color={tabInfo.color}
-            />,
+            tabBarIcon: (tabInfo) => (
+              <ChartArea size={24} color={tabInfo.color} />
+            ),
           }}
         />
         <Tabs.Screen
           name="account"
           options={{
-            tabBarLabel: "Account",
+            tabBarLabel: "Tài khoản",
             tabBarIcon: (tabInfo) => (
-              <CircleUserRound size={24} color={tabInfo.color} />
+              <Box
+                style={{
+                  padding: 8,
+                  borderRadius: 12,
+                  backgroundColor: tabInfo.focused ? 'rgba(250, 183, 83, 0.1)' : 'transparent',
+                }}
+              >
+                <CircleUserRound
+                  size={22}
+                  color={tabInfo.focused ? "#fab753" : "#1a3148"}
+                  strokeWidth={tabInfo.focused ? 2.5 : 2}
+                />
+              </Box>
             ),
           }}
         />

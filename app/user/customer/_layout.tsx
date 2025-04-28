@@ -52,7 +52,7 @@ export default function CustomerLayout() {
         <Tabs.Screen
           name="home"
           options={{
-            tabBarLabel: "Home",
+            tabBarLabel: "Trang chủ",
             tabBarIcon: (tabInfo) => (
               <Box
                 style={{
@@ -73,7 +73,7 @@ export default function CustomerLayout() {
         <Tabs.Screen
           name="activity"
           options={{
-            tabBarLabel: "Activity",
+            tabBarLabel: "Hoạt động",
             tabBarIcon: (tabInfo) => (
               <Box
                 style={{
@@ -117,7 +117,7 @@ export default function CustomerLayout() {
         <Tabs.Screen
           name="account"
           options={{
-            tabBarLabel: "Account",
+            tabBarLabel: "Tài khoản",
             tabBarIcon: (tabInfo) => (
               <Box
                 style={{

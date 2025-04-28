@@ -177,7 +177,7 @@ export default function RequestDetailsScreen() {
   if (!requestDetail) {
     return (
       <Box className="flex-1 bg-[#f1f5f9] items-center justify-center">
-        <Text>Request not found</Text>
+        <Text>Không có yêu cầu</Text>
       </Box>
     );
   }
@@ -194,7 +194,7 @@ export default function RequestDetailsScreen() {
         <Box className="bg-[#1a3148] px-5 pb-6 rounded-b-[32px]">
           <Box className="mt-4">
             <Text className="text-white text-2xl font-bold mb-3">
-              Request Details
+              Chi tiết yêu cầu
             </Text>
             <Box className="flex-row items-center space-x-3 mb-2">
               <Text className="text-[#fab753] text-lg font-semibold">
@@ -217,7 +217,7 @@ export default function RequestDetailsScreen() {
             <Box className="bg-white rounded-2xl shadow-sm overflow-hidden mb-4 border border-gray-100/50">
               <Box className="p-4">
                 <Text className="text-lg font-semibold text-[#1a3148] mb-4">
-                  {requestDetail.requesttype === "Sửa xe" ? "Assigned Mechanic" : "Assigned Driver"}
+                  {requestDetail.requesttype === "Sửa xe" ? "Thợ sửa" : "Tài xế"}
                 </Text>
                 <Box className="space-y-4">
                   <Box className="flex-row items-center">
@@ -251,7 +251,7 @@ export default function RequestDetailsScreen() {
                     >
                       <Phone size={20} color="#1a3148" />
                       <Text className="ml-2 text-[#1a3148] font-medium">
-                        Call
+                        Gọi
                       </Text>
                     </Pressable>
 
@@ -262,7 +262,7 @@ export default function RequestDetailsScreen() {
                     >
                       <MessageSquare size={20} color="#fab753" />
                       <Text className="ml-2 text-[#fab753] font-medium">
-                        Chat
+                        Nhắn tin
                       </Text>
                     </Pressable>
                   </Box>
@@ -273,9 +273,9 @@ export default function RequestDetailsScreen() {
 
           <Box className="bg-white rounded-2xl shadow-sm mb-4 border border-gray-100/50">
             <Box className="p-4">
-              <Text className="text-lg font-semibold text-[#1a3148] mb-4">
-                Service Information
-              </Text>
+              {/* <Text className="text-lg font-semibold text-[#1a3148] mb-4">
+                Thông tin dịch vụ
+              </Text> */}
               <Box className="space-y-4">
                 {requestDetail.requesttype !== "Sửa xe" && (
                 <Box className="flex-row items-center">
@@ -284,7 +284,7 @@ export default function RequestDetailsScreen() {
                   </Box>
                   <Box className="ml-3 flex-1">
                     <Text className="text-sm text-gray-500">
-                      Pickup Location
+                      Điểm đón
                     </Text>
                     <Text className="text-base text-[#1a3148]">
                       {requestDetail.pickuplocation}
@@ -299,7 +299,7 @@ export default function RequestDetailsScreen() {
                       <Navigation2 size={20} color="#fab753" />
                     </Box>
                     <Box className="ml-3 flex-1">
-                      <Text className="text-sm text-gray-500">Destination</Text>
+                      <Text className="text-sm text-gray-500">Đích đến</Text>
                       <Text className="text-base text-[#1a3148]">
                         {requestDetail.destination}
                       </Text>
@@ -312,7 +312,7 @@ export default function RequestDetailsScreen() {
                     <Clock size={20} color="#1a3148" />
                   </Box>
                   <Box className="ml-3">
-                    <Text className="text-sm text-gray-500">Created At</Text>
+                    <Text className="text-sm text-gray-500">Thời gian tạo</Text>
                     <Text className="text-base text-[#1a3148]">
                       {formatDate(requestDetail.createddate)}
                     </Text>
@@ -325,7 +325,7 @@ export default function RequestDetailsScreen() {
           <Box className="bg-white rounded-2xl shadow-sm mb-4 border border-gray-100/50">
             <Box className="p-4">
               <Text className="text-lg font-semibold text-[#1a3148] mb-4">
-                Payment Information
+                Phương thức thanh toán
               </Text>
               <Box className="w-full bg-[#f8fafc] rounded-xl p-4">
                 <Box className="flex-row items-center justify-between">
@@ -333,7 +333,7 @@ export default function RequestDetailsScreen() {
                     <Box className="flex-row items-center mb-1">
                       <CreditCard size={18} color="#1a3148" />
                       <Text className="text-sm text-gray-500 ml-2">
-                        Total Price
+                        Tổng
                       </Text>
                     </Box>
                     {/* Error ngay toLocaleString() sua lai cho gia tri default 00000VND */}

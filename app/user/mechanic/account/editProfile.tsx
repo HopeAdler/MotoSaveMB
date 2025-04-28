@@ -19,15 +19,28 @@ import {
   RadioIcon,
 } from "@/components/ui/radio";
 import { useLocalSearchParams, router } from "expo-router";
-import { Alert, Image, Pressable, ActivityIndicator, ScrollView } from "react-native";
+import {
+  Alert,
+  Image,
+  Pressable,
+  ActivityIndicator,
+  ScrollView,
+} from "react-native";
 import axios from "axios";
 import { useContext } from "react";
 import { AuthContext } from "@/app/context/AuthContext";
 import * as ImagePicker from "expo-image-picker";
 import { storage } from "@/firebaseConfig";
-import { User, ChevronLeft, Camera, CircleIcon, ChevronDown, CalendarDaysIcon } from "lucide-react-native";
+import {
+  User,
+  ChevronLeft,
+  Camera,
+  CircleIcon,
+  ChevronDown,
+  CalendarDaysIcon,
+} from "lucide-react-native";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import DateTimePicker from '@react-native-community/datetimepicker';
+import DateTimePicker from "@react-native-community/datetimepicker";
 
 interface FormData {
   fullname: string;
@@ -35,7 +48,6 @@ interface FormData {
   gender: string | undefined;
   dob: string | null;
   address: string | null;
-  licenseplate: string | null;
   avatar: string | null;
 }
 
@@ -45,7 +57,6 @@ interface UpdateProfilePayload {
   gender: string | undefined;
   dob: string | null;
   address: string | null;
-  licenseplate: string | null;
   avatar: string | null;
 }
 
@@ -64,23 +75,21 @@ const isValidDate = (dateString: string): boolean => {
 
   return true;
 };
-
 const formatDateString = (isoDate: string): string => {
   if (!isoDate) return "";
   return isoDate.split("T")[0];
 };
 
-export default function MEditProfile() {
+export default function EditProfile() {
   const { token, dispatch } = useContext(AuthContext);
   const params = useLocalSearchParams();
 
   const [form, setForm] = useState<FormData>(() => ({
     fullname: params.fullname as string,
     email: params.email as string | null,
-    gender: params.gender as string || undefined,
+    gender: (params.gender as string) || undefined,
     dob: params.dob ? formatDateString(params.dob as string) : null,
     address: params.address as string | null,
-    licenseplate: params.licenseplate as string | null,
     avatar: params.avatar as string | null,
   }));
 
@@ -90,23 +99,28 @@ export default function MEditProfile() {
   } | null>(null);
 
   const [isFormChanged, setIsFormChanged] = useState(false);
+
+  // Add loading state
   const [isLoading, setIsLoading] = useState(false);
+
+  // Add gender sheet state
   const [showGenderSheet, setShowGenderSheet] = useState(false);
-  const genderOptions = ["Male", "Female", "Prefer not to disclose"];
+  const genderOptions = ["Nam", "Nữ", "Không xác định"];
 
   // Modify form state update to check for changes
   const updateForm = (updates: Partial<FormData>) => {
     setForm((prev) => {
       const newForm = { ...prev, ...updates };
-      
+
       const fieldComparisons = {
         gender: () => updates.gender !== params.gender,
         email: () => updates.email !== params.email,
         fullname: () => updates.fullname !== params.fullname,
-        dob: () => updates.dob !== (params.dob ? formatDateString(params.dob as string) : null),
+        dob: () =>
+          updates.dob !==
+          (params.dob ? formatDateString(params.dob as string) : null),
         address: () => updates.address !== params.address,
-        licenseplate: () => updates.licenseplate !== params.licenseplate,
-        avatar: () => updates.avatar !== params.avatar
+        avatar: () => updates.avatar !== params.avatar,
       };
 
       const updatedField = Object.keys(updates)[0] as keyof FormData;
@@ -116,8 +130,8 @@ export default function MEditProfile() {
           return fieldComparisons[updatedField]() || selectedImage !== null;
         }
 
-        const hasChanged = Object.keys(fieldComparisons).some(
-          (key) => fieldComparisons[key as keyof FormData]()
+        const hasChanged = Object.keys(fieldComparisons).some((key) =>
+          fieldComparisons[key as keyof FormData]()
         );
         return hasChanged || selectedImage !== null;
       });
@@ -133,8 +147,8 @@ export default function MEditProfile() {
         await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!permissionResult.granted) {
         Alert.alert(
-          "Permission Required",
-          "Please allow access to your photo library"
+          "Yêu cầu quyền truy cập",
+          "Vui lòng cho phép truy cập thư viện ảnh của bạn"
         );
         return;
       }
@@ -158,8 +172,13 @@ export default function MEditProfile() {
       }
     } catch (error) {
       console.error("Image picker error:", error);
-      Alert.alert("Error", "Failed to access photo library");
+      Alert.alert("Lỗi", "Không thể truy cập thư viện ảnh");
     }
+  };
+
+  const isValidEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
   };
 
   // Modify handleSubmit to validate first
@@ -167,14 +186,26 @@ export default function MEditProfile() {
     try {
       const errors = [];
       if (!form.fullname.trim()) {
-        errors.push("Full name is required");
+        errors.push("Họ và tên là bắt buộc");
+      } else if (form.fullname.trim().length > 50) {
+        errors.push("Họ và tên không được dài quá 50 ký tự");
       }
       if (form.dob && !isValidDate(form.dob)) {
-        errors.push("Invalid date format. Use YYYY-MM-DD");
+        errors.push("Định dạng ngày không hợp lệ. Vui lòng sử dụng YYYY-MM-DD");
+      }
+      if (form.email) {
+        if (!isValidEmail(form.email)) {
+          errors.push("Địa chỉ email không hợp lệ");
+        } else if (form.email.trim().length > 50) {
+          errors.push("Email không được dài quá 50 ký tự");
+        }
+      }
+      if (form.address && form.address.trim().length > 100) {
+        errors.push("Địa chỉ không được dài quá 100 ký tự");
       }
 
       if (errors.length > 0) {
-        Alert.alert("Validation Error", errors.join("\n"));
+        Alert.alert("Lỗi", errors.join("\n"));
         return;
       }
 
@@ -194,7 +225,7 @@ export default function MEditProfile() {
           avatarUrl = await getDownloadURL(storageRef);
         } catch (uploadError) {
           console.error("Upload error:", uploadError);
-          Alert.alert("Error", "Failed to upload image. Try again.");
+          Alert.alert("Lỗi", "Không thể tải ảnh lên. Vui lòng thử lại.");
           return;
         }
       }
@@ -205,7 +236,6 @@ export default function MEditProfile() {
         gender: form.gender?.trim() || undefined,
         dob: form.dob?.trim() || null,
         address: form.address?.trim() || null,
-        licenseplate: form.licenseplate?.trim() || null,
         avatar: avatarUrl || null,
       };
 
@@ -236,7 +266,6 @@ export default function MEditProfile() {
           gender: form.gender,
           dob: form.dob,
           address: form.address,
-          licenseplate: form.licenseplate,
           avatar: avatarUrl,
         };
         router.setParams(params);
@@ -250,10 +279,10 @@ export default function MEditProfile() {
         });
 
         Alert.alert(
-          "Error",
+          "Lỗi",
           error.response?.data?.message ||
             error.response?.data?.error ||
-            "Failed to update profile"
+            "Không thể cập nhật hồ sơ"
         );
       }
     } finally {
@@ -273,7 +302,7 @@ export default function MEditProfile() {
       }, 100);
     } catch (error) {
       console.error("Logout error:", error);
-      Alert.alert("Error", "Failed to log out. Please try again.");
+      Alert.alert("Lỗi", "Không thể đăng xuất. Vui lòng thử lại.");
       setIsLoggingOut(false);
     }
   }, [dispatch, router]);
@@ -304,9 +333,9 @@ export default function MEditProfile() {
 
   const handleDateChange = (event: any, selectedDate?: Date) => {
     setShowDatePicker(false);
-    if (event.type === 'set' && selectedDate) {
+    if (event.type === "set" && selectedDate) {
       // Format date as YYYY-MM-DD
-      const formattedDate = selectedDate.toISOString().split('T')[0];
+      const formattedDate = selectedDate.toISOString().split("T")[0];
       updateForm({ dob: formattedDate });
     }
   };
@@ -314,7 +343,7 @@ export default function MEditProfile() {
   return (
     <Box className="flex-1 bg-[#f1f5f9]">
       <ScrollView>
-        <Box className="bg-[#1a3148] px-4 pt-6 pb-20 rounded-b-[32px] shadow-lg">
+        <Box className="bg-[#1a3148] px-4 pt-6 pb-20 rounded-b-[32px]">
           <Box className="flex-row items-center justify-between mb-6">
             <Pressable onPress={() => router.back()} className="p-2 -ml-2">
               <ChevronLeft size={24} color="white" />
@@ -322,7 +351,7 @@ export default function MEditProfile() {
 
             {isFormChanged && (
               <Pressable onPress={handleSubmit} className="p-2">
-                <Text className="text-white font-medium text-lg">Save</Text>
+                <Text className="text-[#fab753] font-medium text-lg">Lưu</Text>
               </Pressable>
             )}
           </Box>
@@ -349,7 +378,7 @@ export default function MEditProfile() {
 
               <Pressable
                 onPress={pickImage}
-                className="absolute bottom-0 right-0 w-9 h-9 bg-[#fab753] rounded-full items-center justify-center shadow-lg border-2 border-white"
+                className="absolute bottom-0 right-0 w-9 h-9 bg-[#fab753] rounded-xl items-center justify-center shadow-lg border-2 border-white"
               >
                 <Camera size={18} color="white" />
               </Pressable>
@@ -358,11 +387,11 @@ export default function MEditProfile() {
         </Box>
 
         <Box className="px-4 -mt-12">
-          <Box className="bg-white rounded-2xl shadow-sm p-5 border border-gray-100/50">
+          <Box className="bg-white rounded-2xl shadow-sm p-5">
             <Box className="space-y-4">
               <Box>
-                <Text className="text-sm font-medium text-gray-600 mb-1.5">
-                  Full Name
+                <Text className="text-sm font-medium text-[#1a3148] mb-1.5">
+                  Họ và tên
                 </Text>
                 <Input className="bg-[#f8fafc] rounded-xl border-0 shadow-sm">
                   <InputField
@@ -371,21 +400,23 @@ export default function MEditProfile() {
                       updateForm({ fullname: text })
                     }
                     className="h-12 px-3 text-base"
-                    placeholder="Enter your full name"
+                    placeholder="Nhập họ tên của bạn"
                   />
                 </Input>
               </Box>
 
               <Box>
-                <Text className="text-sm font-medium text-gray-600 mb-1.5">
-                  Email Address
+                <Text className="text-sm font-medium text-[#1a3148] mb-1.5">
+                  Email 
                 </Text>
                 <Input className="bg-[#f8fafc] rounded-xl border-0 shadow-sm">
                   <InputField
-                    value={form.email || ''}
-                    onChangeText={(text: string) => updateForm({ email: text || null })}
+                    value={form.email || ""}
+                    onChangeText={(text: string) =>
+                      updateForm({ email: text || null })
+                    }
                     className="h-12 px-3 text-base"
-                    placeholder="Enter your email address (optional)"
+                    placeholder="Nhập địa chỉ email của bạn (tùy chọn)"
                     keyboardType="email-address"
                     autoCapitalize="none"
                   />
@@ -393,38 +424,38 @@ export default function MEditProfile() {
               </Box>
 
               <Box>
-                <Text className="text-sm font-medium text-gray-600 mb-1.5">
-                  Gender
+                <Text className="text-sm font-medium text-[#1a3148] mb-1.5">
+                  Giới tính
                 </Text>
                 <Pressable
                   onPress={() => setShowGenderSheet(true)}
                   className="bg-[#f8fafc] rounded-xl border-0 shadow-sm h-12 px-3 flex-row items-center justify-between"
                 >
                   <Text
-                    className={`text-base ${form.gender ? "text-gray-900" : "text-gray-400"}`}
+                    className={`text-base ${form.gender ? "text-[#1a3148]" : "text-gray-400"}`}
                   >
-                    {form.gender || "Select your gender (optional)"}
+                    {form.gender || "Chọn giới tính của bạn (tùy chọn)"}
                   </Text>
-                  <ChevronDown size={20} color="#9CA3AF" />
+                  <ChevronDown size={20} color="#1a3148" />
                 </Pressable>
               </Box>
 
               <Box>
-                <Text className="text-sm font-medium text-gray-600 mb-1.5">
-                  Date of Birth
+                <Text className="text-sm font-medium text-[#1a3148] mb-1.5">
+                  Ngày sinh
                 </Text>
                 <Pressable
                   onPress={() => setShowDatePicker(true)}
                   className="bg-[#f8fafc] rounded-xl border-0 shadow-sm h-12 px-3 flex-row items-center justify-between"
                 >
                   <Text
-                    className={`text-base ${form.dob ? "text-gray-900" : "text-gray-400"}`}
+                    className={`text-base ${form.dob ? "text-[#1a3148]" : "text-gray-400"}`}
                   >
-                    {form.dob || "Select your date of birth (optional)"}
+                    {form.dob || "Chọn ngày sinh của bạn (tùy chọn)"}
                   </Text>
-                  <CalendarDaysIcon size={20} color="#9CA3AF" />
+                  <CalendarDaysIcon size={20} color="#1a3148" />
                 </Pressable>
-                
+
                 {showDatePicker && (
                   <DateTimePicker
                     value={form.dob ? new Date(form.dob) : new Date()}
@@ -438,31 +469,17 @@ export default function MEditProfile() {
               </Box>
 
               <Box>
-                <Text className="text-sm font-medium text-gray-600 mb-1.5">
-                  Address
+                <Text className="text-sm font-medium text-[#1a3148] mb-1.5">
+                  Địa chỉ
                 </Text>
                 <Input className="bg-[#f8fafc] rounded-xl border-0 shadow-sm">
                   <InputField
-                    value={form.address || ''}
-                    onChangeText={(text: string) => updateForm({ address: text || null })}
-                    className="h-12 px-3 text-base"
-                    placeholder="Enter your address (optional)"
-                  />
-                </Input>
-              </Box>
-
-              <Box>
-                <Text className="text-sm font-medium text-gray-600 mb-1.5">
-                  License Plate
-                </Text>
-                <Input className="bg-[#f8fafc] rounded-xl border-0 shadow-sm">
-                  <InputField
-                    value={form.licenseplate || ''}
+                    value={form.address || ""}
                     onChangeText={(text: string) =>
-                      updateForm({ licenseplate: text || null })
+                      updateForm({ address: text || null })
                     }
                     className="h-12 px-3 text-base"
-                    placeholder="Enter license plate number (optional)"
+                    placeholder="Nhập địa chỉ của bạn (tùy chọn)"
                   />
                 </Input>
               </Box>
@@ -476,16 +493,12 @@ export default function MEditProfile() {
             onPress={handleLogout}
             disabled={isLoggingOut}
             variant="solid"
-            className={`rounded-xl py-2 ${
-              isLoggingOut ? 'bg-gray-100' : 'bg-white active:bg-gray-50'
-            }`}
+            className={`rounded-xl py-2 ${isLoggingOut ? "bg-gray-100" : "bg-white active:bg-gray-50"}`}
           >
-            <ButtonText 
-              className={`font-medium text-base ${
-                isLoggingOut ? 'text-gray-400' : 'text-red-600'
-              }`}
+            <ButtonText
+              className={`font-medium text-base ${isLoggingOut ? "text-gray-400" : "text-red-600"}`}
             >
-              {isLoggingOut ? 'Logging out...' : 'Log Out'}
+              {isLoggingOut ? "Đang đăng xuất..." : "Đăng xuất"}
             </ButtonText>
           </Button>
         </Box>
@@ -509,12 +522,12 @@ export default function MEditProfile() {
           </ActionsheetDragIndicatorWrapper>
 
           <Box className="mb-6">
-            <Text className="text-xl font-semibold mb-2">
-              What's your gender?
+            <Text className="text-xl font-semibold text-[#1a3148] mb-2">
+              Giới tính của bạn là gì?
             </Text>
             <Text className="text-base text-gray-500">
-              This will help us personalize your experience and enhance safety
-              features.
+              Điều này sẽ giúp chúng tôi cá nhân hóa trải nghiệm và nâng cao
+              tính năng an toàn.
             </Text>
           </Box>
 
@@ -543,8 +556,8 @@ export default function MEditProfile() {
           </Box>
 
           <Text className="text-sm text-gray-500 mt-4">
-            The provided value may be compared with information that we have of
-            you in our records, from time to time.
+            Thông tin được cung cấp có thể được so sánh với dữ liệu của bạn
+            trong hệ thống của chúng tôi theo thời gian.
           </Text>
         </ActionsheetContent>
       </Actionsheet>

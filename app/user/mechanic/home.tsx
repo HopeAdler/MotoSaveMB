@@ -149,7 +149,7 @@ export default function MHomeScreen() {
               </Box>
               <Box>
                 <Text className="text-[#fab753] text-sm">
-                  Welcome back, Mechanic
+                  Chào mừng trở lại
                 </Text>
                 <Text className="text-white text-lg font-bold">
                   {user?.username}

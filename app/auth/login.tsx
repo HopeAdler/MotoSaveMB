@@ -113,10 +113,10 @@ export default function LoginScreen() {
             resizeMode="contain"
           />
           <Text className="text-white text-2xl font-bold mt-4">
-            Welcome Back
+            Chào mừng trở lại
           </Text>
           <Text className="text-white/60 text-base mt-1">
-            Sign in to continue
+            Đăng nhập để tiếp tục
           </Text>
         </Box>
       </Box>
@@ -177,17 +177,17 @@ export default function LoginScreen() {
             className="h-14 rounded-xl bg-[#fab753] mt-2 shadow-sm shadow-[#fab753]/20"
           >
             <Box className="flex-row items-center">
-              <Text className="text-white font-bold text-lg">Sign In</Text>
+              <Text className="text-white font-bold text-lg">Đăng nhập</Text>
             </Box>
           </Button>
 
           <Box className="flex-row justify-center mt-6">
-            <Text className="text-gray-600">Don't have an account? </Text>
+            <Text className="text-gray-600">Chưa có tài khoản? </Text>
             <Text
               className="text-[#fab753] font-semibold"
               onPress={() => router.navigate("/auth/register")}
             >
-              Sign Up
+              Đăng ký
             </Text>
           </Box>
         </Box>

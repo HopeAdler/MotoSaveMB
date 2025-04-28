@@ -143,10 +143,10 @@ export default function RegisterScreen() {
             resizeMode="contain"
           />
           <Text className="text-white text-2xl font-bold mt-4">
-            Create Account
+            Tạo tài khoản
           </Text>
           <Text className="text-white/60 text-base mt-1">
-            Sign up to get started
+            Đăng ký để bắt đầu
           </Text>
         </Box>
       </Box>
@@ -208,17 +208,17 @@ export default function RegisterScreen() {
             className="h-14 rounded-xl bg-[#fab753] mt-2 shadow-sm shadow-[#fab753]/20"
           >
             <Box className="flex-row items-center">
-              <Text className="text-white font-bold text-lg">Sign Up</Text>
+              <Text className="text-white font-bold text-lg">Đăng ký</Text>
             </Box>
           </Button>
 
           <Box className="flex-row justify-center mt-6">
-            <Text className="text-gray-600">Already have an account? </Text>
+            <Text className="text-gray-600">Đã có tài khoản? </Text>
             <Text
               className="text-[#fab753] font-semibold"
               onPress={() => router.navigate("/auth/login")}
             >
-              Sign In
+              Đăng nhập
             </Text>
           </Box>
         </Box>

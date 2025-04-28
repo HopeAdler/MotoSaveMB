@@ -48,7 +48,7 @@ export const CustomerInfo = ({
           <TouchableOpacity 
             onPress={onCallPress} 
             className="flex-row items-center"
-            accessibilityLabel={`Call ${repairRequestDetail?.customername}`}
+            accessibilityLabel={`Gọi ${repairRequestDetail?.customername}`}
             accessibilityRole="button"
           >
             <Phone color="#64748b" size={16} />
@@ -66,7 +66,7 @@ export const CustomerInfo = ({
         >
           <Box className="flex-row items-center">
             <MessageCircle color="white" size={18} />
-            <Text className="text-white font-semibold ml-2">Chat</Text>
+            <Text className="text-white font-semibold ml-2">Nhắn tin</Text>
           </Box>
         </TouchableOpacity>
       </Box>
