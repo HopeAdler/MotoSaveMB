@@ -461,6 +461,37 @@ export async function acceptRequest(requestdetailid: string, token: string): Pro
   }
 }
 
+export async function acceptEmergencyRequest(requestdetailid: string, token: string): Promise<any> {
+  try {
+    const response = await axios.put(
+      `https://motor-save-be.vercel.app/api/v1/requests/emergency/${requestdetailid}/accept`,
+      {},
+      { headers: { Authorization: "Bearer " + token } }
+    );
+
+    // If request is successful, return the response data
+    return response.data;
+  } catch (error: any) {
+    if (error.response) {
+      const status = error.response.status;
+      const errorMessage = error.response.data?.message || "Failed to accept request";
+
+      if (status === 404 || status === 409) {
+        // Only log if 404 or 409
+        console.warn(`Accept request warning (${status}):`, errorMessage);
+        return null; // or you can return something else if you prefer
+      }
+      
+      // For other errors, throw normally
+      throw new Error(errorMessage);
+    } else {
+      // Non-HTTP error (like network error)
+      console.error("Non-response error accepting request:", error.message);
+      throw new Error("Network error or server unreachable");
+    }
+  }
+}
+
 export async function acceptRepairQuote(requestdetailid: string | any, token: string): Promise<any> {
   try {
     await axios.put(
