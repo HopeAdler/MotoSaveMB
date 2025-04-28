@@ -77,6 +77,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
 } from "@/components/ui/alert-dialog";
+import { Divider } from "@/components/ui/divider";
 
 const RepairRequestScreen = () => {
   const { PayZaloBridge } = NativeModules;
@@ -452,18 +453,20 @@ const RepairRequestScreen = () => {
             <Box key={step.status} className="items-center flex-1">
               <Box className="h-8 flex items-center justify-center relative z-10">
                 <Box
-                  className={`w-8 h-8 rounded-full ${index <= currentStepIndex ? getStatusColor() : "bg-gray-200"
-                    } items-center justify-center`}
+                  className={`w-8 h-8 rounded-full ${
+                    index <= currentStepIndex ? getStatusColor() : "bg-gray-200"
+                  } items-center justify-center`}
                 >
                   <CheckCircle2 size={16} color="white" />
                 </Box>
               </Box>
               <Box className="h-12 justify-start pt-2">
                 <Text
-                  className={`text-xs text-center px-1 ${index <= currentStepIndex
-                    ? "text-gray-900"
-                    : "text-gray-500"
-                    }`}
+                  className={`text-xs text-center px-1 ${
+                    index <= currentStepIndex
+                      ? "text-gray-900"
+                      : "text-gray-500"
+                  }`}
                   numberOfLines={2}
                 >
                   {step.title}
@@ -489,17 +492,17 @@ const RepairRequestScreen = () => {
             <ChevronLeft size={24} color="#374151" />
           </Pressable>
           <Text bold size="xl" className="flex-1 text-center mr-10">
-            Repair Vehicle Request
+            Yêu cầu sửa xe
           </Text>
         </Box>
         <Box className="bg-white rounded-2xl shadow-sm p-4 mb-4">
           <Text className="text-lg font-bold text-gray-900 mb-4 text-center">
-            Mechanic Information
+            Thông tin thợ sửa xe
           </Text>
           <Box className="flex-row items-center">
             <User size={20} color="#6B7280" />
             <Box className="ml-3">
-              <Text className="text-sm text-gray-500">Mechanic Name</Text>
+              <Text className="text-sm text-gray-500">Họ và tên</Text>
               <Text className="text-base text-gray-900">
                 {requestDetail?.requeststatus !== "Pending"
                   ? requestDetail?.mechanicname
@@ -511,7 +514,7 @@ const RepairRequestScreen = () => {
           <Box className="flex-row items-center">
             <Phone size={20} color="#6B7280" />
             <Box className="ml-3">
-              <Text className="text-sm text-gray-500">Phone Number</Text>
+              <Text className="text-sm text-gray-500">Số điện thoại</Text>
               <Text className="text-base text-gray-900">
                 {requestDetail?.requeststatus !== "Pending"
                   ? requestDetail?.mechanicphone
@@ -522,7 +525,7 @@ const RepairRequestScreen = () => {
           <Box className="flex-row items-center">
             <Car size={20} color="#6B7280" />
             <Box className="ml-3">
-              <Text className="text-sm text-gray-500">Station</Text>
+              <Text className="text-sm text-gray-500">Trạm</Text>
               <Text className="text-base text-gray-900">
                 {requestDetail?.stationname}
               </Text>
@@ -531,7 +534,7 @@ const RepairRequestScreen = () => {
           <Box className="flex-row items-center">
             <AlertCircle size={20} color="#6B7280" />
             <Box className="ml-3">
-              <Text className="text-sm text-gray-500">Address</Text>
+              <Text className="text-sm text-gray-500">Địa chỉ</Text>
               <Text className="text-base text-gray-900">
                 {requestDetail?.stationaddress}
               </Text>
@@ -546,7 +549,7 @@ const RepairRequestScreen = () => {
                 )
               }
             >
-              View repair cost preview
+              Xem bảng giá dịch vụ sửa chữa
             </Text>
           </Box>
         </Box>
@@ -558,72 +561,128 @@ const RepairRequestScreen = () => {
           requestDetail?.requeststatus !== "Inspecting" && (
             <Box className="flex-1 bg-white rounded-2xl shadow-sm p-4 mb-4">
               <Text className="text-lg font-bold text-gray-900 mb-4 text-center">
-                Repair Quote
+                Phí sửa chữa
               </Text>
 
-              <FlatList
-                data={repairQuotes}
-                keyExtractor={(item) => item.id}
-                renderItem={({ item }) => (
-                  <Box className="flex-row justify-between items-center py-3 border-b border-gray-500">
-                    <Box>
-                      <Text className="text-base font-semibold text-[#1a3148]">
-                        {item.repairname || "No repair name found"}
-                      </Text>
-                      {item.accessoryname && (
+              <Text className="text-lg font-bold text-gray-900 mt-3 mb-1">
+                Gói sửa chữa
+              </Text>
+
+              {repairQuotes.filter(
+                (quote) => quote.repairpackagename === "Basic"
+              ).length > 0 ? (
+                repairQuotes
+                  .filter((quote) => quote.repairpackagename === "Basic")
+                  .map((item) => (
+                    <Box
+                      key={item.id}
+                      className="flex-row justify-between item-center"
+                    >
+                      <Box className="flex-1">
                         <Text className="text-base font-semibold text-[#1a3148]">
-                          {item.accessoryname || "No repair name found"}
+                          {item.repairname}
                         </Text>
-                      )}
-                    </Box>
-                    <Box className="flex-row flex-wrap gap-2 mt-4">
-                      <Text className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
-                        Cost: {formatMoney(item.cost)}
-                      </Text>
-                      <Text className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
-                        Rate: {item.wagerate}x
-                      </Text>
-                      <Text className="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full">
-                        Wage: {formatMoney(item.wage)}
-                      </Text>
-                      <Text className="bg-orange-100 text-orange-800 text-sm font-medium px-3 py-1 rounded-full">
-                        Total: {formatMoney(item.total)}
+                      </Box>
+                      <Text className="bg-blue-100 text-blue-800 text-sm font-semibold px-3 py-1 rounded-full">
+                        {formatMoney(
+                          item.repairpackagename === "Basic"
+                            ? item.wage || 0
+                            : item.cost
+                        )}
                       </Text>
                     </Box>
-                  </Box>
-                )}
-              />
+                  ))
+              ) : (
+                <Text className="text-gray-500 italic">
+                  Không có gói sửa chữa
+                </Text>
+              )}
+
+              <Divider className="mt-2"></Divider>
+
+              <Text className="text-lg font-bold text-gray-900 mt-4 mb-1">
+                Danh sách linh kiện thay thế
+              </Text>
+
+              {repairQuotes.filter(
+                (quote) => quote.repairpackagename === "Addons"
+              ).length > 0 ? (
+                repairQuotes
+                  .filter((quote) => quote.repairpackagename === "Addons")
+                  .map((item) => (
+                    <Box
+                      key={item.id}
+                      className="flex-row justify-between item-center"
+                    >
+                      <Box className="flex-1">
+                        <Text className="text-base font-semibold text-[#1a3148]">
+                          {item.accessoryname || item.repairname}
+                        </Text>
+                        <Text className="text-base font-semibold text-gray-500">
+                          {item.partcategoryname}
+                        </Text>
+                        <Text className="text-xs">
+                          Phụ thu: {formatMoney(item.wage)}
+                        </Text>
+                      </Box>
+                      <Box>
+                        <Text className="bg-blue-100 text-blue-800 text-sm font-semibold px-3 py-1 rounded-full">
+                          {formatMoney(item.cost)}
+                        </Text>
+                      </Box>
+                    </Box>
+                  ))
+              ) : (
+                <Text className="text-gray-500 italic">Không có linh kiện</Text>
+              )}
+
+              <Divider className="mt-2"></Divider>
+
+              <Box className="flex-row justify-between items-center mt-4 pt-3 border-gray-300">
+                <Text className="text-base font-semibold text-gray-900 mb-2">
+                  Tổng phụ thu
+                </Text>
+                <Text className="bg-green-100 text-green-800 text-sm font-semibold px-3 py-1 rounded-full">
+                  {formatMoney(
+                    repairQuotes
+                      .filter((quote) => quote.repairpackagename !== "Basic")
+                      .reduce((sum, item) => sum + (item.wage || 0), 0)
+                  )}
+                </Text>
+              </Box>
+
+              <Divider className="mt-2"></Divider>
 
               {/* Total Price */}
               <Box className="flex-row justify-between items-center my-4 pt-3">
-                <Text className="text-base font-semibold text-gray-900">
-                  Total Price
+                <Text className="text-lg font-bold text-gray-900">
+                  Tổng đơn
                 </Text>
-                <Text className="text-lg font-bold text-red-500">
-                  {requestDetail?.totalprice.toLocaleString()} VND
+                <Text className="bg-pink-100 text-black-800 text-base font-bold px-3 py-1 rounded-full">
+                  {formatMoney(requestDetail?.totalprice || 0)}
                 </Text>
               </Box>
+
+              <Divider></Divider>
 
               {/* Return vehicle location */}
               <Box className="mt-2">
                 <Text className="text-base font-semibold text-gray-900 mb-2">
-                  Return vehicle location (Optional)
+                  Địa điểm trả xe (Không bắt buộc)
                 </Text>
                 <Input variant="outline" size="md" className="bg-white">
                   <InputField
-                    placeholder="Search destination"
+                    placeholder="Tìm địa điểm"
                     value={destinationQuery}
                     onChangeText={handleDestinationChange}
                   />
                 </Input>
               </Box>
               {destinationResults.length > 0 && !destinationSelected && (
-                <FlatList
-                  data={destinationResults}
-                  keyExtractor={(_item, index) => index.toString()}
-                  className="bg-white rounded max-h-40"
-                  renderItem={({ item }) => (
+                <Box className="bg-white-rounded max-h-40">
+                  {destinationResults.map((item, index) => (
                     <Pressable
+                      key={index.toString()}
                       onPress={() => {
                         setDestinationQuery(item.description);
                         handleFetchLocation(item.description);
@@ -632,13 +691,29 @@ const RepairRequestScreen = () => {
                     >
                       <Text className="text-black">{item.description}</Text>
                     </Pressable>
-                  )}
-                />
+                  ))}
+                </Box>
+                // <FlatList
+                //   data={destinationResults}
+                //   keyExtractor={(_item, index) => index.toString()}
+                //   className="bg-white rounded max-h-40"
+                //   renderItem={({ item }) => (
+                //     <Pressable
+                //       onPress={() => {
+                //         setDestinationQuery(item.description);
+                //         handleFetchLocation(item.description);
+                //       }}
+                //       className="p-2"
+                //     >
+                //       <Text className="text-black">{item.description}</Text>
+                //     </Pressable>
+                //   )}
+                // />
               )}
               {/* Payment method */}
               <Box className="mt-4">
                 <Text className="text-base font-semibold text-gray-900 mb-2">
-                  Payment Method
+                  Phương thức thanh toán
                 </Text>
                 <Select
                   selectedValue={paymentMethod}

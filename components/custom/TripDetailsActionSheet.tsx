@@ -216,37 +216,49 @@ const TripDetailsActionSheet: React.FC<TripDetailsActionSheetProps> = ({
                         </Box>
                       </Box>
                     )}
-                    <Box className="bg-blue-50 rounded-2xl p-4 mt-4">
-                      <Box className="items-center">
-                        <Text className="text-gray-600 mb-1">Estimated Fare</Text>
-                        <Text className="text-2xl font-bold text-blue-600">
-                          {fare?.toLocaleString()} VND
-                          {/* ssss */}
-                        </Text>
+                    {rescueType != "flood" ? (
+                      <Box>
+                        <Box className="bg-blue-50 rounded-2xl p-4 mt-4">
+                          <Box className="items-center">
+                            <Text className="text-gray-600 mb-1">Estimated Fare</Text>
+                            <Text className="text-2xl font-bold text-blue-600">
+                              {fare?.toLocaleString()} VND
+                              {/* ssss */}
+                            </Text>
+                          </Box>
+                        </Box>
+                        <Box className="mt-4">
+                          <Text className="text-gray-600 mb-2">Payment Method</Text>
+                          <Select
+                            selectedValue={paymentMethod}
+                            onValueChange={(value: any) => setPaymentMethod(value)}
+                          >
+                            <SelectTrigger className="border border-gray-200 rounded-xl p-5 flex-row items-center justify-between bg-gray-50 h-13">
+                              <SelectInput
+                                placeholder="Select payment method"
+                                className="text-lg flex-1"
+                              />
+                              <SelectIcon as={ChevronDownIcon} />
+                            </SelectTrigger>
+                            <SelectPortal>
+                              <SelectBackdrop />
+                              <SelectContent>
+                                <SelectItem label="Tiền mặt" value="Tiền mặt" />
+                                <SelectItem label="Zalopay" value="Zalopay" />
+                              </SelectContent>
+                            </SelectPortal>
+                          </Select>
+                        </Box>
                       </Box>
-                    </Box>
-                    <Box className="mt-4">
-                      <Text className="text-gray-600 mb-2">Payment Method</Text>
-                      <Select
-                        selectedValue={paymentMethod}
-                        onValueChange={(value: any) => setPaymentMethod(value)}
-                      >
-                        <SelectTrigger className="border border-gray-200 rounded-xl p-5 flex-row items-center justify-between bg-gray-50 h-13">
-                          <SelectInput
-                            placeholder="Select payment method"
-                            className="text-lg flex-1"
-                          />
-                          <SelectIcon as={ChevronDownIcon} />
-                        </SelectTrigger>
-                        <SelectPortal>
-                          <SelectBackdrop />
-                          <SelectContent>
-                            <SelectItem label="Tiền mặt" value="Tiền mặt" />
-                            <SelectItem label="Zalopay" value="Zalopay" />
-                          </SelectContent>
-                        </SelectPortal>
-                      </Select>
-                    </Box>
+                    ) : (
+                      <Box className="bg-red-50 rounded-2xl p-4 mt-4">
+                        <Box className="items-center">
+                          <Text className="text-gray-600 mb-1 font-semibold align-middle text-center"> 
+                            Fare will be calculated based on traveled distance
+                            </Text>
+                        </Box>
+                      </Box>
+                    )}
                     {rescueType === "emergency" && (
                       <Box className="mt-4">
                         <Text className="text-gray-600 mb-2">Loại xe</Text>

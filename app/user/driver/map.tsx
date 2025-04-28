@@ -1,7 +1,7 @@
 import { AuthContext } from "@/app/context/AuthContext";
 import { createRepairRequest, getUndoneRequestDetailIds, getUnpaidPaymentsByRequestId, updateRequestStatus } from "@/app/services/beAPI";
 import { getDirections } from "@/app/services/goongAPI";
-import { decodedToken, decodePolyline, handlePhoneCall } from "@/app/utils/utils";
+import { decodedToken, decodePolyline, formatMoney, handlePhoneCall } from "@/app/utils/utils";
 import { DestinationMarker, OriginMarker } from "@/components/custom/CustomMapMarker";
 import DriverRequestDetail from "@/components/custom/DriverRequestDetail";
 import { tripReducer, TripState, TripAction } from "../../utils/fareCal";
@@ -603,8 +603,12 @@ const GenMap: React.FC = () => {
                             <Text className="text-sm text-gray-500 ml-2">Total Price</Text>
                           </Box>
                           <Text className="text-xl font-bold text-[#1a3148]">
-                            {/* {requestDetail?.totalprice.toLocaleString()} VND */}
-                            <Text className="text-2xl font-bold">{trip.fare?.toLocaleString()} VND</Text>
+                            <Text className="text-2xl font-bold">
+                              {requestDetail?.servicepackagename === 'Cứu hộ nước ngập' ?
+                                formatMoney(trip?.fare) :
+                                formatMoney(requestDetail?.totalprice || 0)
+                              }
+                            </Text>
                           </Text>
                         </Box>
                         <Box className="bg-black px-4 py-2 rounded-lg">

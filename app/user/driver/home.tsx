@@ -14,6 +14,7 @@ import { Avatar } from "react-native-elements";
 import { SafeAreaView } from "react-native-safe-area-context";
 import LoadingScreen from "../../loading/loading";
 import { RequestItem } from "@/app/context/formFields";
+import { CreateGuestRequest } from "@/components/custom/CreateGuestRequest";
 
 // interface ServiceCardProps {
 //   icon: LucideIcon;
@@ -47,7 +48,8 @@ export default function DHomeScreen() {
   const { pubnub } = usePubNub(); // Access PubNub instance from context
   const { publishAcceptRequest } = usePubNubService(); //
   const [isLoading, setIsLoading] = useState(true);
-  const { jsonPendingReqDetailIds } = useLocalSearchParams<any>();
+  const { jsonPendingReqDetailIds, jsonCurLoc = '{"latitude":0,"longitude":0}' } = useLocalSearchParams<any>();
+  const [currentLoc, setCurrentLoc] = useState({ latitude: 0, longitude: 0, heading: 0 });
   const [pendingReqDetailIds, setPendingReqDetailIds] = useState(new Map<string, string>());
   const [pendingRescueRequests, setPendingRescueRequests] = useState<RequestItem[]>([]);
   const [pendingReturnRequests, setPendingReturnRequests] = useState<RequestItem[]>([]);
@@ -109,6 +111,16 @@ export default function DHomeScreen() {
       setPendingReqDetailIds(new Map(Object.entries(parsedObject)));
     }
   }, [jsonPendingReqDetailIds]);
+
+  useEffect(() => {
+    try {
+      setCurrentLoc(JSON.parse(jsonCurLoc));
+      // console.log(jsonCurLoc)
+    } catch (error) {
+      console.error("Failed to parse jsonCurLoc:", error, jsonCurLoc);
+      setCurrentLoc({ latitude: 0, longitude: 0, heading: 0 });
+    }
+  }, [jsonCurLoc]);
 
   if (isLoading) return <LoadingScreen />;
 
@@ -226,6 +238,7 @@ export default function DHomeScreen() {
               )}
             </Box>
 
+            {/* <CreateGuestRequest currentLoc={currentLoc}/> */}
             {/* <Box className="bg-white rounded-2xl p-4 mt-4 shadow-sm">
               <Text className="text-lg font-bold text-gray-800 mb-4">
                 Thao tác nhanh

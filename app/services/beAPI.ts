@@ -65,6 +65,13 @@ export interface RepairQuote {
   total: number,
 }
 
+export interface ServicePackage {
+  id: string;
+  name: string;
+  description: string;
+  rate: number,
+}
+
 // Hàm fetch danh sách station
 export async function fetchStations(): Promise<any> {
   try {
@@ -335,10 +342,10 @@ export async function updateRequestStatus(
   }
 }
 
-export async function calculateFare(distance: number): Promise<number> {
+export async function calculateFare(distance: number, serPacRate: number): Promise<number> {
   try {
     const response = await axios.get(
-      `https://motor-save-be.vercel.app/api/v1/distance/calculate?distance=${distance}`
+      `https://motor-save-be.vercel.app/api/v1/distance/calculate?distance=${distance}&serpacrate=${serPacRate}`
     );
     return response.data.totalMoney;
   } catch (error) {
@@ -557,6 +564,17 @@ export async function cancelRequest(
   } catch (error) {
     console.error("Error cancelling ride:", error);
     throw error;
+  }
+}
+
+export async function getServicePackageByName(serPacName: string): Promise<any> {
+  try {
+    const response = await axios.get(
+      `https://motor-save-be.vercel.app/api/v1/servicepackages/findByName?name=${serPacName}`,
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching repair quotes:", error);
   }
 }
 

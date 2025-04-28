@@ -7,6 +7,8 @@ import beAPI, {
   createPayment,
   createTransaction,
   EmergencyRescueRequestPayload,
+  getServicePackageByName,
+  ServicePackage,
   updateRequestStatus
 } from "@/app/services/beAPI";
 import {
@@ -81,6 +83,7 @@ const EmergencyRescueMapScreen = () => {
       setOriginCoordinates(currentLoc);
     }
   }, [currentLoc, originCoordinates]);
+  const [servicePackage, setServicePackage] = useState<ServicePackage>();
   const [destinationCoordinates, setDestinationCoordinates] = useState({
     latitude: 0,
     longitude: 0,
@@ -113,6 +116,11 @@ const EmergencyRescueMapScreen = () => {
   useEffect(() => {
     isSearchingRef.current = isSearching;
   }, [isSearching]);
+
+  const fetchServicePackage = async () => {
+    const results = await getServicePackageByName('Cứu hộ đến trạm');
+    setServicePackage(results);
+  }
 
   // State để lưu station đã chọn (ID)
   const [selectedStationId, setSelectedStationId] = useState<string>("");
@@ -312,10 +320,10 @@ const EmergencyRescueMapScreen = () => {
   }, [currentLoc, acceptedReqDetStatus]);
   // Tính toán cước phí khi có thông tin đường đi
   useEffect(() => {
-    if (directionsInfo && !showActionsheet) {
+    if (directionsInfo && !showActionsheet && servicePackage) {
       const distanceValue = directionsInfo.distance?.value || 0;
       setFareLoading(true);
-      calculateFare(distanceValue)
+      calculateFare(distanceValue, servicePackage?.rate)
         .then((money) => {
           setFare(money);
           setShowActionsheet(true);
@@ -715,6 +723,7 @@ const EmergencyRescueMapScreen = () => {
 
   useEffect(() => {
     hereNow();
+    fetchServicePackage();
   }, []);
 
   return (
