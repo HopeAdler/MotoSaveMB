@@ -36,7 +36,7 @@ interface RepairRequestDetail {
   requesttype: string;
   requestdetailid: string;
   requeststatus: string;
-  totalprice: number | null;
+  totalprice: number;
   stationid: string;
   stationname: string;
   stationaddress: string;
@@ -71,14 +71,14 @@ interface RepairQuote {
   updateddate?: string;
 }
 
-const translatePaymentMethod = (method: string | undefined): string => {
-  if (!method) return "";
+// const translatePaymentMethod = (method: string | undefined): string => {
+//   if (!method) return "";
 
-  switch (method) {
-    case "Tiền mặt": return "Cash";
-    default: return method;
-  }
-};
+//   switch (method) {
+//     case "Tiền mặt": return "Cash";
+//     default: return method;
+//   }
+// };
 
 export default function RepairDetailsScreen() {
   const { token } = useContext(AuthContext);
@@ -260,9 +260,9 @@ export default function RepairDetailsScreen() {
 
 
   const handleConfirmSend = () => {
-    Alert.alert("Confirm sending repair quote", "Are you sure to send this quote to customer?", [
-      { text: "No", style: "cancel" },
-      { text: "Yes", onPress: handleSendRepairQuote },
+    Alert.alert("Xác nhận gửi báo giá", "Bạn có chắc muốn gửi báo giá cho khách hàng?", [
+      { text: "Huỷ", style: "cancel" },
+      { text: "Xác nhận", onPress: handleSendRepairQuote },
     ]);
   };
 
@@ -343,7 +343,7 @@ export default function RepairDetailsScreen() {
     return (
       <Box className="flex-1 bg-gray-50 items-center justify-center p-4">
         <Text className="text-gray-600 text-center">
-          No repair details found
+          Không có yêu cầu sửa chữa
         </Text>
       </Box>
     );
@@ -360,7 +360,7 @@ export default function RepairDetailsScreen() {
           <Box className="px-5">
             <Box className="flex-row items-center justify-between mt-6">
               <Text className="text-2xl font-bold text-white">
-                Repair Details
+                Chi tiết sửa chữa
               </Text>
               <RepairStatusBadge status={repairRequestDetail.requeststatus} />
             </Box>
@@ -383,7 +383,7 @@ export default function RepairDetailsScreen() {
           <Box className="mt-4 bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
             <Box className="flex-row items-center justify-between mb-5">
               <Text className="text-lg font-bold text-[#1a3148]">
-                Repair Quotes
+                Báo giá sửa chữa
               </Text>
               {isNew && (
                 <Text className="text-sm text-gray-500">
@@ -461,16 +461,16 @@ export default function RepairDetailsScreen() {
                   ) : (
                     <Box className="flex-row flex-wrap gap-2 mt-4">
                       <Text className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
-                        Cost: {formatMoney(item.cost)}
+                        Giá: {formatMoney(item.cost)}
                       </Text>
                       <Text className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
                         Rate: {item.wagerate}x
                       </Text>
                       <Text className="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full">
-                        Wage: {formatMoney(item.wage)}
+                        Phụ thu: {formatMoney(item.wage)}
                       </Text>
                       <Text className="bg-orange-100 text-orange-800 text-sm font-medium px-3 py-1 rounded-full">
-                        Total: {formatMoney(item.total)}
+                        Tổng: {formatMoney(item.total)}
                       </Text>
                     </Box>
                   )}
@@ -480,7 +480,7 @@ export default function RepairDetailsScreen() {
             <Box className="flex-row items-center mt-5">
               <CreditCard size={18} color="#1a3148" />
               <Text className="text-xs uppercase tracking-wider text-gray-500 ml-2">
-                Total Amount
+                Tổng chi phí
               </Text>
               <Text className="text-xs uppercase tracking-wider text-gray-500 ml-2">
                 {formatMoney(repairQuotes.reduce((sum, r) => sum + r.total, 0))}
@@ -497,7 +497,7 @@ export default function RepairDetailsScreen() {
                       }`}
                   >
                     <Text className="text-white font-bold">
-                      + Add Repair Item
+                      + Thêm linh kiện sửa chữa
                     </Text>
                   </Button>
 
@@ -508,7 +508,7 @@ export default function RepairDetailsScreen() {
                       className={`h-12 rounded-xl ${isSubmitDisabled ? "bg-gray-200" : "bg-[#1a3148]"
                         }`}
                     >
-                      <Text className="text-white font-bold">Send Quote</Text>
+                      <Text className="text-white font-bold">Gửi báo giá</Text>
                     </Button>
                   )}
                 </Box>
@@ -520,7 +520,7 @@ export default function RepairDetailsScreen() {
             <Box className="mt-4 bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
               <Box className="flex-row items-center justify-between mb-4">
                 <Text className="text-lg font-bold text-[#1a3148]">
-                  Payment Details
+                  Chi tiết thanh toán
                 </Text>
                 <Box
                   className={`px-3 py-1.5 rounded-full ${repairRequestDetail.paymentstatus === "Success"
@@ -535,8 +535,8 @@ export default function RepairDetailsScreen() {
                       }`}
                   >
                     {repairRequestDetail.paymentstatus === "Success"
-                      ? "Paid"
-                      : "Unpaid"}
+                      ? "Đã thanh toán"
+                      : "Chưa thanh toán"}
                   </Text>
                 </Box>
               </Box>
@@ -547,16 +547,16 @@ export default function RepairDetailsScreen() {
                     <Box className="flex-row items-center mb-1">
                       <CreditCard size={18} color="#1a3148" />
                       <Text className="text-xs uppercase tracking-wider text-gray-500 ml-2">
-                        Total Amount
+                        Tổng đơn
                       </Text>
                     </Box>
                     <Text className="text-2xl font-bold text-[#1a3148]">
-                      {repairRequestDetail?.totalprice?.toLocaleString()} VND
+                      {formatMoney(repairRequestDetail.totalprice)}
                     </Text>
                   </Box>
                   <Box className="bg-black px-4 py-2 rounded-xl">
                     <Text className="text-white font-bold text-sm">
-                      {translatePaymentMethod(repairRequestDetail?.paymentmethod)}
+                      {repairRequestDetail?.paymentmethod}
                     </Text>
                   </Box>
                 </Box>
@@ -569,12 +569,12 @@ export default function RepairDetailsScreen() {
                   <Button
                     onPress={() => {
                       Alert.alert(
-                        "Confirm Payment",
-                        "Has the customer paid in full?",
+                        "Xác nhận thanh toán",
+                        "Khách hàng đã thanh toán đầy đủ?",
                         [
-                          { text: "Cancel", style: "cancel" },
+                          { text: "Huỷ", style: "cancel" },
                           {
-                            text: "Confirm",
+                            text: "Xác nhận",
                             onPress: () => changePaymentStatus("Success"),
                           },
                         ]

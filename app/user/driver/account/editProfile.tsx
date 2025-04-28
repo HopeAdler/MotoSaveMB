@@ -95,7 +95,7 @@ export default function DEditProfile() {
 
   // Add gender sheet state
   const [showGenderSheet, setShowGenderSheet] = useState(false);
-  const genderOptions = ["Male", "Female", "Prefer not to disclose"];
+  const genderOptions = ["Nam", "Nữ", "Không xác định"];
 
   // Modify form state update to check for changes
   const updateForm = (updates: Partial<FormData>) => {
@@ -325,7 +325,7 @@ export default function DEditProfile() {
 
             {isFormChanged && (
               <Pressable onPress={handleSubmit} className="p-2">
-                <Text className="text-[#fab753] font-medium text-lg">Save</Text>
+                <Text className="text-[#fab753] font-medium text-lg">Lưu</Text>
               </Pressable>
             )}
           </Box>
@@ -365,7 +365,7 @@ export default function DEditProfile() {
             <Box className="space-y-4">
               <Box>
                 <Text className="text-sm font-medium text-[#1a3148] mb-1.5">
-                  Full Name
+                  Họ và tên
                 </Text>
                 <Input className="bg-[#f8fafc] rounded-xl border-0 shadow-sm">
                   <InputField
@@ -374,21 +374,21 @@ export default function DEditProfile() {
                       updateForm({ fullname: text })
                     }
                     className="h-12 px-3 text-base"
-                    placeholder="Enter your full name"
+                    placeholder="Nhập họ và tên của bạn"
                   />
                 </Input>
               </Box>
 
               <Box>
                 <Text className="text-sm font-medium text-[#1a3148] mb-1.5">
-                  Email Address
+                  Email
                 </Text>
                 <Input className="bg-[#f8fafc] rounded-xl border-0 shadow-sm">
                   <InputField
                     value={form.email || ''}
                     onChangeText={(text: string) => updateForm({ email: text || null })}
                     className="h-12 px-3 text-base"
-                    placeholder="Enter your email address (optional)"
+                    placeholder="Nhập địa chỉ email của bạn (tùy chọn)"
                     keyboardType="email-address"
                     autoCapitalize="none"
                   />
@@ -397,7 +397,7 @@ export default function DEditProfile() {
 
               <Box>
                 <Text className="text-sm font-medium text-[#1a3148] mb-1.5">
-                  Gender
+                  Giới tính
                 </Text>
                 <Pressable
                   onPress={() => setShowGenderSheet(true)}
@@ -406,7 +406,7 @@ export default function DEditProfile() {
                   <Text
                     className={`text-base ${form.gender ? "text-[#1a3148]" : "text-gray-400"}`}
                   >
-                    {form.gender || "Select your gender (optional)"}
+                    {form.gender || "Chọn giới tính của bạn (tùy chọn)"}
                   </Text>
                   <ChevronDown size={20} color="#1a3148" />
                 </Pressable>
@@ -414,7 +414,7 @@ export default function DEditProfile() {
 
               <Box>
                 <Text className="text-sm font-medium text-[#1a3148] mb-1.5">
-                  Date of Birth
+                  Ngày sinh
                 </Text>
                 <Pressable
                   onPress={() => setShowDatePicker(true)}
@@ -423,7 +423,7 @@ export default function DEditProfile() {
                   <Text
                     className={`text-base ${form.dob ? "text-[#1a3148]" : "text-gray-400"}`}
                   >
-                    {form.dob || "Select your date of birth (optional)"}
+                    {form.dob || "Chọn ngày sinh của bạn (tùy chọn)"}
                   </Text>
                   <CalendarDaysIcon size={20} color="#1a3148" />
                 </Pressable>
@@ -440,9 +440,9 @@ export default function DEditProfile() {
                 )}
               </Box>
 
-              <Box>
+              {/* <Box>
                 <Text className="text-sm font-medium text-[#1a3148] mb-1.5">
-                  Address
+                  Địa chỉ
                 </Text>
                 <Input className="bg-[#f8fafc] rounded-xl border-0 shadow-sm">
                   <InputField
@@ -452,11 +452,11 @@ export default function DEditProfile() {
                     placeholder="Enter your address (optional)"
                   />
                 </Input>
-              </Box>
+              </Box> */}
 
               <Box>
                 <Text className="text-sm font-medium text-[#1a3148] mb-1.5">
-                  License Plate
+                  Biển số xe
                 </Text>
                 <Input className="bg-[#f8fafc] rounded-xl border-0 shadow-sm">
                   <InputField
@@ -465,7 +465,7 @@ export default function DEditProfile() {
                       updateForm({ licenseplate: text || null })
                     }
                     className="h-12 px-3 text-base"
-                    placeholder="Enter license plate number (optional)"
+                    placeholder="Nhập biển số xe của bạn"
                   />
                 </Input>
               </Box>
@@ -488,7 +488,7 @@ export default function DEditProfile() {
                 isLoggingOut ? 'text-gray-400' : 'text-red-600'
               }`}
             >
-              {isLoggingOut ? 'Logging out...' : 'Log Out'}
+              {isLoggingOut ? "Đang đăng xuất..." : "Đăng xuất"}
             </ButtonText>
           </Button>
         </Box>
@@ -513,11 +513,11 @@ export default function DEditProfile() {
 
           <Box className="mb-6">
             <Text className="text-xl font-semibold text-[#1a3148] mb-2">
-              What's your gender?
+            Giới tính của bạn là gì?
             </Text>
             <Text className="text-base text-gray-500">
-              This will help us personalise your experience and enhance safety
-              features.
+            Điều này sẽ giúp chúng tôi cá nhân hóa trải nghiệm và nâng cao
+            tính năng an toàn.
             </Text>
           </Box>
 
@@ -546,8 +546,8 @@ export default function DEditProfile() {
           </Box>
 
           <Text className="text-sm text-gray-500 mt-4">
-            The provided value may be compared with information that we have of
-            you in our records, from time to time.
+          Thông tin được cung cấp có thể được so sánh với dữ liệu của bạn
+          trong hệ thống của chúng tôi theo thời gian.
           </Text>
         </ActionsheetContent>
       </Actionsheet>

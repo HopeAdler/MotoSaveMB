@@ -119,7 +119,7 @@ export default function MRequestScreen() {
       <Box className="bg-white p-5 shadow-sm">
         <Box className="flex-row items-center justify-between mb-2">
           <Box>
-            <Text className="text-[#1a3148] text-xl font-bold">Repair Requests</Text>
+            <Text className="text-[#1a3148] text-xl font-bold">Yêu cầu sửa chữa</Text>
           </Box>
         </Box>
       </Box>
@@ -141,7 +141,7 @@ export default function MRequestScreen() {
         }
         ListEmptyComponent={
           <Box className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100/50 mt-4 items-center justify-center">
-            <Text className="text-[#1a3148] text-base font-medium">No repair requests available</Text>
+            <Text className="text-[#1a3148] text-base font-medium">Không có yêu cầu sửa chữa</Text>
           </Box>
         }
         initialNumToRender={8}

@@ -676,7 +676,7 @@ const RescueMapScreen = () => {
           <SearchInput
             value={originQuery}
             onChangeText={handleOriginChange}
-            placeholder="Search origin"
+            placeholder="Vui lòng nhập điểm đón"
             onClear={() => setOriginQuery("")}
           />
           <SearchResults
@@ -691,7 +691,7 @@ const RescueMapScreen = () => {
             <SearchInput
               value={destinationQuery}
               onChangeText={handleDestinationChange}
-              placeholder="Search destination"
+              placeholder="Vui lòng nhập điểm đến"
               onClear={() => setDestinationQuery("")}
               isDisabled={!originSelected}
             />

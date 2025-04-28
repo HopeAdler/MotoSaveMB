@@ -77,8 +77,8 @@ export default function CSettingscreen() {
   const menuItems: MenuButtonProps[] = [
     {
       icon: Settings,
-      title: "Account Settings",
-      subtitle: "Update your personal information",
+      title: "Cài đặt tài khoản",
+      subtitle: "Cập nhật thông tin cá nhân",
       color: "#1a3148",
       onPress: handleAccountSettings
     }
@@ -137,23 +137,23 @@ export default function CSettingscreen() {
                 {profile?.email || "No email provided"}
               </Text>
               <Box className="bg-white/10 rounded-xl px-4 py-2 border border-white/20">
-                <Text className="text-white text-sm">Member since {new Date(profile?.createddate || "").getFullYear()}</Text>
+                <Text className="text-white text-sm">Thành viên từ năm {new Date(profile?.createddate || "").getFullYear()}</Text>
               </Box>
             </Box>
           </Box>
 
           <Box className="px-4 -mt-12">
             <Box className="bg-white rounded-2xl shadow-sm p-5 mb-4 border border-gray-100/50">
-              <Text className="text-lg font-bold text-[#1a3148] mb-4">Contact Information</Text>
+              <Text className="text-lg font-bold text-[#1a3148] mb-4">Thông tin cá nhân</Text>
               <Box className="space-y-3">
                 <Box className="flex-row items-center p-4 bg-[#f8fafc] rounded-xl">
                   <Box className="w-12 h-12 bg-[#1a3148]/5 rounded-xl items-center justify-center">
                     <Phone size={22} color="#1a3148" />
                   </Box>
                   <Box className="ml-3 flex-1">
-                    <Text className="text-sm text-gray-500">Phone Number</Text>
+                    <Text className="text-sm text-gray-500">Số điện thoại</Text>
                     <Text className="text-base font-medium text-[#1a3148]">
-                      {profile?.phone || "Not provided"}
+                      {profile?.phone || "Không có"}
                     </Text>
                   </Box>
                 </Box>
@@ -163,9 +163,9 @@ export default function CSettingscreen() {
                     <Mail size={22} color="#fab753" />
                   </Box>
                   <Box className="ml-3 flex-1">
-                    <Text className="text-sm text-gray-500">Email Address</Text>
+                    <Text className="text-sm text-gray-500">Email</Text>
                     <Text className="text-base font-medium text-[#1a3148]">
-                      {profile?.email || "Not provided"}
+                      {profile?.email || "Không có"}
                     </Text>
                   </Box>
                 </Box>

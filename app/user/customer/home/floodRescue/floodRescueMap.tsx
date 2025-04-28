@@ -687,7 +687,7 @@ const FloodRescueMapScreen = () => {
         <SearchInput
           value={originQuery}
           onChangeText={handleOriginChange}
-          placeholder="Search origin"
+          placeholder="Vui lòng nhập điểm đón"
           onClear={() => setOriginQuery("")}
         />
         <SearchResults

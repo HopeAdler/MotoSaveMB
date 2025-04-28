@@ -66,7 +66,7 @@ export const RepairRequestItem = React.memo((props: {
             }
           }}
         >
-          <Text style={styles.buttonText}>Accept Request</Text>
+          <Text style={styles.buttonText}>Chấp nhận</Text>
         </TouchableOpacity>
       ) : (
         <TouchableOpacity
@@ -78,7 +78,7 @@ export const RepairRequestItem = React.memo((props: {
             })
           }
         >
-          <Text style={styles.buttonText}>View Details</Text>
+          <Text style={styles.buttonText}>Xem chi tiết</Text>
         </TouchableOpacity>
       )}
     </Box>
