@@ -1,6 +1,6 @@
 import { AuthContext } from "@/app/context/AuthContext";
 import { useCameraZoom } from "@/app/hooks/useCameraZoom";
-import { calculateFare, createPayment, createRescueRequest, createTransaction, RescueRequestPayload, updateRequestStatus, } from "@/app/services/beAPI";
+import { calculateFare, createPayment, createRescueRequest, createTransaction, getServicePackageByName, RescueRequestPayload, ServicePackage, updateRequestStatus } from "@/app/services/beAPI";
 import { geocodeAddress, getAutocomplete, getDirections, getReverseGeocode, } from "@/app/services/goongAPI";
 import { decodePolyline } from "@/app/utils/utils";
 import TrackingActionSheet from "@/components/custom/TrackingActionSheet";
@@ -35,6 +35,8 @@ const RescueMapScreen = () => {
   // Các state chính
   const [focusOnMe, setFocusOnMe] = useState<boolean>(true);
   const currentLoc = useSmoothedLocation();
+
+  const [servicePackage, setServicePackage] = useState<ServicePackage>();
 
   const [originCoordinates, setOriginCoordinates] = useState({
     latitude: 0,
@@ -91,6 +93,10 @@ const RescueMapScreen = () => {
     isSearchingRef.current = isSearching;
   }, [isSearching]);
 
+  const fetchServicePackage = async () => {
+    const results = await getServicePackageByName('Cứu hộ thường');
+    setServicePackage(results);
+  }
   // PubNub
   const [users, setUsers] = useState(new Map<string, User>());
   // Refs
@@ -273,10 +279,10 @@ const RescueMapScreen = () => {
   }, [currentLoc, acceptedReqDetStatus]);
 
   useEffect(() => {
-    if (directionsInfo && !acceptedDriverId && !showActionsheet) {
+    if (directionsInfo && !acceptedDriverId && !showActionsheet && servicePackage) {
       const distanceValue = directionsInfo.distance?.value || 0;
       setFareLoading(true);
-      calculateFare(distanceValue)
+      calculateFare(distanceValue, servicePackage?.rate, 0)
         .then((money) => {
           setFare(money);
           setShowActionsheet(true);
@@ -655,6 +661,7 @@ const RescueMapScreen = () => {
   }, [requestDetailId]);
   useEffect(() => {
     hereNow();
+    fetchServicePackage();
   }, []);
 
   return (
