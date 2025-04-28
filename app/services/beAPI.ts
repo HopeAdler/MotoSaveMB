@@ -342,10 +342,10 @@ export async function updateRequestStatus(
   }
 }
 
-export async function calculateFare(distance: number, serPacRate: number): Promise<number> {
+export async function calculateFare(distance: number, serPacRate: number, waiting: number): Promise<number> {
   try {
     const response = await axios.get(
-      `https://motor-save-be.vercel.app/api/v1/distance/calculate?distance=${distance}&serpacrate=${serPacRate}`
+      `https://motor-save-be.vercel.app/api/v1/distance/calculate?distance=${distance}&serpacrate=${serPacRate}&waiting=${waiting}`
     );
     return response.data.totalMoney;
   } catch (error) {

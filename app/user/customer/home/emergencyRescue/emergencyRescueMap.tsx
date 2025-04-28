@@ -323,7 +323,7 @@ const EmergencyRescueMapScreen = () => {
     if (directionsInfo && !showActionsheet && servicePackage) {
       const distanceValue = directionsInfo.distance?.value || 0;
       setFareLoading(true);
-      calculateFare(distanceValue, servicePackage?.rate)
+      calculateFare(distanceValue, servicePackage?.rate, 0)
         .then((money) => {
           setFare(money);
           setShowActionsheet(true);
