@@ -20,6 +20,7 @@ import { DestinationMarker, OriginMarker } from "../../../../../components/custo
 import { ActionSheetToggle, BackButton, SearchInput, SearchResults } from "../../../../../components/custom/MapUIComponents";
 import MapViewComponent from "../../../../../components/custom/MapViewComponent";
 import { User } from "../../../../context/formFields";
+import { LinearTransition } from "react-native-reanimated";
 const { EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN } = process.env;
 MapboxGL.setAccessToken(`${EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN}`);
 const INITIAL_RADIUS = 5000; // 5 km
@@ -61,7 +62,7 @@ const RescueMapScreen = () => {
   const [destinationResults, setDestinationResults] = useState<any[]>([]);
   const [routeCoordinates, setRouteCoordinates] = useState<[number, number][]>([]);
   const [directionsInfo, setDirectionsInfo] = useState<any>(null);
-  const [fare, setFare] = useState<number | null>(null);
+  const [fare, setFare] = useState<number>(0);
   const [fareLoading, setFareLoading] = useState<boolean>(false);
   const [paymentLoading, setPaymentLoading] = useState<boolean>(false);
   const [originSelected, setOriginSelected] = useState(false);
@@ -718,7 +719,7 @@ const RescueMapScreen = () => {
           {originCoordinates.latitude !== 0 && (
             <MapboxGL.Camera
               ref={camera}
-              centerCoordinate={[originCoordinates.longitude, originCoordinates.latitude]}
+            // centerCoordinate={[originCoordinates.longitude, originCoordinates.latitude]}
             />
           )}
           {currentLoc.latitude !== 0 && (
@@ -759,15 +760,19 @@ const RescueMapScreen = () => {
           {routeCoordinates.length > 0 && (
             <MapboxGL.ShapeSource
               id="routeSource"
+              lineMetrics={true}
               shape={{
                 type: "Feature",
                 geometry: { type: "LineString", coordinates: routeCoordinates },
                 properties: {},
+
               }}
             >
               <MapboxGL.LineLayer
                 id="routeLine"
-                style={{ lineColor: "#ff0000", lineWidth: 4 }}
+                style={{
+                  lineColor: "#fab753", lineWidth: 3, lineOpacity: 0.8
+                }}
               />
             </MapboxGL.ShapeSource>
           )}

@@ -24,7 +24,6 @@ const MapViewComponent: React.FC<MapViewComponentProps> = ({
   currentLoc,
   focusMode: [focusOnMe, setFocusOnMe],
   children,
-  isActionSheetOpen,
 }) => {
   const loadMap = `https://tiles.goong.io/assets/goong_map_web.json?api_key=${EXPO_PUBLIC_GOONG_MAP_KEY}`;
   const mapRef = useRef<MapboxGL.MapView>(null);
@@ -43,9 +42,6 @@ const MapViewComponent: React.FC<MapViewComponentProps> = ({
   }, [focusOnMe, currentLoc]);
 
   const locationButtonOffset = useSharedValue(10);
-  useEffect(() => {
-    locationButtonOffset.value = withTiming(isActionSheetOpen ? 150 : 10, { duration: 300 });
-  }, [isActionSheetOpen]);
 
   const animatedButtonStyle = useAnimatedStyle(() => ({
     bottom: locationButtonOffset.value,
@@ -53,17 +49,15 @@ const MapViewComponent: React.FC<MapViewComponentProps> = ({
 
   return (
     <View className="flex-1">
-      <MapboxGL.MapView styleURL={loadMap} ref={mapRef} style={{ flex: 1 }}>
+      <MapboxGL.MapView styleURL={loadMap} ref={mapRef} style={{ flex: 1 }} >
         <MapboxGL.Camera ref={cameraRef} zoomLevel={14} />
 
         {Array.from(users.entries()).map(([key, user]) => (
           <UserMarker key={key} user={user} />
         ))}
-
         {children}
       </MapboxGL.MapView>
-
-      <MyLocationButton onPress={() => setFocusOnMe(!focusOnMe)} isActionSheetOpen={isActionSheetOpen} />
+      <MyLocationButton onPress={() => setFocusOnMe(!focusOnMe)}  />
     </View>
   );
 };

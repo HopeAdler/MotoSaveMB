@@ -4,36 +4,29 @@ import { StyleSheet } from "react-native";
 import { Button, ButtonIcon } from "@/components/ui/button";
 import { LocateFixed } from "lucide-react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
+import { Box } from "../ui/box";
 
 interface MyLocationButtonProps {
   onPress: () => void;
-  isActionSheetOpen: boolean;
 }
 
-const MyLocationButton: React.FC<MyLocationButtonProps> = ({ onPress, isActionSheetOpen }) => {
+const MyLocationButton: React.FC<MyLocationButtonProps> = ({ onPress}) => {
   const offset = useSharedValue(10);
 
-  React.useEffect(() => {
-    offset.value = withTiming(isActionSheetOpen ? 200 : 10, { duration: 300 });
-  }, [isActionSheetOpen]);
+  // React.useEffect(() => {
+  //   offset.value = withTiming(isActionSheetOpen ? 500 : 10, { duration: 300 });
+  // }, [isActionSheetOpen]);
 
-  const animatedStyle = useAnimatedStyle(() => ({ bottom: offset.value }));
+  // const animatedStyle = useAnimatedStyle(() => ({ bottom: offset.value }));
 
   return (
-    <Animated.View style={[styles.container, animatedStyle]}>
-      <Button variant="solid" size="lg" className="rounded-full p-3.5" onPress={onPress}>
-        <ButtonIcon as={LocateFixed} />
+    <Box className="absolute bottom-1 pt-22 right-4 w-12 h-12 z-20">
+      <Button variant="solid"  size="lg" className="w-12 h-12 bg-white rounded-full items-center justify-center shadow-md" onPress={onPress}>
+        <ButtonIcon as={LocateFixed} color="#374151" />
       </Button>
-    </Animated.View>
+    </Box>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    position: "absolute",
-    right: 5,
-    zIndex: 20,
-  },
-});
 
 export default MyLocationButton;

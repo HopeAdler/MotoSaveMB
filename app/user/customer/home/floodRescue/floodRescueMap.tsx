@@ -85,7 +85,7 @@ const FloodRescueMapScreen = () => {
     []
   );
   const [directionsInfo, setDirectionsInfo] = useState<any>(null);
-  const [fare, setFare] = useState<number | null>(0);
+  const [fare, setFare] = useState<number >(0);
   // const [fareLoading, setFareLoading] = useState<boolean>(false);
   const [paymentLoading, setPaymentLoading] = useState<boolean>(false);
   const [originSelected, setOriginSelected] = useState(false);
@@ -711,7 +711,7 @@ const FloodRescueMapScreen = () => {
           {originCoordinates.latitude !== 0 && (
             <MapboxGL.Camera
               ref={camera}
-              centerCoordinate={[originCoordinates.longitude, originCoordinates.latitude]}
+              // centerCoordinate={[originCoordinates.longitude, originCoordinates.latitude]}
             />
           )}
           {currentLoc.latitude !== 0 && (

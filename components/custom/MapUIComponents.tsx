@@ -35,8 +35,8 @@ export const SearchInput = ({
   showClearButton = true,
   isDisabled
 }: SearchInputProps) => {
-  type SelectionState = { start : number } | null;
-  const [selectionState, setSelectionState] = useState<SelectionState>({ start: 0});
+  type SelectionState = { start: number } | null;
+  const [selectionState, setSelectionState] = useState<SelectionState>({ start: 0 });
   const handleFocus = () => {
     setSelectionState(null);
   };
@@ -48,29 +48,29 @@ export const SearchInput = ({
   const selectionProp = selectionState === null ? undefined : selectionState;
 
   return (
-  <Input
-    variant="outline"
-    size="lg"
-    className="bg-white rounded-xl shadow-sm border-0"
-    isDisabled={isDisabled}
-  >
-    <InputIcon>
-      <Search size={18} color="#6B7280" />
-    </InputIcon>
-    <InputField
-      placeholder={placeholder}
-      value={value}
-      onChangeText={onChangeText}
-      selection={selectionProp}
-      onFocus={handleFocus}
-      onBlur={handleBlur}
-    />
-    {showClearButton && value.length > 0 && (
-      <Pressable onPress={onClear} className="p-2">
-        <X size={16} color="#6B7280" />
-      </Pressable>
-    )}
-  </Input>
+    <Input
+      variant="outline"
+      size="lg"
+      className="bg-white rounded-xl shadow-sm border-0 h-12"
+      isDisabled={isDisabled}
+    >
+      <InputIcon>
+        <Search size={20} color="#000000" />
+      </InputIcon>
+      <InputField
+        placeholder={placeholder}
+        value={value}
+        onChangeText={onChangeText}
+        selection={selectionProp}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
+      />
+      {showClearButton && value.length > 0 && (
+        <Pressable onPress={onClear} className="p-2">
+          <X size={16} color="#6B7280" />
+        </Pressable>
+      )}
+    </Input>
   );
 };
 
@@ -92,7 +92,7 @@ export const SearchResults = ({ data, onSelectItem, visible }: SearchResultsProp
         renderItem={({ item }) => (
           <Pressable
             onPress={() => onSelectItem(item)}
-            className="p-3 border-b border-gray-100 flex-row items-center"
+            className="p-3 border-b border-gray-100 flex-row items-center "
           >
             <MapPin size={16} color="#6B7280" className="mr-2" />
             <Text className="text-gray-800 ml-2">{item.description}</Text>
@@ -132,7 +132,7 @@ export const ActionSheetToggle = ({ onPress, visible }: { onPress: () => void, v
       onPress={onPress}
       className="absolute bottom-20 right-4 w-12 h-12 bg-white rounded-full items-center justify-center shadow-md"
     >
-      <ChevronUp size={24} color="#3B82F6" />
+      <ChevronUp size={24} color="#fab753" />
     </Pressable>
   );
 };
