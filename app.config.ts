@@ -6,7 +6,7 @@ const config: ExpoConfig = {
   slug: "motorsave",
   version: "1.0.0",
   orientation: "portrait",
-  icon: "./assets/images/icon.png",
+  icon: "./assets/images/logo.png",
   scheme: "myapp",
   userInterfaceStyle: "automatic",
   newArchEnabled: true,
@@ -15,7 +15,7 @@ const config: ExpoConfig = {
   },
   android: {
     adaptiveIcon: {
-      foregroundImage: "./assets/images/adaptive-icon.png",
+      foregroundImage: "./assets/images/logo.png",
       backgroundColor: "#ffffff",
     },
     package: "com.hopeadler.MotoSavemb",
