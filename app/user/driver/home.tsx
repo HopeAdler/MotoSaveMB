@@ -1,6 +1,7 @@
 import { AuthContext } from "@/app/context/AuthContext";
+import { RequestItem } from "@/app/context/formFields";
 import { usePubNub } from "@/app/context/PubNubContext";
-import { acceptEmergencyRequest, getPendingReturnRequest } from "@/app/services/beAPI";
+import { getPendingReturnRequest } from "@/app/services/beAPI";
 import { usePubNubService } from "@/app/services/pubnubService";
 import { renderItem } from "@/components/custom/RequestItem";
 import { Box } from "@/components/ui/box";
@@ -13,8 +14,6 @@ import { FlatList, Pressable, View } from "react-native";
 import { Avatar } from "react-native-elements";
 import { SafeAreaView } from "react-native-safe-area-context";
 import LoadingScreen from "../../loading/loading";
-import { RequestItem } from "@/app/context/formFields";
-import { CreateGuestRequest } from "@/components/custom/CreateGuestRequest";
 
 // interface ServiceCardProps {
 //   icon: LucideIcon;
