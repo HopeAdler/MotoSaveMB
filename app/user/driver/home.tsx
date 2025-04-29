@@ -69,12 +69,12 @@ export default function DHomeScreen() {
       );
 
       // Accept any requests with servicepackagename === 'Cứu hộ đến trạm'
-      for (const request of requests) {
-        if (request.data.servicepackagename === 'Cứu hộ đến trạm') {
-          console.log(`Auto-accepting request ID ${request.id}`);
-          await acceptEmergencyRequest(request.id, token);
-        }
-      }
+      // for (const request of requests) {
+      //   if (request.data.servicepackagename === 'Cứu hộ đến trạm') {
+      //     console.log(`Auto-accepting request ID ${request.id}`);
+      //     await acceptEmergencyRequest(request.id, token);
+      //   }
+      // }
 
       // After accepting, filter and sort
       const filteredRequests = requests
