@@ -20,6 +20,8 @@ import {
   SelectBackdrop,
   SelectContent,
   SelectItem,
+  SelectDragIndicatorWrapper,
+  SelectDragIndicator,
 } from "@/components/ui/select";
 import { Divider } from "@/components/ui/divider";
 import { AuthContext } from "@/app/context/AuthContext";
@@ -219,22 +221,22 @@ const TripDetailsActionSheet: React.FC<TripDetailsActionSheetProps> = ({
                     )}
                     {rescueType != "flood" ? (
                       <Box>
-                        <Box className="bg-blue-50 rounded-2xl p-4 mt-4">
+                        <Box className="bg-[#fab7535b] rounded-2xl p-4 mt-4">
                           <Box className="items-center">
                             <Text className="text-gray-600 mb-1">Phí ước tính</Text>
-                            <Text className="text-2xl font-bold text-blue-600">
+                            <Text className="text-2xl font-bold color-[#fab753]">
                               {formatMoney(fare)}
                               {/* ssss */}
                             </Text>
                           </Box>
                         </Box>
-                        <Box className="mt-4">
+                        <Box className="mt-2">
                           <Text className="text-gray-600 mb-2">Phương thức thanh toán</Text>
                           <Select
                             selectedValue={paymentMethod}
                             onValueChange={(value: any) => setPaymentMethod(value)}
                           >
-                            <SelectTrigger className="border border-gray-200 rounded-xl p-5 flex-row items-center justify-between bg-gray-50 h-13">
+                            <SelectTrigger className="border border-gray-100 rounded-xl p-5 flex-row items-center justify-between bg-gray-100 h-13">
                               <SelectInput
                                 placeholder="Select payment method"
                                 className="text-lg flex-1"
@@ -243,7 +245,11 @@ const TripDetailsActionSheet: React.FC<TripDetailsActionSheetProps> = ({
                             </SelectTrigger>
                             <SelectPortal>
                               <SelectBackdrop />
-                              <SelectContent>
+
+                              <SelectContent className="space-y-2" >
+                                <SelectDragIndicatorWrapper>
+                                  <SelectDragIndicator />
+                                </SelectDragIndicatorWrapper>
                                 <SelectItem label="Tiền mặt" value="Tiền mặt" />
                                 <SelectItem label="Zalopay" value="Zalopay" />
                               </SelectContent>
@@ -254,9 +260,9 @@ const TripDetailsActionSheet: React.FC<TripDetailsActionSheetProps> = ({
                     ) : (
                       <Box className="bg-red-50 rounded-2xl p-4 mt-4">
                         <Box className="items-center">
-                          <Text className="text-gray-600 mb-1 font-semibold align-middle text-center"> 
+                          <Text className="text-gray-600 mb-1 font-semibold align-middle text-center">
                             Fare will be calculated based on traveled distance
-                            </Text>
+                          </Text>
                         </Box>
                       </Box>
                     )}
@@ -278,7 +284,7 @@ const TripDetailsActionSheet: React.FC<TripDetailsActionSheetProps> = ({
                               }
                             }}
                           >
-                            <SelectTrigger className="border border-gray-200 rounded-xl p-5 flex-row items-center justify-between bg-gray-50 h-13">
+                            <SelectTrigger className="border border-gray-100 rounded-xl p-5 flex-row items-center justify-between bg-gray-50 h-13">
                               <SelectInput
                                 placeholder="Chọn xe của bạn"
                                 className="text-lg flex-1"
@@ -317,7 +323,7 @@ const TripDetailsActionSheet: React.FC<TripDetailsActionSheetProps> = ({
                       size="lg"
                       onPress={onPayment}
                       disabled={fareLoading || paymentLoading || fare === null}
-                      className="bg-blue-600 h-14 rounded-xl mt-4"
+                      className="bg-[#fab753] h-16 rounded-xl mt-4"
                     >
                       <Box className="flex-row items-center">
                         {paymentLoading && (

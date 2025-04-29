@@ -101,7 +101,7 @@ const StationSelect: React.FC<StationSelectProps> = ({
       // defaultValue={selectedLabel}
       // initialLabel={selectedLabel}
     >
-      <SelectTrigger variant="outline" size="md">
+      <SelectTrigger variant="outline" size="md" className="p-3 border border-gray-200 flex-row items-center justify-between h-12">
         <SelectInput placeholder="Chọn trạm sửa xe"/>
         <SelectIcon as={ChevronDownIcon} />
       </SelectTrigger>

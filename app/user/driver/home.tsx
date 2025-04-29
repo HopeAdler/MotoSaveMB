@@ -1,6 +1,6 @@
 import { AuthContext } from "@/app/context/AuthContext";
 import { usePubNub } from "@/app/context/PubNubContext";
-import { getPendingReturnRequest } from "@/app/services/beAPI";
+import { acceptEmergencyRequest, getPendingReturnRequest } from "@/app/services/beAPI";
 import { usePubNubService } from "@/app/services/pubnubService";
 import { renderItem } from "@/components/custom/RequestItem";
 import { Box } from "@/components/ui/box";
@@ -59,24 +59,35 @@ export default function DHomeScreen() {
     try {
       const requests = await Promise.all(
         Array.from(pendingReqDetailIds.values()).map(async (id) => {
-          console.log(id)
+          console.log(id);
           const response = await axios.get(
             `https://motor-save-be.vercel.app/api/v1/requests/driver/${id}`,
             { headers: { Authorization: "Bearer " + token } }
           );
-          return response.data;
+          return { id, data: response.data };
         })
       );
 
-      // Filter out items where requeststatus is 'Accepted'
+      // Accept any requests with servicepackagename === 'Cứu hộ đến trạm'
+      for (const request of requests) {
+        if (request.data.servicepackagename === 'Cứu hộ đến trạm') {
+          console.log(`Auto-accepting request ID ${request.id}`);
+          await acceptEmergencyRequest(request.id, token);
+        }
+      }
+
+      // After accepting, filter and sort
       const filteredRequests = requests
-        .filter((item) => (item.requeststatus === "Pending"))
+        .map(r => r.data)
+        .filter((item) => item.requeststatus === "Pending")
         .sort((a, b) => new Date(b.createddate).getTime() - new Date(a.createddate).getTime());
+
       setPendingRescueRequests(filteredRequests.slice(0, 2)); // ⬅️ Overwrite state with filtered data
     } catch (error) {
       console.error("Error fetching requests:", error);
     }
   };
+
   const fetchPendingReturnRequest = async () => {
     try {
       const results = await getPendingReturnRequest(token);

@@ -240,7 +240,7 @@ const RepairRequestScreen = () => {
   useEffect(() => {
     if (directionsInfo) {
       const distanceValue = directionsInfo.distance?.value || 0;
-      calculateFare(distanceValue)
+      calculateFare(distanceValue,1,0)
         .then((money) => {
           setReturnFare(money);
           console.log("Set fare success");
