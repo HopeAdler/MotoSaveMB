@@ -1,16 +1,12 @@
 import { AuthContext } from "@/app/context/AuthContext";
-import { Box } from "@/components/ui/box";
-import { Button, ButtonText } from "@/components/ui/button";
-import { Text } from "@/components/ui/text";
-import MapboxGL from "@rnmapbox/maps";
-import axios from "axios";
-import { router, useLocalSearchParams, useRouter } from "expo-router";
-import React, { useContext, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, TouchableOpacity } from "react-native";
-import Icon from "react-native-vector-icons/Feather";
+import { useCurrentLocStore } from "@/app/hooks/currentLocStore";
+import { useUsersStore } from "@/app/hooks/usersStore";
 import { createRepairRequest, getUnpaidPaymentsByRequestId, updateRequestStatus } from "@/app/services/beAPI";
 import { getDirections } from "@/app/services/goongAPI";
-import { decodedToken, decodePolyline } from "@/app/utils/utils";
+import { decodedToken, decodePolyline, handlePhoneCall } from "@/app/utils/utils";
+import { DestinationMarker, OriginMarker } from "@/components/custom/CustomMapMarker";
+import DriverRequestDetail from "@/components/custom/DriverRequestDetail";
+import { GoBackButton } from "@/components/custom/GoBackButton";
 import MapViewComponent from "@/components/custom/MapViewComponent";
 import {
   Actionsheet,
@@ -19,20 +15,17 @@ import {
   ActionsheetDragIndicator,
   ActionsheetDragIndicatorWrapper,
 } from "@/components/ui/actionsheet";
-import { MessageSquare, MapPin, AlertCircle, Navigation2, Clock, CreditCard, Phone, MapPinCheckInsideIcon } from "lucide-react-native";
-import { GoBackButton } from "@/components/custom/GoBackButton";
-import { handlePhoneCall } from "@/app/utils/utils";
-import DriverRequestDetail from "@/components/custom/DriverRequestDetail";
-import { DestinationMarker, OriginMarker } from "@/components/custom/CustomMapMarker";
+import { Box } from "@/components/ui/box";
+import { Button, ButtonText } from "@/components/ui/button";
+import { Text } from "@/components/ui/text";
+import MapboxGL from "@rnmapbox/maps";
+import axios from "axios";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { AlertCircle, Clock, CreditCard, MapPin, MapPinCheckInsideIcon, MessageSquare, Navigation2, Phone } from "lucide-react-native";
+import React, { useContext, useEffect, useRef, useState } from "react";
+import { ActivityIndicator, TouchableOpacity } from "react-native";
+import Icon from "react-native-vector-icons/Feather";
 
-type User = {
-  uuid: string;
-  username: string;
-  role: string;
-  latitude: number;
-  longitude: number;
-  heading: number;
-};
 
 interface RequestDetail {
   requestid: string;
@@ -85,11 +78,15 @@ const RequestMap: React.FC = () => {
   const { requestdetailid } = useLocalSearchParams<{ requestdetailid: string }>();
   const { token } = useContext(AuthContext);
   const userId = decodedToken(token)?.id;
-  const { jsonCurLoc = '{"latitude":0,"longitude":0}', jsonUsers = "{}" } = useLocalSearchParams<any>();
   const router = useRouter();
 
-  const [users, setUsers] = useState<Map<string, User>>(new Map(Object.entries(JSON.parse(jsonUsers))));
-  const [currentLoc, setCurrentLoc] = useState({ latitude: 0, longitude: 0, heading: 0 });
+  const {
+    currentLoc,
+  } = useCurrentLocStore();
+  const {
+    users,
+  } = useUsersStore();
+
   const [requestDetail, setRequestDetail] = useState<RequestDetail | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [originCoordinates, setOriginCoordinates] = useState({ latitude: 0, longitude: 0 });
@@ -275,30 +272,6 @@ const RequestMap: React.FC = () => {
       })
       .catch((error: any) => console.error("Error fetching directions:", error));
   };
-
-  useEffect(() => {
-    try {
-      setCurrentLoc(JSON.parse(jsonCurLoc));
-      console.log(jsonCurLoc)
-    } catch (error) {
-      console.error("Failed to parse jsonCurLoc:", error, jsonCurLoc);
-      setCurrentLoc({ latitude: 0, longitude: 0, heading: 0 });
-    }
-  }, [jsonCurLoc]);
-
-  useEffect(() => {
-    try {
-      const parsedUsers = JSON.parse(jsonUsers);
-      if (typeof parsedUsers === "object" && parsedUsers !== null) {
-        setUsers(new Map(Object.entries(parsedUsers)));
-      } else {
-        setUsers(new Map());
-      }
-    } catch (error) {
-      console.error("Failed to parse jsonUsers:", error, jsonUsers);
-      setUsers(new Map());
-    }
-  }, [jsonUsers]);
 
   useEffect(() => {
     fetchRoute();

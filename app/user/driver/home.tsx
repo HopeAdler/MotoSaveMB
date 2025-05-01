@@ -1,13 +1,14 @@
 import { AuthContext } from "@/app/context/AuthContext";
 import { RequestItem } from "@/app/context/formFields";
 import { usePubNub } from "@/app/context/PubNubContext";
+import { usePendingReqStore } from "@/app/hooks/usePendingReqStore";
 import { getPendingReturnRequest } from "@/app/services/beAPI";
 import { usePubNubService } from "@/app/services/pubnubService";
 import { renderItem } from "@/components/custom/RequestItem";
 import { Box } from "@/components/ui/box";
 import { Text } from "@/components/ui/text";
 import axios from "axios";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { AlertCircle, Bell, Clock, MapPin, Truck } from "lucide-react-native";
 import React, { useContext, useEffect, useState } from "react";
 import { FlatList, Pressable, View } from "react-native";
@@ -20,11 +21,6 @@ import LoadingScreen from "../../loading/loading";
 //   title: string;
 //   color: string;
 // }
-
-interface LocationProps {
-  name: string;
-  distance: string;
-}
 
 const ServiceCard = ({ icon: Icon, title, color }: {
   icon: React.ComponentType<any>;
@@ -43,13 +39,16 @@ const ServiceCard = ({ icon: Icon, title, color }: {
 );
 
 export default function DHomeScreen() {
-  const { user, dispatch, token } = useContext(AuthContext);
+  const { user, token } = useContext(AuthContext);
   const { pubnub } = usePubNub(); // Access PubNub instance from context
   const { publishAcceptRequest } = usePubNubService(); //
   const [isLoading, setIsLoading] = useState(true);
-  const { jsonPendingReqDetailIds, jsonCurLoc = '{"latitude":0,"longitude":0}' } = useLocalSearchParams<any>();
-  const [currentLoc, setCurrentLoc] = useState({ latitude: 0, longitude: 0, heading: 0 });
-  const [pendingReqDetailIds, setPendingReqDetailIds] = useState(new Map<string, string>());
+
+  const {
+    pendingReqDetailIds,
+    setPendingReqDetailIds
+  } = usePendingReqStore();
+
   const [pendingRescueRequests, setPendingRescueRequests] = useState<RequestItem[]>([]);
   const [pendingReturnRequests, setPendingReturnRequests] = useState<RequestItem[]>([]);
   const router = useRouter();
@@ -82,6 +81,19 @@ export default function DHomeScreen() {
         .sort((a, b) => new Date(b.createddate).getTime() - new Date(a.createddate).getTime());
 
       setPendingRescueRequests(filteredRequests.slice(0, 2)); // ⬅️ Overwrite state with filtered data
+      // Extract the IDs of the pending requests
+      const pendingRequestIds = new Set(filteredRequests.map((r) => r.id));
+
+      // Remove non-pending request IDs from the store
+      const updatedMap = new Map(pendingReqDetailIds);
+      Array.from(pendingReqDetailIds.keys()).forEach((id) => {
+        if (!pendingRequestIds.has(id)) {
+          updatedMap.delete(id); // Remove the non-pending ID from the store
+        }
+      });
+
+      // Update the store with the new map
+      setPendingReqDetailIds(updatedMap);
     } catch (error) {
       console.error("Error fetching requests:", error);
     }
@@ -115,29 +127,7 @@ export default function DHomeScreen() {
     if (user.role !== "Driver") router.replace("/error/403");
   }, [user]);
 
-  useEffect(() => {
-    if (jsonPendingReqDetailIds) {
-      const parsedObject = JSON.parse(jsonPendingReqDetailIds);
-      setPendingReqDetailIds(new Map(Object.entries(parsedObject)));
-    }
-  }, [jsonPendingReqDetailIds]);
-
-  useEffect(() => {
-    try {
-      setCurrentLoc(JSON.parse(jsonCurLoc));
-      // console.log(jsonCurLoc)
-    } catch (error) {
-      console.error("Failed to parse jsonCurLoc:", error, jsonCurLoc);
-      setCurrentLoc({ latitude: 0, longitude: 0, heading: 0 });
-    }
-  }, [jsonCurLoc]);
-
   if (isLoading) return <LoadingScreen />;
-
-  const handleLogout = async () => {
-    dispatch?.({ type: "LOGOUT" });
-    router.replace("/auth/login");
-  };
 
   return (
     <SafeAreaView className="flex-1 bg-gray-100">
