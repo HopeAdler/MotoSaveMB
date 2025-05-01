@@ -884,8 +884,8 @@ const EmergencyRescueMapScreen = () => {
           isOpen={showTracking}
           onClose={() => setShowTracking(false)}
           requestDetailIdState={[requestDetailId, setRequestDetailId]}
-          eta={directionsInfo?.distance?.text}
-          distance={directionsInfo?.duration?.text}
+          eta={directionsInfo?.duration?.text}
+          distance={directionsInfo?.distance?.text}
           driverId={acceptedDriverId}
           setAcceptedReqDetStatus={setAcceptedReqDetStatus}
         />
