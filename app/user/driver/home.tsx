@@ -15,6 +15,8 @@ import { FlatList, Pressable, View } from "react-native";
 import { Avatar } from "react-native-elements";
 import { SafeAreaView } from "react-native-safe-area-context";
 import LoadingScreen from "../../loading/loading";
+import { CreateGuestRequest } from "@/components/custom/CreateGuestRequest";
+import { useCurrentLocStore } from "@/app/hooks/currentLocStore";
 
 // interface ServiceCardProps {
 //   icon: LucideIcon;
@@ -43,7 +45,9 @@ export default function DHomeScreen() {
   const { pubnub } = usePubNub(); // Access PubNub instance from context
   const { publishAcceptRequest } = usePubNubService(); //
   const [isLoading, setIsLoading] = useState(true);
-
+  const {
+      currentLoc,
+    } = useCurrentLocStore();
   const {
     pendingReqDetailIds,
     setPendingReqDetailIds
@@ -238,7 +242,7 @@ export default function DHomeScreen() {
               )}
             </Box>
 
-            {/* <CreateGuestRequest currentLoc={currentLoc}/> */}
+            <CreateGuestRequest currentLoc={currentLoc}/>
             {/* <Box className="bg-white rounded-2xl p-4 mt-4 shadow-sm">
               <Text className="text-lg font-bold text-gray-800 mb-4">
                 Thao tác nhanh
