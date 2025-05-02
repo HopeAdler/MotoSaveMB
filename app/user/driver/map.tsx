@@ -1,10 +1,11 @@
 import { AuthContext } from "@/app/context/AuthContext";
-import { createRepairRequest, getUndoneRequestDetailIds, getUnpaidPaymentsByRequestId, updateRequestStatus } from "@/app/services/beAPI";
+import { useCurrentLocStore } from "@/app/hooks/currentLocStore";
+import { useUsersStore } from "@/app/hooks/usersStore";
+import { createRepairRequest, fetchRescueRequestDetail, getUndoneRequestDetailIds, getUnpaidPaymentsByRequestId, updatePaymentTotal, updateRequestStatus } from "@/app/services/beAPI";
 import { getDirections } from "@/app/services/goongAPI";
 import { decodedToken, decodePolyline, formatMoney, handlePhoneCall } from "@/app/utils/utils";
 import { DestinationMarker, OriginMarker } from "@/components/custom/CustomMapMarker";
 import DriverRequestDetail from "@/components/custom/DriverRequestDetail";
-import { tripReducer, TripState, TripAction } from "../../utils/fareCal";
 import MapViewComponent from "@/components/custom/MapViewComponent";
 import {
   Actionsheet,
@@ -17,39 +18,13 @@ import { Box } from "@/components/ui/box";
 import { Button, ButtonText } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
 import MapboxGL from "@rnmapbox/maps";
-import axios from "axios";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { AlertCircle, Clock, CreditCard, MapPin, MapPinCheckInsideIcon, MessageSquare, Navigation2, Phone } from "lucide-react-native";
 import React, { useContext, useEffect, useReducer, useRef, useState } from "react";
 import { ActivityIndicator, TouchableOpacity } from "react-native";
 import Icon from "react-native-vector-icons/Feather";
-
-type User = {
-  uuid: string;
-  username: string;
-  role: string;
-  latitude: number;
-  longitude: number;
-  heading: number;
-};
-
-interface RequestDetail {
-  requestid: string;
-  servicepackagename: string;
-  requesttype: string;
-  customername: string;
-  customerphone: string;
-  pickuplocation: string;
-  destination: string;
-  totalprice: number;
-  paymentmethod: string;
-  paymentstatus: string;
-  pickuplong: number;
-  pickuplat: number;
-  deslng: number;
-  deslat: number;
-  requeststatus: string;
-}
+import { TripAction, tripReducer, TripState } from "../../utils/fareCal";
+import { DriverRescueRequestDetail } from "@/app/context/formFields";
 
 interface UnpaidPayments {
   paymentid: string;
@@ -95,14 +70,18 @@ const GenMap: React.FC = () => {
   const [curReqDetId, setCurReqDetId] = useState<string | null>(null);
   const { token } = useContext(AuthContext);
   const userId = decodedToken(token)?.id;
-  const { jsonCurLoc = '{"latitude":0,"longitude":0}', jsonUsers = "{}" } = useLocalSearchParams<any>();
+
   const router = useRouter();
+  const {
+    currentLoc,
+  } = useCurrentLocStore();
+  const {
+    users,
+  } = useUsersStore();
 
   const [trip, dispatch] = useReducer(tripReducer, initialTrip);
 
-  const [users, setUsers] = useState<Map<string, User>>(new Map(Object.entries(JSON.parse(jsonUsers))));
-  const [currentLoc, setCurrentLoc] = useState({ latitude: 0, longitude: 0, heading: 0 });
-  const [requestDetail, setRequestDetail] = useState<RequestDetail | null>(null);
+  const [requestDetail, setRequestDetail] = useState<DriverRescueRequestDetail | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [originCoordinates, setOriginCoordinates] = useState({ latitude: 0, longitude: 0 });
   const [destinationCoordinates, setDestinationCoordinates] = useState({ latitude: 0, longitude: 0 });
@@ -156,6 +135,17 @@ const GenMap: React.FC = () => {
       return;
     }
     console.error("curReqDetId is undefined");
+  };
+
+  const changePaymentTotal = async () => {
+    if (!curReqDetId) return;
+    const payload = {
+      requestDetailId: curReqDetId,
+      newTotal: trip?.fare || 0,
+    };
+    const result = await updatePaymentTotal(payload, token);
+    setLoading(true)
+    if (result) fetchUnpaidPayments();
   };
 
   const changeButtonColor = (): string => {
@@ -225,19 +215,19 @@ const GenMap: React.FC = () => {
     try {
       if (!curReqDetId) return;
       console.log('curReq: ' + curReqDetId)
-      const response = await axios.get<RequestDetail>(
-        `https://motor-save-be.vercel.app/api/v1/requests/driver/${curReqDetId}`,
-        { headers: { Authorization: "Bearer " + token } }
-      );
-      setRequestDetail(response.data);
+      const results = await fetchRescueRequestDetail(token, curReqDetId)
+      setRequestDetail(results);
       setOriginCoordinates({
-        latitude: response.data.pickuplat,
-        longitude: response.data.pickuplong,
+        latitude: results.pickuplat,
+        longitude: results.pickuplong,
       });
       setDestinationCoordinates({
-        latitude: response.data.deslat,
-        longitude: response.data.deslng,
+        latitude: results.deslat,
+        longitude: results.deslng,
       });
+      if (results.requesttype === 'Cứu hộ nước ngập' && results.requeststatus === 'Done') {
+        changePaymentTotal();
+      }
     } catch (error) {
       console.error("Error fetching request details:", error);
     } finally {
@@ -319,33 +309,10 @@ const GenMap: React.FC = () => {
   };
 
   useEffect(() => {
-    try {
-      setCurrentLoc(JSON.parse(jsonCurLoc));
-      // console.log(jsonCurLoc)
-    } catch (error) {
-      console.error("Failed to parse jsonCurLoc:", error, jsonCurLoc);
-      setCurrentLoc({ latitude: 0, longitude: 0, heading: 0 });
-    }
-  }, [jsonCurLoc]);
-
-  useEffect(() => {
-    try {
-      const parsedUsers = JSON.parse(jsonUsers);
-      if (typeof parsedUsers === "object" && parsedUsers !== null) {
-        setUsers(new Map(Object.entries(parsedUsers)));
-      } else {
-        setUsers(new Map());
-      }
-    } catch (error) {
-      console.error("Failed to parse jsonUsers:", error, jsonUsers);
-      setUsers(new Map());
-    }
-  }, [jsonUsers]);
-
-  useEffect(() => {
     fetchUndoneRequestDetails();
     fetchRequestDetail();
     fetchRoute();
+
   }, [currentLoc, requestDetail?.requeststatus]);
 
   useEffect(() => {
@@ -357,7 +324,7 @@ const GenMap: React.FC = () => {
         coords: currentLoc
       } as TripAction);
     }
-    if (requestDetail.requeststatus === 'Done'|| requestDetail.requeststatus === 'Cancel') {
+    if (requestDetail.requeststatus === 'Done' || requestDetail.requeststatus === 'Cancel') {
       dispatch({ type: 'END' } as TripAction);
     }
   }, [requestDetail, currentLoc]);

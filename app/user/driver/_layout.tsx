@@ -1,4 +1,8 @@
 import AuthContext from "@/app/context/AuthContext";
+import { User } from "@/app/context/formFields";
+import { useCurrentLocStore } from "@/app/hooks/currentLocStore";
+import { usePendingReqStore } from "@/app/hooks/usePendingReqStore";
+import { useUsersStore } from "@/app/hooks/usersStore";
 import {
   getCurrentLocation,
   requestLocationPermission,
@@ -6,29 +10,22 @@ import {
 } from "@/app/services/locationService";
 import { usePubNubService } from "@/app/services/pubnubService"; // ✅ Use the custom hook
 import { decodedToken } from "@/app/utils/utils";
+import { Box } from "@/components/ui/box";
 import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
 import "@/global.css";
+import axios from "axios";
+import { getHeadingAsync } from "expo-location";
 import { Tabs, useRouter, useSegments } from "expo-router";
 import {
   ChartArea,
+  CircleUserRound,
   DollarSign,
   House,
   List,
-  CircleUserRound,
   MapIcon,
 } from "lucide-react-native";
 import { useContext, useEffect, useRef, useState } from "react";
-import axios from "axios";
-import { getHeadingAsync } from "expo-location";
-import { Box } from "@/components/ui/box";
 
-type User = {
-  uuid: string;
-  username: string;
-  role: string;
-  latitude: number;
-  longitude: number;
-};
 const SMOOTHING_FACTOR = 0.1;
 
 export default function DriverLayout() {
@@ -40,20 +37,25 @@ export default function DriverLayout() {
     subscribeToRescueChannel,
     hereNow,
   } = usePubNubService(); // ✅ Get service functions
+
+  const {
+    getPendingReqDetailIds,
+    setPendingReqDetailIds,
+  } = usePendingReqStore();
+  const {
+    currentLoc,
+    setCurrentLoc,
+  } = useCurrentLocStore();
+  const {
+    getUsers,
+    setUsers,
+  } = useUsersStore();
+
   const { user, token } = useContext(AuthContext);
 
-  const [currentLoc, setCurrentLoc] = useState({
-    latitude: 0,
-    longitude: 0,
-    heading: 0,
-  });
   const lastLocation = useRef({ latitude: 0, longitude: 0, heading: 0 });
 
   const userId = decodedToken(token)?.id;
-  const [users, setUsers] = useState(new Map<string, User>());
-  const [pendingReqDetailIds, setPendingReqDetailIds] = useState(
-    new Map<string, string>()
-  );
 
   const updateLocation = async (locationSubscription: any) => {
     if ((await requestLocationPermission()) && userId) {
@@ -121,11 +123,11 @@ export default function DriverLayout() {
         const smoothedLatitude =
           lastLocation.current.latitude +
           SMOOTHING_FACTOR *
-            (updatedLocation.latitude - lastLocation.current.latitude);
+          (updatedLocation.latitude - lastLocation.current.latitude);
         const smoothedLongitude =
           lastLocation.current.longitude +
           SMOOTHING_FACTOR *
-            (updatedLocation.longitude - lastLocation.current.longitude);
+          (updatedLocation.longitude - lastLocation.current.longitude);
 
         const smoothedUpdatedLocation = {
           latitude: smoothedLatitude,
@@ -136,7 +138,7 @@ export default function DriverLayout() {
         if (
           smoothedUpdatedLocation.latitude !== lastLocation.current.latitude ||
           smoothedUpdatedLocation.longitude !==
-            lastLocation.current.longitude ||
+          lastLocation.current.longitude ||
           smoothedUpdatedLocation.heading !== lastLocation.current.heading
         ) {
           lastLocation.current = smoothedUpdatedLocation;
@@ -172,23 +174,27 @@ export default function DriverLayout() {
 
   useEffect(() => {
     // Render Users
+
     subscribeToChannel(
       user,
       (msg: any) => {
         if (msg.publisher === userId) {
-          setUsers((prev) => new Map(prev).set(msg.publisher, msg.message));
+          const currentUsers = getUsers();
+          const updatedUsers = new Map(currentUsers);
+          updatedUsers.set(msg.publisher, msg.message);
+          setUsers(updatedUsers);
         }
       },
       (event: any) => {
-        if (event.action === "leave" || event.action === "timeout") {
-          setUsers((prev) => {
-            const updated = new Map(prev);
-            updated.delete(event.uuid);
-            return updated;
-          });
+        if (event.action === 'leave' || event.action === 'timeout') {
+          const currentUsers = getUsers();
+          const updatedUsers = new Map(currentUsers);
+          updatedUsers.delete(event.uuid);
+          setUsers(updatedUsers);
         }
       }
     );
+
 
     // Listen to requests from PubNub
     subscribeToRescueChannel((msg: any) => {
@@ -196,11 +202,10 @@ export default function DriverLayout() {
         msg.message.senderRole === "Customer" &&
         msg.message.driverId === userId
       ) {
-        setPendingReqDetailIds((prev) => {
-          const updatedMap = new Map(prev);
-          updatedMap.set(msg.publisher, msg.message.requestDetailId);
-          return new Map(updatedMap);
-        });
+        const prev = getPendingReqDetailIds();
+        const updatedMap = new Map(prev);
+        updatedMap.set(msg.publisher, msg.message.requestDetailId);
+        setPendingReqDetailIds(updatedMap);
       }
     });
 
@@ -213,26 +218,6 @@ export default function DriverLayout() {
   useEffect(() => {
     hereNow();
   }, []);
-
-  useEffect(() => {
-    const params: any = {
-      jsonCurLoc: JSON.stringify(currentLoc),
-    };
-
-    if (segment.includes("home")) {
-      router.setParams({
-        ...params,
-        jsonPendingReqDetailIds: JSON.stringify(
-          Object.fromEntries(pendingReqDetailIds)
-        ),
-      });
-    } else if (segment.includes("requestMap") || segment.includes("map")) {
-      router.setParams({
-        ...params,
-        jsonUsers: JSON.stringify(Object.fromEntries(users)),
-      });
-    }
-  }, [pendingReqDetailIds, currentLoc, users, segment]);
 
   return (
     <GluestackUIProvider mode="light">

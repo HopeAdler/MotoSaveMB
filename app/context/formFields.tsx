@@ -29,7 +29,11 @@ export type User = {
   longitude: number;
   heading: number;
 };
-
+export type CurrentLoc = {
+  latitude: number;
+  longitude: number;
+  heading: number;
+};
 export interface RequestItem {
   requestid: string;
   servicepackagename: string;
@@ -60,6 +64,24 @@ export interface RequestDetail {
   requestid: string;
   requestdetailid: string;
   servicepackagename: string;
+}
+
+export interface DriverRescueRequestDetail {
+  requestid: string;
+  servicepackagename: string;
+  requesttype: string;
+  customername: string;
+  customerphone: string;
+  pickuplocation: string;
+  destination: string;
+  totalprice: number;
+  paymentmethod: string;
+  paymentstatus: string;
+  pickuplong: number;
+  pickuplat: number;
+  deslng: number;
+  deslat: number;
+  requeststatus: string;
 }
 
 export interface RepairRequestDetail {
