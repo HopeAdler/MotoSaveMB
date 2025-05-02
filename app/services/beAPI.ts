@@ -23,6 +23,18 @@ export interface EmergencyRescueRequestPayload {
   vehicleid: string;
 }
 
+export interface EmergencyRequestForGuest {
+  receivername: string,
+  receiverphone: string,
+  pickuplong: number;
+  pickuplat: number;
+  deslng: number;
+  deslat: number;
+  pickuplocation: string;
+  destination: string;
+  totalprice: number;
+  stationid: string;
+}
 export interface FloodRescueRequestPayload {
   pickuplong: number;
   pickuplat: number;
@@ -49,6 +61,10 @@ export interface UpdatedPayment {
   requestDetailId: string;
   newStatus: string;
 }
+export interface UpdatedPaymentTotal {
+  requestDetailId: string;
+  newTotal: number;
+}
 
 export interface Feedback {
   rating: number;
@@ -60,8 +76,8 @@ export interface RepairQuote {
   cost: number;
   requestdetailid: string,
   repaircostpreviewid: number,
-  accessoryid: number | null, 
-  wage: number, 
+  accessoryid: number | null,
+  wage: number,
   total: number,
 }
 
@@ -112,6 +128,27 @@ export async function createEmergencyRescueRequest(
   try {
     const response = await axios.post(
       "https://motor-save-be.vercel.app/api/v1/requests/emergencyRescue",
+      payload,
+      {
+        headers: {
+          Authorization: "Bearer " + token,
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error creating rescue request", error);
+    throw error;
+  }
+}
+
+export async function createEmergencyRequestForGuest(
+  payload: EmergencyRequestForGuest,
+  token: string
+): Promise<any> {
+  try {
+    const response = await axios.post(
+      "https://motor-save-be.vercel.app/api/v1/requests/guest/emergencyRescue",
       payload,
       {
         headers: {
@@ -248,6 +285,27 @@ export async function updatePaymentStatus(
   }
 }
 
+export async function updatePaymentTotal(
+  payload: UpdatedPaymentTotal,
+  token: string
+): Promise<any> {
+  try {
+    const response = await axios.put(
+      "https://motor-save-be.vercel.app/api/v1/transactions/payment/update/total",
+      payload,
+      {
+        headers: {
+          Authorization: "Bearer " + token,
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error creating transaction", error);
+    throw error;
+  }
+}
+
 export async function createFeedback(
   requestdetailid: string,
   payload: Feedback,
@@ -365,6 +423,19 @@ export async function fetchRequests(token: string): Promise<any> {
     console.error("Error fetching requests:", error);
   }
 }
+
+export async function fetchRescueRequestDetail(token: string, requestDetailId: string): Promise<any> {
+  try {
+    const response = await axios.get(
+      `https://motor-save-be.vercel.app/api/v1/requests/driver/${requestDetailId}`,
+      { headers: { Authorization: "Bearer " + token } }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching requests:", error);
+  }
+}
+
 export async function fetchStationOfAStaff(token: string): Promise<any> {
   try {
     const response = await axios.get(
@@ -481,7 +552,7 @@ export async function acceptEmergencyRequest(requestdetailid: string, token: str
         console.warn(`Accept request warning (${status}):`, errorMessage);
         return null; // or you can return something else if you prefer
       }
-      
+
       // For other errors, throw normally
       throw new Error(errorMessage);
     } else {
