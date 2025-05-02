@@ -41,6 +41,8 @@ export interface RequestItem {
   requesttype: string;
   customername: string;
   customerphone: string;
+  receivername: string;
+  receiverphone: string;
   pickuplocation?: string;
   destination?: string;
   requeststatus: string;
@@ -72,6 +74,8 @@ export interface DriverRescueRequestDetail {
   requesttype: string;
   customername: string;
   customerphone: string;
+  receivername: string;
+  receiverphone: string;
   pickuplocation: string;
   destination: string;
   totalprice: number;

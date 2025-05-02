@@ -16,6 +16,8 @@ interface RequestItem {
   requesttype: string;
   customername: string;
   customerphone: string;
+  receivername: string;
+  receiverphone: string;
   pickuplocation: string;
   requeststatus: string;
   createddate: string;

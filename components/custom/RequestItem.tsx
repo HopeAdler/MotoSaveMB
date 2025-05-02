@@ -54,7 +54,7 @@ export const renderItem = ({
     <VStack space="xs" className="mb-4">
       <HStack className="items-center space-x-2">
         <Text className="text-sm text-gray-700 font-medium">
-          👤 {item.customername}
+          👤 {item.customername ? item.customername : item.receivername}
         </Text>
       </HStack>
 
