@@ -2,7 +2,7 @@ import { AuthContext } from "@/app/context/AuthContext";
 import { RequestItem } from "@/app/context/formFields";
 import { usePubNub } from "@/app/context/PubNubContext";
 import { usePendingReqStore } from "@/app/hooks/usePendingReqStore";
-import { getPendingReturnRequest } from "@/app/services/beAPI";
+import { acceptEmergencyRequest, getPendingReturnRequest, getUndoneRequestDetailIds } from "@/app/services/beAPI";
 import { usePubNubService } from "@/app/services/pubnubService";
 import { renderItem } from "@/components/custom/RequestItem";
 import { Box } from "@/components/ui/box";
@@ -11,10 +11,12 @@ import axios from "axios";
 import { useRouter } from "expo-router";
 import { AlertCircle, Bell, Clock, MapPin, Truck } from "lucide-react-native";
 import React, { useContext, useEffect, useState } from "react";
-import { FlatList, Pressable, View } from "react-native";
+import { Alert, FlatList, Pressable, View } from "react-native";
 import { Avatar } from "react-native-elements";
 import { SafeAreaView } from "react-native-safe-area-context";
 import LoadingScreen from "../../loading/loading";
+import { CreateGuestRequest } from "@/components/custom/CreateGuestRequest";
+import { useCurrentLocStore } from "@/app/hooks/currentLocStore";
 
 // interface ServiceCardProps {
 //   icon: LucideIcon;
@@ -43,18 +45,32 @@ export default function DHomeScreen() {
   const { pubnub } = usePubNub(); // Access PubNub instance from context
   const { publishAcceptRequest } = usePubNubService(); //
   const [isLoading, setIsLoading] = useState(true);
-
+  const {
+    currentLoc,
+  } = useCurrentLocStore();
   const {
     pendingReqDetailIds,
-    setPendingReqDetailIds
+    removePendingReqDetailId,
   } = usePendingReqStore();
 
   const [pendingRescueRequests, setPendingRescueRequests] = useState<RequestItem[]>([]);
   const [pendingReturnRequests, setPendingReturnRequests] = useState<RequestItem[]>([]);
   const router = useRouter();
   // const testedIds = ['8f3e93cb-e458-494b-acc5-5e3dd601e709', '67b026f6-e114-4f32-9f61-fae96778a74e', 'e7a09360-6011-40f2-96d1-fac7d49e0093'];
+  const checkUndoneRequest = async () => {
+    try {
+      const results = await getUndoneRequestDetailIds(token);
+      console.log(results)
+      return results.length > 1 ? true : false;
+    } catch (error) {
+      console.error("Error fetching undone request details:", error);
+    }
+  };
+
   const fetchPendingRescueRequests = async () => {
     try {
+      console.log('Fetching...')
+      console.log(pendingReqDetailIds)
       const requests = await Promise.all(
         Array.from(pendingReqDetailIds.values()).map(async (id) => {
           console.log(id);
@@ -67,33 +83,24 @@ export default function DHomeScreen() {
       );
 
       // Accept any requests with servicepackagename === 'Cứu hộ đến trạm'
-      // for (const request of requests) {
-      //   if (request.data.servicepackagename === 'Cứu hộ đến trạm') {
-      //     console.log(`Auto-accepting request ID ${request.id}`);
-      //     await acceptEmergencyRequest(request.id, token);
-      //   }
-      // }
+
 
       // After accepting, filter and sort
-      const filteredRequests = requests
+      const filteredRequestDetails = requests
         .map(r => r.data)
         .filter((item) => item.requeststatus === "Pending")
         .sort((a, b) => new Date(b.createddate).getTime() - new Date(a.createddate).getTime());
 
-      setPendingRescueRequests(filteredRequests.slice(0, 2)); // ⬅️ Overwrite state with filtered data
+      setPendingRescueRequests(filteredRequestDetails.slice(0, 2)); // ⬅️ Overwrite state with filtered data
       // Extract the IDs of the pending requests
-      const pendingRequestIds = new Set(filteredRequests.map((r) => r.id));
+      const newPenReqDetIds = new Set(filteredRequestDetails.map((r) => r.requestdetailid));
 
       // Remove non-pending request IDs from the store
-      const updatedMap = new Map(pendingReqDetailIds);
-      Array.from(pendingReqDetailIds.keys()).forEach((id) => {
-        if (!pendingRequestIds.has(id)) {
-          updatedMap.delete(id); // Remove the non-pending ID from the store
+      Array.from(pendingReqDetailIds.values()).forEach((value) => {
+        if (!newPenReqDetIds.has(value)) {
+          removePendingReqDetailId(value);
         }
       });
-
-      // Update the store with the new map
-      setPendingReqDetailIds(updatedMap);
     } catch (error) {
       console.error("Error fetching requests:", error);
     }
@@ -112,13 +119,36 @@ export default function DHomeScreen() {
   }
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      fetchPendingReturnRequest(); // Fetch initially
-      if (pendingReqDetailIds.size === 0) return; // No requests, skip API calls
-      fetchPendingRescueRequests(); // Fetch every 5 seconds
-    }, 5000);
+    const interval = setInterval(async () => {
+      const result = await checkUndoneRequest();
+      console.log(result)
+      if (!result) {
+        console.log(pendingReqDetailIds.size);
+        fetchPendingReturnRequest(); // Fetch initially
+        // if (pendingReqDetailIds.size === 0) return; // No requests, skip API calls
+        fetchPendingRescueRequests(); // Fetch every 5 seconds
+      }
+    }, 3000);
     return () => clearInterval(interval); // Cleanup interval on unmount
   }, [pendingReqDetailIds, token]); // Dependencies to refetch when changed
+
+  useEffect(() => {
+    if (pendingRescueRequests.length === 0) return; // No requests, skip API calls
+    const autoAcceptRequests = async () => {
+      for (const request of pendingRescueRequests) {
+        if (request.servicepackagename === 'Cứu hộ đến trạm') {
+          console.log(`Auto-accepting request ID ${request.requestdetailid}`);
+          const result = await acceptEmergencyRequest(request.requestdetailid, token);
+          if (result) {
+            await publishAcceptRequest(request.requestdetailid);
+            Alert.alert("Success", "Bạn có một yêu cầu cứu hộ mới được giao!");
+
+          }
+        }
+      }
+    };
+    autoAcceptRequests();
+  }, [pendingRescueRequests]);
 
   // Parse users from JSON and reconstruct the Map
   useEffect(() => {
@@ -238,7 +268,7 @@ export default function DHomeScreen() {
               )}
             </Box>
 
-            {/* <CreateGuestRequest currentLoc={currentLoc}/> */}
+            <CreateGuestRequest currentLoc={currentLoc} />
             {/* <Box className="bg-white rounded-2xl p-4 mt-4 shadow-sm">
               <Text className="text-lg font-bold text-gray-800 mb-4">
                 Thao tác nhanh

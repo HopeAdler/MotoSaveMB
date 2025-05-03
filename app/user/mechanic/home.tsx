@@ -44,6 +44,8 @@ interface RepairRequest {
   requestid: string;
   customername: string;
   customerphone: string;
+  receivername: string;
+  receiverphone: string;
   requesttype: string;
   servicepackagename: string;
   requestdetailid: string;

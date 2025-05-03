@@ -23,6 +23,18 @@ export interface EmergencyRescueRequestPayload {
   vehicleid: string;
 }
 
+export interface EmergencyRequestForGuest {
+  receivername: string,
+  receiverphone: string,
+  pickuplong: number;
+  pickuplat: number;
+  deslng: number;
+  deslat: number;
+  pickuplocation: string;
+  destination: string;
+  totalprice: number;
+  stationid: string;
+}
 export interface FloodRescueRequestPayload {
   pickuplong: number;
   pickuplat: number;
@@ -116,6 +128,27 @@ export async function createEmergencyRescueRequest(
   try {
     const response = await axios.post(
       "https://motor-save-be.vercel.app/api/v1/requests/emergencyRescue",
+      payload,
+      {
+        headers: {
+          Authorization: "Bearer " + token,
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error creating rescue request", error);
+    throw error;
+  }
+}
+
+export async function createEmergencyRequestForGuest(
+  payload: EmergencyRequestForGuest,
+  token: string
+): Promise<any> {
+  try {
+    const response = await axios.post(
+      "https://motor-save-be.vercel.app/api/v1/requests/guest/emergencyRescue",
       payload,
       {
         headers: {

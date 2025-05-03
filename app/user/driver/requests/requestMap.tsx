@@ -26,6 +26,14 @@ import React, { useContext, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, TouchableOpacity } from "react-native";
 import Icon from "react-native-vector-icons/Feather";
 
+type User = {
+  uuid: string;
+  username: string;
+  role: string;
+  latitude: number;
+  longitude: number;
+  heading: number;
+};
 
 interface RequestDetail {
   requestid: string;
@@ -33,6 +41,9 @@ interface RequestDetail {
   requesttype: string;
   customername: string;
   customerphone: string;
+  receivername: string;
+  receiverphone: string;
+  receiverlicenseplate: string;
   pickuplocation: string;
   destination: string;
   totalprice: number;
@@ -75,7 +86,9 @@ interface ICamera {
 }
 
 const RequestMap: React.FC = () => {
-  const { requestdetailid } = useLocalSearchParams<{ requestdetailid: string }>();
+  const { requestdetailid } = useLocalSearchParams<{
+    requestdetailid: string;
+  }>();
   const { token } = useContext(AuthContext);
   const userId = decodedToken(token)?.id;
   const router = useRouter();
@@ -89,10 +102,20 @@ const RequestMap: React.FC = () => {
 
   const [requestDetail, setRequestDetail] = useState<RequestDetail | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [originCoordinates, setOriginCoordinates] = useState({ latitude: 0, longitude: 0 });
-  const [destinationCoordinates, setDestinationCoordinates] = useState({ latitude: 0, longitude: 0 });
-  const [routeCoordinates, setRouteCoordinates] = useState<[number, number][]>([]);
-  const [directionsInfo, setDirectionsInfo] = useState<DirectionsLeg | null>(null);
+  const [originCoordinates, setOriginCoordinates] = useState({
+    latitude: 0,
+    longitude: 0,
+  });
+  const [destinationCoordinates, setDestinationCoordinates] = useState({
+    latitude: 0,
+    longitude: 0,
+  });
+  const [routeCoordinates, setRouteCoordinates] = useState<[number, number][]>(
+    []
+  );
+  const [directionsInfo, setDirectionsInfo] = useState<DirectionsLeg | null>(
+    null
+  );
   const [isActionSheetOpen, setIsActionSheetOpen] = useState<boolean>(true);
   const [unpaidPayments, setUnpaidPayments] = useState<UnpaidPayments[]>([]);
   const camera = useRef<MapboxGL.Camera>(null);
@@ -264,13 +287,15 @@ const RequestMap: React.FC = () => {
           setRouteCoordinates(decoded);
           if (data.routes[0].legs && data.routes[0].legs.length > 0) {
             setDirectionsInfo(data.routes[0].legs[0]);
-            console.log("Switching route...");
+            // console.log("Switching route...");
           }
         } else {
           console.log("No routes found:", data);
         }
       })
-      .catch((error: any) => console.error("Error fetching directions:", error));
+      .catch((error: any) =>
+        console.error("Error fetching directions:", error)
+      );
   };
 
   useEffect(() => {
@@ -316,7 +341,6 @@ const RequestMap: React.FC = () => {
       });
     }
   }, [requestDetail?.requeststatus]);
-
   return (
     <Box className="flex-1">
       <GoBackButton />
@@ -340,7 +364,10 @@ const RequestMap: React.FC = () => {
               requestDetail?.requeststatus === "Pickup" &&
               originCoordinates.latitude !== 0 && (
                 <MapboxGL.Camera
-                  centerCoordinate={[originCoordinates.longitude, originCoordinates.latitude]}
+                  centerCoordinate={[
+                    originCoordinates.longitude,
+                    originCoordinates.latitude,
+                  ]}
                   zoomLevel={14}
                   animationDuration={1000}
                 />
@@ -350,33 +377,48 @@ const RequestMap: React.FC = () => {
               requestDetail?.requeststatus === "Processing" &&
               destinationCoordinates.latitude !== 0 && (
                 <MapboxGL.Camera
-                  centerCoordinate={[destinationCoordinates.longitude, destinationCoordinates.latitude]}
+                  centerCoordinate={[
+                    destinationCoordinates.longitude,
+                    destinationCoordinates.latitude,
+                  ]}
                   zoomLevel={14}
                   animationDuration={1000}
                 />
               )}
-            {requestDetail?.requeststatus !== 'Processing' && originCoordinates && (
-              <MapboxGL.MarkerView
-                id="origin-marker"
-                coordinate={[originCoordinates.longitude, originCoordinates.latitude]}
-              >
-                <OriginMarker size={32} />
-              </MapboxGL.MarkerView>
-            )}
-            {requestDetail?.requeststatus !== 'Pickup' && requestDetail?.destination && destinationCoordinates && (
-              <MapboxGL.MarkerView
-                id="destination-marker"
-                coordinate={[destinationCoordinates.longitude, destinationCoordinates.latitude]}
-              >
-                <DestinationMarker size={32} />
-              </MapboxGL.MarkerView>
-            )}
+            {requestDetail?.requeststatus !== "Processing" &&
+              originCoordinates && (
+                <MapboxGL.MarkerView
+                  id="origin-marker"
+                  coordinate={[
+                    originCoordinates.longitude,
+                    originCoordinates.latitude,
+                  ]}
+                >
+                  <OriginMarker size={32} />
+                </MapboxGL.MarkerView>
+              )}
+            {requestDetail?.requeststatus !== "Pickup" &&
+              requestDetail?.destination &&
+              destinationCoordinates && (
+                <MapboxGL.MarkerView
+                  id="destination-marker"
+                  coordinate={[
+                    destinationCoordinates.longitude,
+                    destinationCoordinates.latitude,
+                  ]}
+                >
+                  <DestinationMarker size={32} />
+                </MapboxGL.MarkerView>
+              )}
             {routeCoordinates.length > 0 && (
               <MapboxGL.ShapeSource
                 id="routeSource"
                 shape={{
                   type: "Feature",
-                  geometry: { type: "LineString", coordinates: routeCoordinates },
+                  geometry: {
+                    type: "LineString",
+                    coordinates: routeCoordinates,
+                  },
                   properties: {},
                 }}
               >
@@ -412,25 +454,43 @@ const RequestMap: React.FC = () => {
                     <Box className="flex-row gap-3 pb-2">
                       <Button
                         variant="solid"
-                        onPress={() => handlePhoneCall(requestDetail?.customerphone)}
-                        className={`rounded-xl h-12 w-12 items-center justify-center ${requestDetail?.requeststatus === "Done"
-                          ? "bg-gray-200"
-                          : "bg-[#1a3148]"
-                          }`}
+                        onPress={() =>
+                          handlePhoneCall(requestDetail?.customerphone)
+                        }
+                        className={`rounded-xl h-12 w-12 items-center justify-center ${
+                          requestDetail?.requeststatus === "Done"
+                            ? "bg-gray-200"
+                            : "bg-[#1a3148]"
+                        }`}
                         disabled={requestDetail?.requeststatus === "Done"}
                       >
-                        <Phone size={22} color={requestDetail?.requeststatus === "Done" ? "#9CA3AF" : "white"} />
+                        <Phone
+                          size={22}
+                          color={
+                            requestDetail?.requeststatus === "Done"
+                              ? "#9CA3AF"
+                              : "white"
+                          }
+                        />
                       </Button>
                       <Button
                         variant="solid"
                         onPress={toChatScreen}
-                        className={`rounded-xl h-12 w-12 items-center justify-center ${requestDetail?.requeststatus === "Done"
-                          ? "bg-gray-200"
-                          : "bg-[#fab753]"
-                          }`}
+                        className={`rounded-xl h-12 w-12 items-center justify-center ${
+                          requestDetail?.requeststatus === "Done"
+                            ? "bg-gray-200"
+                            : "bg-[#fab753]"
+                        }`}
                         disabled={requestDetail?.requeststatus === "Done"}
                       >
-                        <MessageSquare size={22} color={requestDetail?.requeststatus === "Done" ? "#9CA3AF" : "white"} />
+                        <MessageSquare
+                          size={22}
+                          color={
+                            requestDetail?.requeststatus === "Done"
+                              ? "#9CA3AF"
+                              : "white"
+                          }
+                        />
                       </Button>
                     </Box>
                   </Box>
@@ -443,7 +503,9 @@ const RequestMap: React.FC = () => {
                             <Navigation2 size={24} color="#1a3148" />
                           </Box>
                           <Box className="ml-3">
-                            <Text className="text-sm text-gray-500">Distance</Text>
+                            <Text className="text-sm text-gray-500">
+                              Distance
+                            </Text>
                             <Text className="text-xl font-bold text-[#1a3148]">
                               {directionsInfo?.distance?.text}
                             </Text>
@@ -459,7 +521,9 @@ const RequestMap: React.FC = () => {
                             <Clock size={24} color="#1a3148" />
                           </Box>
                           <Box className="ml-3">
-                            <Text className="text-sm text-gray-500">Duration</Text>
+                            <Text className="text-sm text-gray-500">
+                              Duration
+                            </Text>
                             <Text className="text-xl font-bold text-[#1a3148]">
                               {directionsInfo?.duration?.text}
                             </Text>
@@ -478,7 +542,9 @@ const RequestMap: React.FC = () => {
                         <MapPin size={20} color="#1a3148" />
                       </Box>
                       <Box className="ml-3 flex-1">
-                        <Text className="text-sm text-gray-500">Pickup Location</Text>
+                        <Text className="text-sm text-gray-500">
+                          Pickup Location
+                        </Text>
                         <Text className="text-base font-medium text-[#1a3148]">
                           {requestDetail?.pickuplocation}
                         </Text>
@@ -495,7 +561,9 @@ const RequestMap: React.FC = () => {
                           )}
                         </Box>
                         <Box className="ml-3 flex-1">
-                          <Text className="text-sm text-gray-500">Destination</Text>
+                          <Text className="text-sm text-gray-500">
+                            Destination
+                          </Text>
                           <Text className="text-base font-medium text-[#1a3148]">
                             {requestDetail?.destination}
                           </Text>
@@ -509,7 +577,9 @@ const RequestMap: React.FC = () => {
                       <Box>
                         <Box className="flex-row items-center mb-1">
                           <CreditCard size={18} color="#1a3148" />
-                          <Text className="text-sm text-gray-500 ml-2">Total Price</Text>
+                          <Text className="text-sm text-gray-500 ml-2">
+                            Total Price
+                          </Text>
                         </Box>
                         <Text className="text-xl font-bold text-[#1a3148]">
                           {requestDetail?.totalprice.toLocaleString()} VND
@@ -528,12 +598,15 @@ const RequestMap: React.FC = () => {
                     onPress={changeRequestStatus}
                     disabled={requestDetail?.requeststatus === "Done"}
                   >
-                    <ButtonText className={`font-bold text-lg ${requestDetail?.requeststatus === "Pickup" ||
-                      requestDetail?.requeststatus === "Processing" ||
-                      requestDetail?.requeststatus === "Done"
-                      ? "text-white"
-                      : "text-[#1a3148]"
-                      }`}>
+                    <ButtonText
+                      className={`font-bold text-lg ${
+                        requestDetail?.requeststatus === "Pickup" ||
+                        requestDetail?.requeststatus === "Processing" ||
+                        requestDetail?.requeststatus === "Done"
+                          ? "text-white"
+                          : "text-[#1a3148]"
+                      }`}
+                    >
                       {changeButtonTitle()}
                     </ButtonText>
                   </Button>

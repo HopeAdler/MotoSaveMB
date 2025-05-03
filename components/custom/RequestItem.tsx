@@ -54,7 +54,7 @@ export const renderItem = ({
     <VStack space="xs" className="mb-4">
       <HStack className="items-center space-x-2">
         <Text className="text-sm text-gray-700 font-medium">
-          👤 {item.customername}
+          👤 {item.customername ? item.customername : item.receivername}
         </Text>
       </HStack>
 
@@ -85,12 +85,12 @@ export const renderItem = ({
               if (result && item.requesttype !== "Trả xe") {
                 try {
                   await publishAcceptRequest(item.requestdetailid);
-                  Alert.alert("Success", "Request accepted and notification sent!");
+                  Alert.alert("Success", "Đã chấp nhận yêu cầu cứu hộ!");
                 } catch (pubnubError) {
                   Alert.alert("Warning", "Request accepted, but notification failed");
                 }
               } else {
-                Alert.alert("Success", "Request accepted!");
+                Alert.alert("Success", "Đã chấp nhận yêu cầu trả xe!");
               }
             } catch (apiError: any) {
               Alert.alert("Error", apiError.message);

@@ -25,6 +25,7 @@ import { ActivityIndicator, TouchableOpacity } from "react-native";
 import Icon from "react-native-vector-icons/Feather";
 import { TripAction, tripReducer, TripState } from "../../utils/fareCal";
 import { DriverRescueRequestDetail } from "@/app/context/formFields";
+import { UnpaidPaymentList } from "@/components/custom/UnpaidPayments";
 
 interface UnpaidPayments {
   paymentid: string;
@@ -463,7 +464,7 @@ const GenMap: React.FC = () => {
                     <Box className="flex-row items-center justify-between w-full">
                       <Box className="flex-1">
                         <Text className="text-2xl font-bold text-[#1a3148] mb-1">
-                          {requestDetail?.customername}
+                          {requestDetail?.customername ? requestDetail?.customername : requestDetail?.receivername}
                         </Text>
                       </Box>
 
@@ -618,6 +619,9 @@ const GenMap: React.FC = () => {
           }
         </>
       )}
+      {requestDetail?.requestid && requestDetail?.requeststatus === "Done" && unpaidPayments.length > 0 &&
+        <UnpaidPaymentList requestId={requestDetail?.requestid} />
+      }
     </Box>
   );
 };
