@@ -1,5 +1,4 @@
 import AuthContext from "@/app/context/AuthContext";
-import { User } from "@/app/context/formFields";
 import { useCurrentLocStore } from "@/app/hooks/currentLocStore";
 import { usePendingReqStore } from "@/app/hooks/usePendingReqStore";
 import { useUsersStore } from "@/app/hooks/usersStore";
@@ -22,9 +21,9 @@ import {
   DollarSign,
   House,
   List,
-  MapIcon,
+  MapIcon
 } from "lucide-react-native";
-import { useContext, useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef } from "react";
 
 const SMOOTHING_FACTOR = 0.1;
 
@@ -39,7 +38,7 @@ export default function DriverLayout() {
   } = usePubNubService(); // ✅ Get service functions
 
   const {
-    getPendingReqDetailIds,
+    pendingReqDetailIds,
     setPendingReqDetailIds,
   } = usePendingReqStore();
   const {
@@ -202,8 +201,8 @@ export default function DriverLayout() {
         msg.message.senderRole === "Customer" &&
         msg.message.driverId === userId
       ) {
-        const prev = getPendingReqDetailIds();
-        const updatedMap = new Map(prev);
+        const updatedMap = pendingReqDetailIds;
+        console.log(updatedMap)
         updatedMap.set(msg.publisher, msg.message.requestDetailId);
         setPendingReqDetailIds(updatedMap);
       }
@@ -320,6 +319,16 @@ export default function DriverLayout() {
             ),
           }}
         />
+        {/* <Tabs.Screen
+          name="testTextRecognition"
+          options={{
+            headerShown: false,
+            tabBarLabel: "ImageToText",
+            tabBarIcon: (tabInfo) => (
+              <CameraIcon size={24} color={tabInfo.color} />
+            ),
+          }}
+        /> */}
         <Tabs.Screen
           name="performance"
           options={{

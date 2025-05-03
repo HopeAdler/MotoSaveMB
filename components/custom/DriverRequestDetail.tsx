@@ -13,6 +13,8 @@ interface RequestDetail {
   requesttype: string;
   customername: string;
   customerphone: string;
+  receivername: string;
+  receiverphone: string;
   pickuplocation: string;
   destination: string;
   totalprice: number;
@@ -50,7 +52,7 @@ const DriverRequestDetail: React.FC<DriverRequestDetailProps> = ({
               <Box className="flex-1">
                 <Text className="text-xs uppercase text-gray-500 tracking-wider mb-1">Customer Name</Text>
                 <Text className="text-2xl font-bold text-[#1a3148]">
-                  {requestDetail?.customername}
+                  {requestDetail?.customername ? requestDetail?.customername : requestDetail?.receivername}
                 </Text>
               </Box>
               <Box className="flex-row gap-3">

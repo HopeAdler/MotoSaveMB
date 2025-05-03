@@ -463,7 +463,7 @@ const GenMap: React.FC = () => {
                     <Box className="flex-row items-center justify-between w-full">
                       <Box className="flex-1">
                         <Text className="text-2xl font-bold text-[#1a3148] mb-1">
-                          {requestDetail?.customername}
+                          {requestDetail?.customername ? requestDetail?.customername : requestDetail?.receivername}
                         </Text>
                       </Box>
 

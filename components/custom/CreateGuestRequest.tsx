@@ -57,6 +57,10 @@ export const CreateGuestRequest: React.FC<CreateGuestRequestProps> = ({
   const [directionsInfo, setDirectionsInfo] = useState<any>(null);
   const [fare, setFare] = useState<number>(0);
   const [fareLoading, setFareLoading] = useState<boolean>(false);
+  const [formErrors, setFormErrors] = useState<{
+    receivername?: string;
+    receiverphone?: string;
+  }>({});
   const [formData, setFormData] = useState<CreateGuestRequestForm>({
     receivername: "",
     receiverphone: "",
@@ -81,7 +85,7 @@ export const CreateGuestRequest: React.FC<CreateGuestRequestProps> = ({
         }
       );
     }
-  }, [currentLoc]);
+  }, [showModal]);
 
   useEffect(() => {
     fetchStationOfAStaff(token).then((station) => {
@@ -111,7 +115,7 @@ export const CreateGuestRequest: React.FC<CreateGuestRequestProps> = ({
         }
       })
       .catch((error) => console.error("Error fetching directions:", error));
-  }, [currentLoc]);
+  }, [showModal]);
   useEffect(() => {
     if (directionsInfo) {
       const distanceValue = directionsInfo.distance?.value || 0;
@@ -131,14 +135,32 @@ export const CreateGuestRequest: React.FC<CreateGuestRequestProps> = ({
         });
     }
   }, [directionsInfo]);
-  const handleChange = (key: keyof CreateGuestRequestForm, value: string) => {
-    setFormData((prev) => ({ ...prev, [key]: value }));
-  };
 
   const handleSubmit = async () => {
+    const errors: { receivername?: string; receiverphone?: string } = {};
+    const name = formData.receivername.trim();
+    const phone = formData.receiverphone.trim();
+
+    if (!name) {
+      errors.receivername = "Customer name is required.";
+    }
+
+    const phoneRegex = /^[0-9]{10}$/;
+    if (!phone) {
+      errors.receiverphone = "Customer phone is required.";
+    } else if (!phoneRegex.test(phone)) {
+      errors.receiverphone = "Phone number must be exactly 10 digits.";
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      return;
+    }
+
+    setFormErrors({}); // Clear previous errors
     try {
       const result = await createEmergencyRequestForGuest(formData, token);
-      console.log(result)
+      console.log(result);
       const reqId = result.requestdetailid;
       const payment = await createPayment(
         {
@@ -157,10 +179,15 @@ export const CreateGuestRequest: React.FC<CreateGuestRequestProps> = ({
       Alert.alert("Error", "Failed to submit request");
     }
   };
+  
+  const handleCancel = () => {
+    setFormErrors({}); // Clear previous errors
+    setShowModal(false)
+  }
 
   return (
     <View className="p-4">
-      <Button onPress={() => setShowModal(true)}>
+      <Button onPress={() => setShowModal(true)} className="bg-blue-500">
         <ButtonText>Create Guest Rescue Request</ButtonText>
       </Button>
 
@@ -172,36 +199,60 @@ export const CreateGuestRequest: React.FC<CreateGuestRequestProps> = ({
               size="md"
               className="text-center text-gray-800 font-semibold"
             >
-              Guest Rescue Request
+              Create Rescue Request
             </Heading>
             <ModalCloseButton>
-              <Icon as={CloseIcon} size="md" className="text-gray-400" />
+              <Icon as={CloseIcon} size="md" className="text-red-600" />
             </ModalCloseButton>
           </ModalHeader>
 
           <ModalBody className="px-4 py-3 space-y-4">
-            <View>
+            <View className="mb-3">
               <Text className="text-sm text-gray-700 mb-1">Customer Name</Text>
               <TextInput
-                className="border border-gray-300 rounded-lg px-3 py-2 text-base"
+                // className="border border-gray-300 rounded-lg px-3 py-2 text-base"
                 placeholder="Enter name"
                 value={formData.receivername}
-                onChangeText={(text) => handleChange("receivername", text)}
+                onChangeText={(text) => {
+                  setFormData({ ...formData, receivername: text });
+                  setFormErrors((prev) => ({
+                    ...prev,
+                    receivername: undefined,
+                  }));
+                }}
+                className={`border ${formErrors.receivername ? "border-red-500" : "border-gray-300"} rounded px-3 py-2`}
               />
+              {formErrors.receivername && (
+                <Text className="text-red-500 text-sm">
+                  {formErrors.receivername}
+                </Text>
+              )}
             </View>
 
-            <View>
+            <View className="mb-3">
               <Text className="text-sm text-gray-700 mb-1">Customer Phone</Text>
               <TextInput
-                className="border border-gray-300 rounded-lg px-3 py-2 text-base"
+                // className="border border-gray-300 rounded-lg px-3 py-2 text-base"
                 placeholder="Enter phone"
                 keyboardType="phone-pad"
                 value={formData.receiverphone}
-                onChangeText={(text) => handleChange("receiverphone", text)}
+                onChangeText={(text) => {
+                  setFormData({ ...formData, receiverphone: text });
+                  setFormErrors((prev) => ({
+                    ...prev,
+                    receiverphone: undefined,
+                  }));
+                }}
+                className={`border ${formErrors.receiverphone ? "border-red-500" : "border-gray-300"} rounded px-3 py-2`}
               />
+              {formErrors.receiverphone && (
+                <Text className="text-red-500 text-sm">
+                  {formErrors.receiverphone}
+                </Text>
+              )}
             </View>
 
-            <View>
+            <View className="mb-3">
               <Text className="text-sm text-gray-700 mb-1">
                 Pickup Location
               </Text>
@@ -209,7 +260,7 @@ export const CreateGuestRequest: React.FC<CreateGuestRequestProps> = ({
                 {formData.pickuplocation}
               </Text>
             </View>
-            <View>
+            <View className="mb-3">
               <Text className="text-sm text-gray-700 mb-1">Destination</Text>
               <Text className="text-base text-gray-900">
                 {formData.destination}
@@ -217,21 +268,21 @@ export const CreateGuestRequest: React.FC<CreateGuestRequestProps> = ({
             </View>
             <View>
               <Text className="text-sm text-gray-700 mb-1">Price</Text>
-              <Text className="text-base text-gray-900">
-                {formatMoney(formData.totalprice)}
+              <Text className="text-black-800 text-base font-bold">
+                {formatMoney(formData.totalprice || 0)}
               </Text>
             </View>
           </ModalBody>
 
-          <ModalFooter className="border-t border-gray-200 px-4 py-3 flex-row justify-between">
+          <ModalFooter className="border-gray-200 px-4 py-3 flex-row justify-between">
             <Button
               variant="outline"
-              action="secondary"
-              onPress={() => setShowModal(false)}
+              className="flex-1 mx-2 border-red-500"
+              onPress={handleCancel}
             >
-              <ButtonText>Cancel</ButtonText>
+              <ButtonText className="text-red-500">Cancel</ButtonText>
             </Button>
-            <Button onPress={handleSubmit}>
+            <Button onPress={handleSubmit} className="flex-1 mx-2 bg-blue-500">
               <ButtonText>Submit</ButtonText>
             </Button>
           </ModalFooter>

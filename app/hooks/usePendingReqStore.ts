@@ -15,10 +15,16 @@ const getPendingReqDetailIds = (): Map<string, string> => {
   return new Map(pendingReqDetailIds); // Return a copy to avoid unintended mutations
 };
 
-const removePendingReqDetailId = (id: string) => {
-  pendingReqDetailIds.delete(id);
+const removePendingReqDetailId = (requestDetailId: string) => {
+  for (const [key, value] of pendingReqDetailIds.entries()) {
+    if (value === requestDetailId) {
+      pendingReqDetailIds.delete(key);
+      break;
+    }
+  }
   listeners.forEach((cb) => cb(new Map(pendingReqDetailIds)));
 };
+
 
 export const usePendingReqStore = () => {
   const [localMap, setLocalMap] = useState<Map<string, string>>(new Map(pendingReqDetailIds));
