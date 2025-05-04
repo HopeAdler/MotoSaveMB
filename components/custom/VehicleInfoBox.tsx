@@ -1,12 +1,19 @@
 import { Image } from "react-native";
 import { Text, View } from "react-native";
 import { Car } from "lucide-react-native";
+import { Button, ButtonText } from "../ui/button";
+import UpdateGuestVehicle from "./UpdateGuestVehicle";
+import { useState } from "react";
 
 export const VehicleInfoBox = ({ repairRequestDetail }: any) => {
+  const [isCreateVehicleModalOpen, setIsCreateVehicleModalOpen] =
+    useState<boolean>(false);
   return (
     <View className="p-5 rounded-2xl border border-gray-100/50 shadow-sm bg-white mb-4">
-      <Text className="text-[#1a3148] text-lg font-bold mb-4">Thông tin xe</Text>
-      
+      <Text className="text-[#1a3148] text-lg font-bold mb-4">
+        Thông tin xe
+      </Text>
+
       <View className="flex-row">
         {repairRequestDetail?.vehiclephoto ? (
           <Image
@@ -31,6 +38,19 @@ export const VehicleInfoBox = ({ repairRequestDetail }: any) => {
             <Text className="text-[#1a3148] font-bold text-base">
               {repairRequestDetail?.brandname || "N/A"}
             </Text>
+            {!repairRequestDetail?.licenseplate && (
+              <Text
+                className="text-blue-500 text-sm mb-1"
+                onPress={() => setIsCreateVehicleModalOpen(true)}
+              >
+                Cập nhật xe
+              </Text>
+            )}
+            <UpdateGuestVehicle
+              isOpen={isCreateVehicleModalOpen}
+              onClose={() => setIsCreateVehicleModalOpen(false)}
+              requestId={repairRequestDetail?.requestid}
+            />
           </View>
         </View>
       </View>
