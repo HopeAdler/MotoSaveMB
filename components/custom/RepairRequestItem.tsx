@@ -90,8 +90,8 @@ export const RepairRequestItem = React.memo(
                   "Success",
                   "Request accepted and notification sent!"
                 );
-              } catch (apiError) {
-                Alert.alert("Error", "Failed to accept request");
+              } catch (apiError: any) {
+                Alert.alert("Error", apiError);
               }
             }}
           >
