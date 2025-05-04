@@ -11,9 +11,10 @@ import { User } from "../../app/context/formFields";
 // };
 type UserMarkerComponentProps = {
   user: User;
+  heading:number;
 };
 
-const UserMarker: React.FC<UserMarkerComponentProps> = ({ user }) => {
+export const UserMarker: React.FC<UserMarkerComponentProps> = ({ user,heading }) => {
   if (user.role === "Driver") {
     // console.log(user);
     return (
@@ -23,7 +24,7 @@ const UserMarker: React.FC<UserMarkerComponentProps> = ({ user }) => {
       >
         <View
           className="w-28 h-28  rounded-lg overflow-visible items-center justify-center"
-          style={{ transform: [{ rotate: `${user.heading}deg` }] }}
+          style={{ transform: [{ rotate: `${heading}deg` }] }}
         >
           <Image
             source={require("../../assets/images/truck.png")}
@@ -39,4 +40,4 @@ const UserMarker: React.FC<UserMarkerComponentProps> = ({ user }) => {
   }
 };
 
-export default UserMarker;
+// export default UserMarker;

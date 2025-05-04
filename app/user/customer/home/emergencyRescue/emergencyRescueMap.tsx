@@ -773,15 +773,10 @@ const EmergencyRescueMapScreen = () => {
           users={users}
           currentLoc={currentLoc}
           isActionSheetOpen={showActionsheet}
-          focusMode={[focusOnMe, setFocusOnMe]}
-        >
+          focusMode={[focusOnMe, setFocusOnMe]} role={"Customer"} userId={users.get(userId ?? '')?.uuid || ''}      >
           {originCoordinates.latitude !== 0 && (
             <MapboxGL.Camera
               ref={camera}
-              // centerCoordinate={[
-              //   originCoordinates.longitude,
-              //   originCoordinates.latitude,
-              // ]}
             />
           )}
 

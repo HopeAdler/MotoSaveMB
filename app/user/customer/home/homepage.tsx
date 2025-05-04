@@ -73,7 +73,7 @@ export default function CHomeScreen() {
       fetchRequestDetail();
     }
   }, [requestId]);
-
+//possible  error continue
   if (!user) {
     router.replace("/auth/login");
     return null;

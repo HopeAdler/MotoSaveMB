@@ -1,11 +1,137 @@
-import React, { useEffect, useRef } from "react";
+// import React, { useEffect, useRef, useState } from "react";
+// import MapboxGL from "@rnmapbox/maps";
+// import { View } from "react-native";
+// import { UserMarker } from "./UserMarker";
+// import MyLocationButton from "./MyLocationButton";
+// import { useSharedValue, withTiming, useAnimatedStyle } from "react-native-reanimated";
+// import { User } from "../../app/context/formFields";
+
+// type Users = Map<string, User>;
+
+// const { EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN } = process.env;
+// const { EXPO_PUBLIC_GOONG_MAP_KEY } = process.env;
+
+// type MapViewComponentProps = {
+//   users: Users;
+//   currentLoc: { latitude: number; longitude: number };
+//   focusMode: [boolean, React.Dispatch<React.SetStateAction<boolean>>];
+//   children?: React.ReactNode;
+//   isActionSheetOpen: boolean;
+//   // cameraRef: React.RefObject<MapboxGL.Camera>;
+//   role: "Driver" | "Customer";           // thêm
+//   driverHeading?: number;                // thêm
+//   // user: User;
+//   userId: string;
+// };
+
+// const MapViewComponent: React.FC<MapViewComponentProps> = ({
+//   users,
+//   currentLoc,
+//   focusMode: [focusOnMe, setFocusOnMe],
+//   children,
+//   role,
+//   userId,
+//   // driverHeading=0,
+//   // cameraRef,
+// }) => {
+//   const loadMap = `https://tiles.goong.io/assets/goong_map_web.json?api_key=${EXPO_PUBLIC_GOONG_MAP_KEY}`;
+//   const mapRef = useRef<MapboxGL.MapView>(null);
+//   const cameraRef = useRef<MapboxGL.Camera>(null);
+//   const [driverHeading, setDriverHeading] = useState(0);
+//   MapboxGL.setAccessToken(`${EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN}`);
+
+//   // useEffect(() => {
+//   //   if (focusOnMe && cameraRef.current) {
+//   //     cameraRef.current.setCamera({
+//   //       centerCoordinate: [currentLoc.longitude, currentLoc.latitude],
+//   //       zoomLevel: 14,
+//   //       animationDuration: 1000,
+//   //     });
+//   //   }
+//   // }, [focusOnMe, currentLoc]);
+
+//   useEffect(() => {
+//     // setDriverHeading(user?.heading || 0);
+//     // setDriverHeading(user?.heading || 0);
+
+//     if (!cameraRef.current) return;
+
+//     if (role === "Customer") {
+//       // Top‑down 
+//       cameraRef.current.setCamera({
+//         centerCoordinate: [currentLoc.longitude, currentLoc.latitude],
+//         zoomLevel: 14,
+//         pitch: 0,
+//         heading: 0,
+//         animationDuration: 1000,
+//       });
+//     } else {
+//       // 3rd‑person góc nghiêng + xoay theo heading
+//       cameraRef.current.setCamera({
+//         centerCoordinate: [currentLoc.longitude, currentLoc.latitude],
+//         zoomLevel: 19,
+//         pitch: 60,                  // nghiêng 60 độ
+//         heading: user?.heading,     // xoay theo hướng
+//         animationMode: "easeTo",
+//         animationDuration: 1000,
+//         bounds: {
+//           ne: [currentLoc.longitude + 90000, currentLoc.latitude + 90000],
+//           sw: [currentLoc.longitude - 9, currentLoc.latitude - 9],
+//         }
+//       });
+//     }
+//   }, [focusOnMe, currentLoc, role, driverHeading]);
+//   const locationButtonOffset = useSharedValue(10);
+
+//   const animatedButtonStyle = useAnimatedStyle(() => ({
+//     bottom: locationButtonOffset.value,
+//   }));
+
+//   const user = users.get(userId);
+//   // console.log(driverHeading);
+//   console.log(user?.heading);
+//   return (
+//     <View className="flex-1">
+//       <MapboxGL.MapView styleURL={loadMap} ref={mapRef} style={{ flex: 1 }}logoEnabled={false} attributionEnabled={false} >
+//         {/* <MapboxGL.Camera ref={cameraRef} zoomLevel={14} /> */}
+//         {/* <MapboxGL.UserLocation
+//           //  visible
+//           visible={false}
+//           showsUserHeadingIndicator
+//           minDisplacement={1}
+//           onUpdate={(location) => {
+//             const heading = location.coords.heading;
+//             setDriverHeading((prevHeading) => heading ?? prevHeading); // provide the previous value if heading is undefined
+//           }}
+//         /> */}
+//         <MapboxGL.Camera
+//           ref={cameraRef}
+//           pitch={role === "Driver" ? 60 : 0}
+//           heading={role === "Driver" ? user?.heading : 0}
+//         />
+//         <MapboxGL.Camera ref={cameraRef} />
+//         {/* {cameraRef && <MapboxGL.Camera ref={cameraRef} />} */}
+//         {Array.from(users.entries()).map(([key, user]) => (
+//           <UserMarker key={key} user={user} heading={user.heading} />
+//         ))}
+//         {children}
+//       </MapboxGL.MapView>
+//       <MyLocationButton onPress={() => setFocusOnMe(!focusOnMe)} />
+//     </View>
+//   );
+// };
+
+// export default MapViewComponent;
+import React, { useEffect, useRef, useState } from "react";
 import MapboxGL from "@rnmapbox/maps";
 import { View } from "react-native";
-import UserMarker from "./UserMarker";
+import { UserMarker } from "./UserMarker";
 import MyLocationButton from "./MyLocationButton";
-import { useSharedValue, withTiming, useAnimatedStyle } from "react-native-reanimated";
+import { Switch } from "@/components/ui/switch";
+import { Text } from "@/components/ui/text";
 import { User } from "../../app/context/formFields";
-
+import { HStack } from "../ui/hstack";
+import { useIsFocused } from "@react-navigation/native";
 type Users = Map<string, User>;
 
 const { EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN } = process.env;
@@ -17,6 +143,8 @@ type MapViewComponentProps = {
   focusMode: [boolean, React.Dispatch<React.SetStateAction<boolean>>];
   children?: React.ReactNode;
   isActionSheetOpen: boolean;
+  role: "Driver" | "Customer";
+  userId: string;
 };
 
 const MapViewComponent: React.FC<MapViewComponentProps> = ({
@@ -24,40 +152,129 @@ const MapViewComponent: React.FC<MapViewComponentProps> = ({
   currentLoc,
   focusMode: [focusOnMe, setFocusOnMe],
   children,
+  role,
+  userId,
 }) => {
   const loadMap = `https://tiles.goong.io/assets/goong_map_web.json?api_key=${EXPO_PUBLIC_GOONG_MAP_KEY}`;
   const mapRef = useRef<MapboxGL.MapView>(null);
   const cameraRef = useRef<MapboxGL.Camera>(null);
+  const [is3DMode, setIs3DMode] = useState(false);
 
-  MapboxGL.setAccessToken(`${EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN}`);
+  MapboxGL.setAccessToken(EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN!);
 
-  useEffect(() => {
-    if (focusOnMe && cameraRef.current) {
+  const centerOnUser = () => {
+    if (!cameraRef.current) return;
+    if (!is3DMode) {
       cameraRef.current.setCamera({
         centerCoordinate: [currentLoc.longitude, currentLoc.latitude],
         zoomLevel: 14,
-        animationDuration: 1000,
+        animationMode: "easeTo",
+        animationDuration: 500,
       });
     }
-  }, [focusOnMe, currentLoc]);
+  };
+  // Cập nhật camera khi focus, vị trí, chế độ hay heading thay đổi
+  // useEffect(() => {
+  //   if (!cameraRef.current) return;
+  //   const user = users.get(userId);
+  //   const heading = user?.heading ?? 0;
 
-  const locationButtonOffset = useSharedValue(10);
+  //   if (role === "Customer" || (role === "Driver" && !is3DMode)) {
+  //     // 2D mode: giữ nguyên zoom/center, chỉ reset pitch/heading
+  //     cameraRef.current.setCamera({
+  //       centerCoordinate: [currentLoc.longitude, currentLoc.latitude],
+  //       zoomLevel: 14,
+  //       pitch: 0,
+  //       heading: 0,
+  //       animationDuration: 300,
+  //     });
+  //   } else {
+  //     // 3D mode: chỉ update pitch/heading
+  //     cameraRef.current.setCamera({
+  //       centerCoordinate: [currentLoc.longitude, currentLoc.latitude],
+  //       zoomLevel: 19,
+  //       pitch: 60,
+  //       heading,
+  //       animationMode: "easeTo",
+  //       animationDuration: 500,
+  //     });
+  //   }
+  // }, [role, is3DMode, currentLoc]);
 
-  const animatedButtonStyle = useAnimatedStyle(() => ({
-    bottom: locationButtonOffset.value,
-  }));
+  const isFocused = useIsFocused();
+  if (role === "Customer" || (role === "Driver" && !is3DMode)) {
+    useEffect(() => {
+      if (!cameraRef.current) return;
+      cameraRef.current.setCamera({
+        centerCoordinate: [currentLoc.longitude, currentLoc.latitude],
+        zoomLevel: 14,
+        pitch: 0,
+        heading: 0,
+        animationDuration: 1000,
+      });
+    }, [role, is3DMode,isFocused])
+  } else {
+    useEffect(() => {
+          const user = users.get(userId);
+    const heading = user?.heading ?? 0;
+      if (!cameraRef.current) return;
+      cameraRef.current.setCamera({
+        centerCoordinate: [currentLoc.longitude, currentLoc.latitude],
+        zoomLevel: 19,
+        pitch: 60,
+        heading: heading,
+        animationDuration: 1000,
+      });
+    }, [role, is3DMode, currentLoc, isFocused])
+
+  }
 
   return (
-    <View className="flex-1">
-      <MapboxGL.MapView styleURL={loadMap} ref={mapRef} style={{ flex: 1 }} >
-        <MapboxGL.Camera ref={cameraRef} zoomLevel={14} />
+    <View style={{ flex: 1 }}>
+      <MapboxGL.MapView
+        styleURL={loadMap}
+        ref={mapRef}
+        style={{ flex: 1 }}
+        logoEnabled={false}
+        attributionEnabled={false}
 
-        {Array.from(users.entries()).map(([key, user]) => (
-          <UserMarker key={key} user={user} />
+      >
+        <MapboxGL.Camera ref={cameraRef}  centerCoordinate={[currentLoc.longitude, currentLoc.latitude]}/>
+        {Array.from(users.entries()).map(([key, u]) => (
+          <UserMarker
+            key={key}
+            user={u}
+            // chỉ xoay icon khi ở 2D và là driver
+            heading={!is3DMode && u.role === "Driver" ? u.heading : 0}
+          />
         ))}
         {children}
       </MapboxGL.MapView>
-      <MyLocationButton onPress={() => setFocusOnMe(!focusOnMe)}  />
+
+      {/* MyLocationButton: luôn bật focus và center về user nếu đang 2D */}
+      <MyLocationButton
+        onPress={() => {
+          // setFocusOnMe(true);
+          centerOnUser();
+        }}
+      />
+
+      {/* Toggle 2D/3D chỉ dành cho Driver */}
+      {role === "Driver" && (
+        <HStack
+          space="xs"
+          className="absolute top-12 right-12 bg-white p-2 rounded-md items-center shadow-sm"
+        >
+          <Text size="sm" className="mr-2">
+            {is3DMode ? "3D View" : "2D View"}
+          </Text>
+          <Switch
+            size="md"
+            value={is3DMode}
+            onValueChange={(val) => setIs3DMode(val)}
+          />
+        </HStack>
+      )}
     </View>
   );
 };

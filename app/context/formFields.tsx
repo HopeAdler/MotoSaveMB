@@ -28,6 +28,7 @@ export type User = {
   latitude: number;
   longitude: number;
   heading: number;
+  course:number;
 };
 export type CurrentLoc = {
   latitude: number;
