@@ -122,6 +122,7 @@
 // };
 
 // export default MapViewComponent;
+
 import React, { useEffect, useRef, useState } from "react";
 import MapboxGL from "@rnmapbox/maps";
 import { View } from "react-native";
@@ -159,9 +160,26 @@ const MapViewComponent: React.FC<MapViewComponentProps> = ({
   const mapRef = useRef<MapboxGL.MapView>(null);
   const cameraRef = useRef<MapboxGL.Camera>(null);
   const [is3DMode, setIs3DMode] = useState(false);
+  const [hasInitialized, setHasInitialized] = useState(false);
 
   MapboxGL.setAccessToken(EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN!);
 
+
+// 1) Chỉ center+zoom lần đầu khi map load xong
+const handleMapLoad = () => {
+  if (!hasInitialized && cameraRef.current) {
+    cameraRef.current.setCamera({
+      centerCoordinate: [currentLoc.longitude, currentLoc.latitude],
+      zoomLevel: 14,
+      pitch: 0,
+      heading: 0,
+      animationDuration: 0,
+    });
+    setHasInitialized(true);
+  }
+};
+
+  
   const centerOnUser = () => {
     if (!cameraRef.current) return;
     if (!is3DMode) {
@@ -201,33 +219,27 @@ const MapViewComponent: React.FC<MapViewComponentProps> = ({
   //   }
   // }, [role, is3DMode, currentLoc]);
 
-  const isFocused = useIsFocused();
-  if (role === "Customer" || (role === "Driver" && !is3DMode)) {
-    useEffect(() => {
-      if (!cameraRef.current) return;
+  // const isFocused = useIsFocused();
+  useEffect(() => {
+    if (!cameraRef.current) return;
+    const user = users.get(userId);
+    const heading = user?.heading ?? 0;
+
+    if (role === "Customer" || !is3DMode) {
       cameraRef.current.setCamera({
-        centerCoordinate: [currentLoc.longitude, currentLoc.latitude],
-        zoomLevel: 14,
         pitch: 0,
         heading: 0,
-        animationDuration: 1000,
+        animationDuration: 300,
       });
-    }, [role, is3DMode,isFocused])
-  } else {
-    useEffect(() => {
-          const user = users.get(userId);
-    const heading = user?.heading ?? 0;
-      if (!cameraRef.current) return;
+    } else {
       cameraRef.current.setCamera({
-        centerCoordinate: [currentLoc.longitude, currentLoc.latitude],
-        zoomLevel: 19,
         pitch: 60,
-        heading: heading,
-        animationDuration: 1000,
+        heading,
+        animationMode: "easeTo",
+        animationDuration: 300,
       });
-    }, [role, is3DMode, currentLoc, isFocused])
-
-  }
+    }
+  }, [role, is3DMode, users, userId]);
 
   return (
     <View style={{ flex: 1 }}>
@@ -237,9 +249,9 @@ const MapViewComponent: React.FC<MapViewComponentProps> = ({
         style={{ flex: 1 }}
         logoEnabled={false}
         attributionEnabled={false}
-
+        onDidFinishLoadingMap={handleMapLoad}
       >
-        <MapboxGL.Camera ref={cameraRef}  centerCoordinate={[currentLoc.longitude, currentLoc.latitude]}/>
+        <MapboxGL.Camera ref={cameraRef}/>
         {Array.from(users.entries()).map(([key, u]) => (
           <UserMarker
             key={key}
