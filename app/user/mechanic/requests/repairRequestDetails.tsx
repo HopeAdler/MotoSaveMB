@@ -2,6 +2,7 @@ import AuthContext from "@/app/context/AuthContext";
 import { Accessory, RepairCostPreview } from "@/app/context/formFields";
 import LoadingScreen from "@/app/loading/loading";
 import {
+  createPayment,
   createRepairQuote,
   getRepairCostPreview,
   getRepairQuotesByRequestDetailId,
@@ -28,11 +29,13 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Text
+  Text,
 } from "react-native";
 
 interface RepairRequestDetail {
   requestid: string;
+  receivername: string;
+  receiverphone: string;
   requesttype: string;
   requestdetailid: string;
   requeststatus: string;
@@ -116,8 +119,13 @@ export default function RepairDetailsScreen() {
       if (results) {
         setRepairRequestDetail(results);
 
-        if (["Waiting", "Accepted", "Repairing", "Done"].includes(results.requeststatus)) {
-          const quoteResults = await getRepairQuotesByRequestDetailId(requestDetailId);
+        if (
+          ["Waiting", "Accepted", "Repairing", "Done"].includes(
+            results.requeststatus
+          )
+        ) {
+          const quoteResults =
+            await getRepairQuotesByRequestDetailId(requestDetailId);
           if (quoteResults?.length > 0) {
             setRepairQuotes(
               quoteResults.map((quote: any, idx: number) => ({
@@ -142,10 +150,10 @@ export default function RepairDetailsScreen() {
       createDirectChannel(repairRequestDetail.customerid, requestDetailId);
     }
     // Only poll if in Waiting status
-    if (repairRequestDetail?.requeststatus === "Waiting") {
+    // if (repairRequestDetail?.requeststatus === "Waiting") {
       const interval = setInterval(() => fetchData(false), 5000);
       return () => clearInterval(interval);
-    }
+    // }
   }, [requestDetailId, repairRequestDetail?.requeststatus]);
 
   useEffect(() => {
@@ -188,9 +196,7 @@ export default function RepairDetailsScreen() {
     (item) => item.total === 0 || !item.repairname
   );
   const isSubmitDisabled = repairQuotes.some(
-    (item) =>
-    (item.total === 0 ||
-      !item.repairname)
+    (item) => item.total === 0 || !item.repairname
   );
 
   // add the extra parameters here too
@@ -201,20 +207,20 @@ export default function RepairDetailsScreen() {
     wage?: number,
     total?: number
   ) => {
-    setRepairQuotes(prev =>
-      prev.map(item =>
+    setRepairQuotes((prev) =>
+      prev.map((item) =>
         item.index === index
           ? {
-            ...item,
-            repairname: selectedRepair.name,
-            repaircostpreviewid: parseInt(selectedRepair.id),
-            // min: selectedRepair.min,
-            // max: selectedRepair.max,
-            cost: accessory?.cost || 0,
-            accessoryid: accessory?.id || null,
-            wage: wage ?? selectedRepair.wage,
-            total: total ?? selectedRepair.wage,
-          }
+              ...item,
+              repairname: selectedRepair.name,
+              repaircostpreviewid: parseInt(selectedRepair.id),
+              // min: selectedRepair.min,
+              // max: selectedRepair.max,
+              cost: accessory?.cost || 0,
+              accessoryid: accessory?.id || null,
+              wage: wage ?? selectedRepair.wage,
+              total: total ?? selectedRepair.wage,
+            }
           : item
       )
     );
@@ -224,17 +230,14 @@ export default function RepairDetailsScreen() {
   //   console.log(repairQuotes)
   // }, [repairQuotes])
 
-  const handlePriceChange = useCallback(
-    (index: number, costStr: string) => {
-      const parsedCost = costStr === "" ? 0 : parseInt(costStr) || 0;
-      setRepairQuotes((prev) =>
-        prev.map((item) =>
-          item.index === index ? { ...item, cost: parsedCost } : item
-        )
-      );
-    },
-    []
-  );
+  const handlePriceChange = useCallback((index: number, costStr: string) => {
+    const parsedCost = costStr === "" ? 0 : parseInt(costStr) || 0;
+    setRepairQuotes((prev) =>
+      prev.map((item) =>
+        item.index === index ? { ...item, cost: parsedCost } : item
+      )
+    );
+  }, []);
 
   // When the input loses focus, round the value and validate.
   // const handlePriceBlur = useCallback((index: number) => {
@@ -258,18 +261,45 @@ export default function RepairDetailsScreen() {
   //   );
   // }, []);
 
-
   const handleConfirmSend = () => {
-    Alert.alert("Xác nhận gửi báo giá", "Bạn có chắc muốn gửi báo giá cho khách hàng?", [
+    Alert.alert(
+      "Xác nhận gửi báo giá",
+      "Bạn có chắc muốn gửi báo giá cho khách hàng?",
+      [
+        { text: "Huỷ", style: "cancel" },
+        { text: "Xác nhận", onPress: handleSendRepairQuote },
+      ]
+    );
+  };
+
+  // Xác nhận request cho guest
+  const handleDone = () => {
+    Alert.alert("Xác nhận báo giá", "Bạn có chắc muốn tạo báo giá này", [
       { text: "Huỷ", style: "cancel" },
-      { text: "Xác nhận", onPress: handleSendRepairQuote },
+      { text: "Xác nhận", onPress: handleUpdateGuestQuote },
     ]);
   };
 
   const sendRepairQuote = async (repairQuote: RepairQuote) => {
-    const { detail, cost, requestdetailid, repaircostpreviewid, accessoryid, wage, total } = repairQuote;
-    const payload = { detail, cost, requestdetailid, repaircostpreviewid, accessoryid, wage, total };
-    console.log(payload)
+    const {
+      detail,
+      cost,
+      requestdetailid,
+      repaircostpreviewid,
+      accessoryid,
+      wage,
+      total,
+    } = repairQuote;
+    const payload = {
+      detail,
+      cost,
+      requestdetailid,
+      repaircostpreviewid,
+      accessoryid,
+      wage,
+      total,
+    };
+    console.log(payload);
     // Remove try-catch to let errors propagate
     const results = await createRepairQuote(payload, token);
     console.log(results);
@@ -284,6 +314,40 @@ export default function RepairDetailsScreen() {
       fetchData();
 
       Alert.alert("Thành công", "Báo giá đã được gửi!");
+      setIsNew(false);
+      // if (repairRequestDetail) {
+      //   createDirectChannel(repairRequestDetail.customerid, requestDetailId);
+      // }
+    } catch (error) {
+      console.error("Error sending repair quotes:", error);
+      Alert.alert("Lỗi", "Đã có lỗi xảy ra khi gửi báo giá.");
+    }
+  };
+
+  //Chuyển status thành Done nếu là khách ngoài
+  const handleUpdateGuestQuote = async () => {
+    try {
+      await Promise.all(repairQuotes.map(sendRepairQuote));
+      const result = await updateRepairRequestStatus(requestDetailId, token, "Waiting");
+      await updateRepairRequestStatus(
+        requestDetailId,
+        token,
+        "Done"
+      );
+      console.log(result);
+      const payment = await createPayment(
+        {
+          requestdetailid: repairRequestDetail?.requestdetailid,
+          totalamount: result.requestDetail.totalprice,
+          paymentmethod: "Tiền mặt",
+          paymentstatus: "Unpaid",
+        },
+        token
+      );
+      console.log(payment);
+      fetchData();
+
+      Alert.alert("Thành công", "Báo giá đã được tạo!");
       setIsNew(false);
       // if (repairRequestDetail) {
       //   createDirectChannel(repairRequestDetail.customerid, requestDetailId);
@@ -379,7 +443,7 @@ export default function RepairDetailsScreen() {
               <VehicleInfoBox repairRequestDetail={repairRequestDetail} />
             </Box>
           </Box>
-
+          {repairRequestDetail?.licenseplate &&
           <Box className="mt-4 bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
             <Box className="flex-row items-center justify-between mb-5">
               <Text className="text-lg font-bold text-[#1a3148]">
@@ -493,20 +557,35 @@ export default function RepairDetailsScreen() {
                   <Button
                     onPress={addRepairItem}
                     disabled={isAddDisabled}
-                    className={`h-12 rounded-xl ${isAddDisabled ? "bg-gray-200" : "bg-[#fab753]"
-                      }`}
+                    className={`h-12 rounded-xl ${
+                      isAddDisabled ? "bg-gray-200" : "bg-[#fab753]"
+                    }`}
                   >
                     <Text className="text-white font-bold">
                       + Thêm linh kiện sửa chữa
                     </Text>
                   </Button>
 
-                  {repairQuotes.length > 0 && (
+                  {repairQuotes.length > 0 &&
+                  repairRequestDetail.receivername ? (
+                    <Button
+                      onPress={handleDone}
+                      disabled={isSubmitDisabled}
+                      className={`h-12 rounded-xl ${
+                        isSubmitDisabled ? "bg-gray-200" : "bg-[#1a3148]"
+                      }`}
+                    >
+                      <Text className="text-white font-bold">
+                        Xác nhận báo giá
+                      </Text>
+                    </Button>
+                  ) : (
                     <Button
                       onPress={handleConfirmSend}
                       disabled={isSubmitDisabled}
-                      className={`h-12 rounded-xl ${isSubmitDisabled ? "bg-gray-200" : "bg-[#1a3148]"
-                        }`}
+                      className={`h-12 rounded-xl ${
+                        isSubmitDisabled ? "bg-gray-200" : "bg-[#1a3148]"
+                      }`}
                     >
                       <Text className="text-white font-bold">Gửi báo giá</Text>
                     </Button>
@@ -515,6 +594,7 @@ export default function RepairDetailsScreen() {
               </Box>
             )}
           </Box>
+          }
 
           {repairRequestDetail?.paymentmethod && (
             <Box className="mt-4 bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
@@ -523,16 +603,18 @@ export default function RepairDetailsScreen() {
                   Chi tiết thanh toán
                 </Text>
                 <Box
-                  className={`px-3 py-1.5 rounded-full ${repairRequestDetail.paymentstatus === "Success"
-                    ? "bg-green-100"
-                    : "bg-red-100"
-                    }`}
+                  className={`px-3 py-1.5 rounded-full ${
+                    repairRequestDetail.paymentstatus === "Success"
+                      ? "bg-green-100"
+                      : "bg-red-100"
+                  }`}
                 >
                   <Text
-                    className={`text-sm font-semibold ${repairRequestDetail.paymentstatus === "Success"
-                      ? "text-green-600"
-                      : "text-red-600"
-                      }`}
+                    className={`text-sm font-semibold ${
+                      repairRequestDetail.paymentstatus === "Success"
+                        ? "text-green-600"
+                        : "text-red-600"
+                    }`}
                   >
                     {repairRequestDetail.paymentstatus === "Success"
                       ? "Đã thanh toán"
@@ -563,7 +645,8 @@ export default function RepairDetailsScreen() {
               </Box>
 
               {repairRequestDetail?.paymentstatus === "Unpaid" &&
-                (repairRequestDetail?.paymentmethod === "Tiền mặt" || repairRequestDetail?.paymentmethod === "Cash") &&
+                (repairRequestDetail?.paymentmethod === "Tiền mặt" ||
+                  repairRequestDetail?.paymentmethod === "Cash") &&
                 (repairRequestDetail?.requeststatus === "Repairing" ||
                   repairRequestDetail?.requeststatus === "Done") && (
                   <Button
@@ -581,10 +664,11 @@ export default function RepairDetailsScreen() {
                       );
                     }}
                     disabled={repairRequestDetail?.requeststatus !== "Done"}
-                    className={`h-12 rounded-xl mt-4 ${repairRequestDetail?.requeststatus === "Done"
-                      ? "bg-[#fab753]"
-                      : "bg-gray-200"
-                      }`}
+                    className={`h-12 rounded-xl mt-4 ${
+                      repairRequestDetail?.requeststatus === "Done"
+                        ? "bg-[#fab753]"
+                        : "bg-gray-200"
+                    }`}
                   >
                     <Text className="text-white font-bold">
                       Confirm Payment
@@ -604,12 +688,13 @@ export default function RepairDetailsScreen() {
                       repairRequestDetail.requeststatus
                     )
                   }
-                  className={`h-14 rounded-xl ${["Accepted", "Repairing"].includes(
-                    repairRequestDetail.requeststatus
-                  )
-                    ? "bg-green-500 shadow-sm shadow-green-500/20"
-                    : "bg-gray-200"
-                    }`}
+                  className={`h-14 rounded-xl ${
+                    ["Accepted", "Repairing"].includes(
+                      repairRequestDetail.requeststatus
+                    )
+                      ? "bg-green-500 shadow-sm shadow-green-500/20"
+                      : "bg-gray-200"
+                  }`}
                 >
                   <Text className="text-white text-base font-bold">
                     {repairRequestDetail?.requeststatus === "Repairing"
