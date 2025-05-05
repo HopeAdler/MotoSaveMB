@@ -158,7 +158,7 @@ export const formatDate = (dateString: string) => {
 };
 
 export const formatMoney = (amount: number) => {
-  return amount.toLocaleString("vi-VN").replace(/,/g, ".") + "VNĐ";
+  return amount?.toLocaleString("vi-VN").replace(/,/g, ".") + "VNĐ";
 }
 
 export const groupActivitiesByDate = (activities: ActivityItem[]) => {
