@@ -19,8 +19,10 @@ import { decodedToken } from "@/app/utils/utils";
 import { DestinationMarker, OriginMarker } from "../../../../../components/custom/CustomMapMarker";
 import { ActionSheetToggle, BackButton, SearchInput, SearchResults } from "../../../../../components/custom/MapUIComponents";
 import MapViewComponent from "../../../../../components/custom/MapViewComponent";
-import { User } from "../../../../context/formFields";
+import { RequestDetail, User } from "../../../../context/formFields";
 import { LinearTransition } from "react-native-reanimated";
+import { useLatReqDetStore } from "@/app/hooks/useLatReqDetStore";
+import axios from "axios";
 const { EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN } = process.env;
 MapboxGL.setAccessToken(`${EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN}`);
 const INITIAL_RADIUS = 5000; // 5 km
@@ -34,6 +36,12 @@ const RescueMapScreen = () => {
   const { PayZaloBridge } = NativeModules;
   const userId = decodedToken(token)?.id;
   // Các state chính
+  const {
+    latestRequestDetail,
+    setLatReqDet,
+  } = useLatReqDetStore();
+
+
   const [focusOnMe, setFocusOnMe] = useState<boolean>(true);
   const currentLoc = useSmoothedLocation();
 
@@ -660,7 +668,34 @@ const RescueMapScreen = () => {
       // pubnub?.destroy();
     };
   }, [requestDetailId]);
+  const fetchRequestDetail = async (reqDetID: string) => {
+    const response = await axios.get<RequestDetail>(
+      `https://motor-save-be.vercel.app/api/v1/requests/driver/${reqDetID}`,
+      { headers: { Authorization: "Bearer " + token } }
+    );
+    setOriginCoordinates({
+      longitude: response.data?.pickuplong || 0,
+      latitude: response.data?.pickuplat || 0
+    });
+    setDestinationCoordinates({
+      longitude: response.data?.deslng || 0,
+      latitude: response.data?.deslat || 0
+    });
+    setOriginQuery(response.data?.pickuplocation);
+    setDestinationQuery(response.data?.destination);
+    setOriginSelected(true),
+    setDestinationSelected(true),
+    console.log("Fetching request detail...");
+  };
+
   useEffect(() => {
+    if (latestRequestDetail &&
+      latestRequestDetail?.requeststatus !== "Done" &&
+      latestRequestDetail?.requeststatus !== "Cancel") {
+      setRequestDetailId(latestRequestDetail?.requestdetailid)
+      fetchRequestDetail(latestRequestDetail?.requestdetailid)
+      setShowTracking(true);
+    }
     hereNow();
     fetchServicePackage();
   }, []);
@@ -672,6 +707,7 @@ const RescueMapScreen = () => {
         <BackButton onPress={() => router.back()} />
       </Box>
       {/* Header: Search origin & destination */}
+      {/* {!latestRequestDetail && */}
       <Box className="absolute top-0 left-0 w-full z-10 p-4 pt-16">
         <Box className="bg-white/95 rounded-xl p-3 shadow-md">
           <SearchInput
@@ -707,6 +743,7 @@ const RescueMapScreen = () => {
           />
         </Box>
       </Box>
+      {/* } */}
 
       {/* Map view */}
       <Box className="flex-1">
@@ -799,27 +836,48 @@ const RescueMapScreen = () => {
       )}
 
       {/* Tracking action sheet */}
-      {showTracking && requestDetailId && acceptedReqDetId && acceptedReqDetStatus !== "Pending" && (
-        <TrackingActionSheet
-          isOpen={showTracking}
-          onClose={() => setShowTracking(false)}
-          // requestdetailid={requestDetailId}
-          eta={directionsInfo?.duration?.text}
-          distance={directionsInfo?.distance?.text}
-          driverId={acceptedDriverId}
-          setAcceptedReqDetStatus={setAcceptedReqDetStatus}
-          requestDetailIdState={[requestDetailId, setRequestDetailId]}
-        />
-      )}
+      {(latestRequestDetail &&
+      latestRequestDetail?.requeststatus !== "Done" &&
+      latestRequestDetail?.requeststatus !== "Cancel") ?
+        <>
+          {requestDetailId && (
+            <TrackingActionSheet
+              isOpen={showTracking}
+              onClose={() => setShowTracking(false)}
+              // requestdetailid={requestDetailId}
+              eta={directionsInfo?.duration?.text}
+              distance={directionsInfo?.distance?.text}
+              driverId={null}
+              setAcceptedReqDetStatus={setAcceptedReqDetStatus}
+              requestDetailIdState={[requestDetailId, setRequestDetailId]}
+            />
+          )}
+        </>
+        :
+        <>
+          {showTracking && requestDetailId && acceptedReqDetId && acceptedReqDetStatus !== "Pending" && (
+            <TrackingActionSheet
+              isOpen={showTracking}
+              onClose={() => setShowTracking(false)}
+              // requestdetailid={requestDetailId}
+              eta={directionsInfo?.duration?.text}
+              distance={directionsInfo?.distance?.text}
+              driverId={acceptedDriverId}
+              setAcceptedReqDetStatus={setAcceptedReqDetStatus}
+              requestDetailIdState={[requestDetailId, setRequestDetailId]}
+            />
+          )}
+        </>
+      }
 
       {/* ActionSheet Toggle buttons */}
-      {!showActionsheet && directionsInfo && (
+      {!latestRequestDetail && !showActionsheet && directionsInfo && (
         <ActionSheetToggle
           onPress={() => setShowActionsheet(true)}
           visible={!showActionsheet}
         />
       )}
-      {!showTracking && requestDetailId && acceptedReqDetId && acceptedReqDetStatus !== "Pending" && (
+      {((latestRequestDetail) || (!showTracking && requestDetailId && acceptedReqDetId && acceptedReqDetStatus !== "Pending")) && (
         <ActionSheetToggle
           onPress={() => setShowTracking(true)}
           visible={true}
