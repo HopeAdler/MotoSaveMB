@@ -9,22 +9,14 @@ import React, { useContext, useEffect, useState } from "react";
 import { Pressable, ScrollView } from "react-native";
 import { Avatar } from "react-native-elements";
 import LoadingScreen from "../../../loading/loading";
+import { LatestRequestDetail } from "@/app/context/formFields";
+import { useLatReqDetStore } from "@/app/hooks/useLatReqDetStore";
 
 interface ServiceCardProps {
   icon: React.ElementType;
   title: string;
   color: string;
   onPress: () => void;
-}
-
-interface LatestRequestDetail {
-  requestdetailid: string;
-  requeststatus: string;
-  createddate: string;
-  updateddate: string;
-  requestid: string;
-  servicepackagename: string;
-  requesttype: string;
 }
 
 const ServiceCard: React.FC<ServiceCardProps> = ({
@@ -50,9 +42,12 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
 export default function CHomeScreen() {
   const { user, token } = useContext(AuthContext);
   const { requestId } = useContext(RequestContext);
-  const [latestRequestDetail, setLatestRequestDetail] =
-    useState<LatestRequestDetail>();
   const [isLoading, setIsLoading] = useState(false);
+
+  const {
+      latestRequestDetail,
+      setLatReqDet,
+    } = useLatReqDetStore();
 
   const fetchRequestDetail = async () => {
     setIsLoading(true);
@@ -61,7 +56,7 @@ export default function CHomeScreen() {
         `https://motor-save-be.vercel.app/api/v1/requests/latestRequestDetail/${requestId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      setLatestRequestDetail(response.data);
+      setLatReqDet(response.data);
       setIsLoading(false);
     } catch (error) {
       console.error("Error fetching request details:", error);
@@ -72,6 +67,10 @@ export default function CHomeScreen() {
     if (requestId !== null) {
       fetchRequestDetail();
     }
+  }, [requestId]);
+  useEffect(() => {
+    console.log(latestRequestDetail)
+    console.log(requestId)
   }, [requestId]);
 
   if (!user) {

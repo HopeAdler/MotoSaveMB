@@ -50,6 +50,7 @@ import { RequestDetail } from "@/app/context/formFields";
 import { cancelRequest } from "@/app/services/beAPI";
 import axios from "axios";
 import { RequestContext } from "@/app/context/RequestContext";
+import { useLatReqDetStore } from "@/app/hooks/useLatReqDetStore";
 
 const cancelReasons = [
   "Driver delayed",
@@ -85,6 +86,11 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
   const {setRequestId} = useContext(RequestContext);
   const [loading, setLoading] = useState<boolean>(true);
 
+  const {
+    latestRequestDetail,
+    setLatReqDet,
+  } = useLatReqDetStore();
+
   // State cho cancellation actionsheet và alert confirmation
   const [showCancelActionsheet, setShowCancelActionsheet] = useState(false);
   const [showCancelAlert, setShowCancelAlert] = useState(false);
@@ -93,8 +99,9 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
 
   const fetchRequestDetail = async () => {
     try {
+      const latReqDetId = latestRequestDetail?.requestdetailid || requestdetailid;
       const response = await axios.get<RequestDetail>(
-        `https://motor-save-be.vercel.app/api/v1/requests/driver/${requestdetailid}`,
+        `https://motor-save-be.vercel.app/api/v1/requests/driver/${latReqDetId}`,
         { headers: { Authorization: "Bearer " + token } }
       );
       setRequestDetail(response.data);
@@ -115,6 +122,7 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
 
   useEffect(() => {
     if (requestDetail?.requeststatus === "Done") {
+      setRequestId('')
       const timer = setTimeout(() => {
         onClose();
         if (requestDetail?.servicepackagename === "Cứu hộ đến trạm") {
