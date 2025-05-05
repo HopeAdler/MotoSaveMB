@@ -680,6 +680,22 @@ export async function getServicePackageByName(serPacName: string): Promise<any> 
   }
 }
 
+export const updateRequestVehicle = async (requestid: string | any, vehicleId: string | any, token: string) => {
+  try {
+    const response = await axios.put(
+      `https://motor-save-be.vercel.app/api/v1/customerVehicles/guest/${requestid}`,
+      { vehicleId: vehicleId },
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error updating request vehicle:", error);
+    throw error;
+  }
+};
+
 const beAPI = {
   createRescueRequest,
   createEmergencyRescueRequest,
