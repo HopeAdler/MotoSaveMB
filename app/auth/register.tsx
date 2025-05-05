@@ -65,8 +65,8 @@ export default function RegisterScreen() {
           updatedForm
         );
         setErrors((prev: any) => ({
-            ...prev,
-            confirmPassword: confirmError,
+          ...prev,
+          confirmPassword: confirmError,
         }))
       }
     }
@@ -133,6 +133,17 @@ export default function RegisterScreen() {
     }
   };
 
+  const handleOTPSend = async () => {
+    const { phone } = form;
+    try {
+      router.push({
+        pathname: "/auth/otp",
+        params: { phoneNumber: phone },
+      });
+    } catch (error) {
+      setErrors({ server: "Gửi OTP không thành công." });
+    }
+  };
   return (
     <Box className="flex-1 bg-[#f8fafc]">
       <Box className="bg-[#1a3148] h-[45%] rounded-b-[40px] shadow-lg px-6 pt-12 pb-20">
@@ -168,11 +179,10 @@ export default function RegisterScreen() {
                     placeholder={`${translateFieldName(field)}`}
                     secureTextEntry={field === "password" || field === "confirmPassword"}
                     keyboardType={field === "phone" ? "numeric" : "default"}
-                    className={`w-full bg-gray-50 h-[52px] pl-14 rounded-xl ${
-                      errors[field]
+                    className={`w-full bg-gray-50 h-[52px] pl-14 rounded-xl ${errors[field]
                         ? "border-red-500 border-2"
                         : "border border-gray-200"
-                    }`}
+                      }`}
                     style={{
                       fontSize: 16,
                       lineHeight: 24,
@@ -209,6 +219,14 @@ export default function RegisterScreen() {
           >
             <Box className="flex-row items-center">
               <Text className="text-white font-bold text-lg">Đăng ký</Text>
+            </Box>
+          </Button>
+          <Button
+            onPress={handleOTPSend}
+            className="h-14 rounded-xl bg-[#fab753] mt-2 shadow-sm shadow-[#fab753]/20"
+          >
+            <Box className="flex-row items-center">
+              <Text className="text-white font-bold text-lg">TestOTP</Text>
             </Box>
           </Button>
 
