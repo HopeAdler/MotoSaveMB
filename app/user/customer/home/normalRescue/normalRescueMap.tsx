@@ -19,8 +19,10 @@ import { decodedToken } from "@/app/utils/utils";
 import { DestinationMarker, OriginMarker } from "../../../../../components/custom/CustomMapMarker";
 import { ActionSheetToggle, BackButton, SearchInput, SearchResults } from "../../../../../components/custom/MapUIComponents";
 import MapViewComponent from "../../../../../components/custom/MapViewComponent";
-import { User } from "../../../../context/formFields";
+import { RequestDetail, User } from "../../../../context/formFields";
 import { LinearTransition } from "react-native-reanimated";
+import { useLatReqDetStore } from "@/app/hooks/useLatReqDetStore";
+import axios from "axios";
 const { EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN } = process.env;
 MapboxGL.setAccessToken(`${EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN}`);
 const INITIAL_RADIUS = 5000; // 5 km
@@ -34,6 +36,12 @@ const RescueMapScreen = () => {
   const { PayZaloBridge } = NativeModules;
   const userId = decodedToken(token)?.id;
   // Các state chính
+  const {
+    latestRequestDetail,
+    setLatReqDet,
+  } = useLatReqDetStore();
+
+
   const [focusOnMe, setFocusOnMe] = useState<boolean>(true);
   const currentLoc = useSmoothedLocation();
 
@@ -43,6 +51,8 @@ const RescueMapScreen = () => {
     latitude: 0,
     longitude: 0
   });
+
+  const [requestActive, setRequestActive] = useState<boolean>(false);
 
   useEffect(() => {
     // if origin is still at the default, and currentLoc is now non-zero, set it:
@@ -570,6 +580,12 @@ const RescueMapScreen = () => {
       console.log("Request đã được hủy thành công");
       // Cập nhật UI nếu cần
       setRequestDetailId(null);
+
+      // Hide action sheet
+      setShowActionsheet(false);
+
+      //Show lại input fields
+      setRequestActive(false);
     } catch (error) {
       console.error("Lỗi chi tiết khi hủy request:", error);
       // Xử lý lỗi (có thể thử hủy lại hoặc hiển thị thông báo)
@@ -586,6 +602,9 @@ const RescueMapScreen = () => {
     // Cập nhật UI
     setShowActionsheet(true);
     setShowTracking(false);
+
+    // //Show lại input fields
+    // setRequestActive(false);
 
     // Sử dụng reqId được truyền vào nếu có, nếu không thì dùng state
     const idToCancel = reqId || requestDetailId;
@@ -653,6 +672,9 @@ const RescueMapScreen = () => {
         //Initializing direct chat(driverId, requestDetailId)
         setAcceptedDriverId(msg?.publisher)
         createDirectChannel(msg?.publisher, msg.message.requestDetailId)
+        
+        //Hide input fields origin & destination
+        setRequestActive(true);
       }
     });
     return () => {
@@ -660,7 +682,37 @@ const RescueMapScreen = () => {
       // pubnub?.destroy();
     };
   }, [requestDetailId]);
+
+  // Fetch latest request detail
+  const fetchRequestDetail = async (reqDetID: string) => {
+    const response = await axios.get<RequestDetail>(
+      `https://motor-save-be.vercel.app/api/v1/requests/driver/${reqDetID}`,
+      { headers: { Authorization: "Bearer " + token } }
+    );
+    setOriginCoordinates({
+      longitude: response.data?.pickuplong || 0,
+      latitude: response.data?.pickuplat || 0
+    });
+    setDestinationCoordinates({
+      longitude: response.data?.deslng || 0,
+      latitude: response.data?.deslat || 0
+    });
+    setOriginQuery(response.data?.pickuplocation);
+    setDestinationQuery(response.data?.destination);
+    setOriginSelected(true);
+    setDestinationSelected(true);
+    setAcceptedDriverId(response.data?.driverid)
+    console.log("Fetching request detail...");
+  };
+
   useEffect(() => {
+    if (latestRequestDetail &&
+      latestRequestDetail?.requeststatus !== "Done" &&
+      latestRequestDetail?.requeststatus !== "Cancel") {
+      setRequestDetailId(latestRequestDetail?.requestdetailid)
+      fetchRequestDetail(latestRequestDetail?.requestdetailid)
+      setShowTracking(true);
+    }
     hereNow();
     fetchServicePackage();
   }, []);
@@ -672,41 +724,44 @@ const RescueMapScreen = () => {
         <BackButton onPress={() => router.back()} />
       </Box>
       {/* Header: Search origin & destination */}
+      {/* {!latestRequestDetail && */}
       <Box className="absolute top-0 left-0 w-full z-10 p-4 pt-16">
-        <Box className="bg-white/95 rounded-xl p-3 shadow-md">
-          <SearchInput
-            value={originQuery}
-            onChangeText={handleOriginChange}
-            placeholder="Vui lòng nhập điểm đón"
-            onClear={() => setOriginQuery("")}
-          />
-          <SearchResults
-            data={originResults}
-            onSelectItem={(item) => {
-              setOriginQuery(item.description);
-              handleFetchLocation(item.description, true);
-            }}
-            visible={originResults.length > 0 && !originSelected}
-          />
-          <Box className="mt-2">
+        {!requestActive && (
+          <Box className="bg-white/95 rounded-xl p-3 shadow-md">
             <SearchInput
-              value={destinationQuery}
-              onChangeText={handleDestinationChange}
-              placeholder="Vui lòng nhập điểm đến"
-              onClear={() => setDestinationQuery("")}
-              isDisabled={!originSelected}
+              value={originQuery}
+              onChangeText={handleOriginChange}
+              placeholder="Vui lòng nhập điểm đón"
+              onClear={() => setOriginQuery("")}
+            />
+            <SearchResults
+              data={originResults}
+              onSelectItem={(item) => {
+                setOriginQuery(item.description);
+                handleFetchLocation(item.description, true);
+              }}
+              visible={originResults.length > 0 && !originSelected}
+            />
+            <Box className="mt-2">
+              <SearchInput
+                value={destinationQuery}
+                onChangeText={handleDestinationChange}
+                placeholder="Vui lòng nhập điểm đến"
+                onClear={() => setDestinationQuery("")}
+                isDisabled={!originSelected}
+              />
+            </Box>
+            <SearchResults
+              data={destinationResults}
+              onSelectItem={(item) => {
+                setDestinationQuery(item.description);
+                handleFetchLocation(item.description, false);
+              }}
+              visible={destinationResults.length > 0 && !destinationSelected}
             />
           </Box>
-          <SearchResults
-            data={destinationResults}
-            onSelectItem={(item) => {
-              setDestinationQuery(item.description);
-              handleFetchLocation(item.description, false);
-            }}
-            visible={destinationResults.length > 0 && !destinationSelected}
-          />
+        )}
         </Box>
-      </Box>
 
       {/* Map view */}
       <Box className="flex-1">
@@ -801,27 +856,48 @@ const RescueMapScreen = () => {
       )}
 
       {/* Tracking action sheet */}
-      {showTracking && requestDetailId && acceptedReqDetId && acceptedReqDetStatus !== "Pending" && (
-        <TrackingActionSheet
-          isOpen={showTracking}
-          onClose={() => setShowTracking(false)}
-          // requestdetailid={requestDetailId}
-          eta={directionsInfo?.duration?.text}
-          distance={directionsInfo?.distance?.text}
-          driverId={acceptedDriverId}
-          setAcceptedReqDetStatus={setAcceptedReqDetStatus}
-          requestDetailIdState={[requestDetailId, setRequestDetailId]}
-        />
-      )}
+      {(latestRequestDetail &&
+      latestRequestDetail?.requeststatus !== "Done" &&
+      latestRequestDetail?.requeststatus !== "Cancel") ?
+        <>
+          {requestDetailId && (
+            <TrackingActionSheet
+              isOpen={showTracking}
+              onClose={() => setShowTracking(false)}
+              // requestdetailid={requestDetailId}
+              eta={directionsInfo?.duration?.text}
+              distance={directionsInfo?.distance?.text}
+              driverId={null}
+              setAcceptedReqDetStatus={setAcceptedReqDetStatus}
+              requestDetailIdState={[requestDetailId, setRequestDetailId]}
+            />
+          )}
+        </>
+        :
+        <>
+          {showTracking && requestDetailId && acceptedReqDetId && acceptedReqDetStatus !== "Pending" && (
+            <TrackingActionSheet
+              isOpen={showTracking}
+              onClose={() => setShowTracking(false)}
+              // requestdetailid={requestDetailId}
+              eta={directionsInfo?.duration?.text}
+              distance={directionsInfo?.distance?.text}
+              driverId={acceptedDriverId}
+              setAcceptedReqDetStatus={setAcceptedReqDetStatus}
+              requestDetailIdState={[requestDetailId, setRequestDetailId]}
+            />
+          )}
+        </>
+      }
 
       {/* ActionSheet Toggle buttons */}
-      {!showActionsheet && directionsInfo && (
+      {!latestRequestDetail && !showActionsheet && directionsInfo && (
         <ActionSheetToggle
           onPress={() => setShowActionsheet(true)}
           visible={!showActionsheet}
         />
       )}
-      {!showTracking && requestDetailId && acceptedReqDetId && acceptedReqDetStatus !== "Pending" && (
+      {((latestRequestDetail) || (!showTracking && requestDetailId && acceptedReqDetId && acceptedReqDetStatus !== "Pending")) && (
         <ActionSheetToggle
           onPress={() => setShowTracking(true)}
           visible={true}

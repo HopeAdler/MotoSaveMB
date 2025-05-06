@@ -211,6 +211,10 @@
 import React, { createContext, useEffect, useReducer } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+import { initializeAppCheck } from '@react-native-firebase/app-check';
+import { getApp } from '@react-native-firebase/app';
+import { debugToken, rnfbProvider } from "../constant/firebaseProvider";
+
 interface AuthState {
   user: any;
   token: any;
@@ -251,6 +255,11 @@ const AuthReducer = (state: AuthState, action: AuthAction) => {
 
 export const AuthContextProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(AuthReducer, INITIAL_STATE);
+  console.log('DEBUG token: ', debugToken)
+  initializeAppCheck(getApp(), {
+    provider: rnfbProvider,
+    isTokenAutoRefreshEnabled: true,
+  });
 
   useEffect(() => {
     const initializeAuth = async () => {

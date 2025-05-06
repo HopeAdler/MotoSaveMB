@@ -158,9 +158,9 @@ export default function MHomeScreen() {
                 </Text>
               </Box>
             </Box>
-            <Pressable className="w-12 h-12 bg-white/10 rounded-xl items-center justify-center border border-white/20">
+            {/* <Pressable className="w-12 h-12 bg-white/10 rounded-xl items-center justify-center border border-white/20">
               <Bell color="#fab753" size={22} />
-            </Pressable>
+            </Pressable> */}
           </Box>
         </Box>
 

@@ -113,6 +113,7 @@ const EmergencyRescueMapScreen = () => {
   const [acceptedDriverId, setAcceptedDriverId] = useState<string | null>(null);
   const isSearchingRef = useRef(isSearching);
   const [showVehicleAlert, setShowVehicleAlert] = useState(false);
+  const [requestActive, setRequestActive] = useState<boolean>(false);
   useEffect(() => {
     isSearchingRef.current = isSearching;
   }, [isSearching]);
@@ -659,6 +660,10 @@ const EmergencyRescueMapScreen = () => {
         );
       }
       setRequestDetailId(null);
+
+      setShowActionsheet(false);
+      //Show lại input fields
+      setRequestActive(false);
     } catch (error) {
       console.error("Error cancelling request:", error);
     }
@@ -716,6 +721,9 @@ const EmergencyRescueMapScreen = () => {
         setAcceptedReqDetId(msg.message.requestDetailId);
         setAcceptedDriverId(msg?.publisher);
         createDirectChannel(msg?.publisher, msg.message.requestDetailId);
+
+        //Hide input fields origin & destination
+        setRequestActive(true);
       }
     });
     return () => { };
@@ -735,6 +743,7 @@ const EmergencyRescueMapScreen = () => {
 
       {/* Input container with enhanced styling */}
       <Box className="absolute top-0 left-0 w-full z-10 px-4 pt-16">
+        {!requestActive && (
         <Box className="bg-white/95 rounded-xl p-3 shadow-md">
           {/* Origin search with improved UI */}
           <SearchInput
@@ -765,6 +774,7 @@ const EmergencyRescueMapScreen = () => {
             />
           </Box>
         </Box>
+        )}
       </Box>
 
       {/* Map with enhanced markers */}

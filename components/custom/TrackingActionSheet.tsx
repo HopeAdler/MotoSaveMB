@@ -17,6 +17,7 @@ import {
   Clock,
   Navigation2,
   CheckCircle2,
+  MapPin,
 } from "lucide-react-native";
 import AuthContext from "@/app/context/AuthContext";
 import { router } from "expo-router";
@@ -50,6 +51,7 @@ import { RequestDetail } from "@/app/context/formFields";
 import { cancelRequest } from "@/app/services/beAPI";
 import axios from "axios";
 import { RequestContext } from "@/app/context/RequestContext";
+import { useLatReqDetStore } from "@/app/hooks/useLatReqDetStore";
 
 const cancelReasons = [
   "Driver delayed",
@@ -85,6 +87,11 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
   const {setRequestId} = useContext(RequestContext);
   const [loading, setLoading] = useState<boolean>(true);
 
+  const {
+    latestRequestDetail,
+    setLatReqDet,
+  } = useLatReqDetStore();
+
   // State cho cancellation actionsheet và alert confirmation
   const [showCancelActionsheet, setShowCancelActionsheet] = useState(false);
   const [showCancelAlert, setShowCancelAlert] = useState(false);
@@ -93,8 +100,9 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
 
   const fetchRequestDetail = async () => {
     try {
+      const latReqDetId = latestRequestDetail?.requestdetailid || requestdetailid;
       const response = await axios.get<RequestDetail>(
-        `https://motor-save-be.vercel.app/api/v1/requests/driver/${requestdetailid}`,
+        `https://motor-save-be.vercel.app/api/v1/requests/driver/${latReqDetId}`,
         { headers: { Authorization: "Bearer " + token } }
       );
       setRequestDetail(response.data);
@@ -115,21 +123,20 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
 
   useEffect(() => {
     if (requestDetail?.requeststatus === "Done") {
+      setRequestId(null)
       const timer = setTimeout(() => {
         onClose();
         if (requestDetail?.servicepackagename === "Cứu hộ đến trạm") {
-          // router.push({
-            //   pathname: "/user/customer/home/emergencyRescue/repairRequest",
-            //   params: { requestid: requestDetail?.requestid },
-            // });
-            router.navigate("/user/customer/home/emergencyRescue/repairRequest")
-            setRequestDetailId(null);
+          router.navigate("/user/customer/home/emergencyRescue/repairRequest")
+          setRequestDetailId(null);
+          setLatReqDet(null);
         } else {
           router.push({
             pathname: "/user/customer/home/feedback",
             params: { requestdetailid },
           });
           setRequestDetailId(null);
+          setLatReqDet(null);
         }
       }, 3000);
       return () => clearTimeout(timer);
@@ -143,17 +150,17 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
   const getStatusColor = () => {
     switch (requestDetail?.requeststatus) {
       case "Pending":
-        return "bg-orange-500";
+        return "#fab753";
       case "Accepted":
-        return "bg-blue-500";
+        return "#fab753";
       case "Pickup":
-        return "bg-yellow-500";
+        return "#fab753";
       case "Processing":
-        return "bg-green-500";
+        return "#fab753";
       case "Done":
-        return "bg-gray-500";
+        return "#fab753";
       default:
-        return "bg-gray-200";
+        return "#fab753";
     }
   };
 
@@ -175,9 +182,10 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
           <Box className="absolute top-4 left-[10%] right-[10%] h-[1px]">
             <Box className="w-full h-0.5 bg-gray-200">
               <Box
-                className={`h-full ${getStatusColor()}`}
+                className={`h-full`}
                 style={{
                   width: `${(currentStepIndex / (steps.length - 1)) * 100}%`,
+                  backgroundColor: getStatusColor(),
                 }}
               />
             </Box>
@@ -186,9 +194,10 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
             <Box key={step.status} className="items-center flex-1">
               <Box className="h-8 flex items-center justify-center relative z-10">
                 <Box
-                  className={`w-8 h-8 rounded-full ${
-                    index <= currentStepIndex ? getStatusColor() : "bg-gray-200"
-                  } items-center justify-center`}
+                  className={`w-8 h-8 rounded-full items-center justify-center`}
+                  style={{
+                    backgroundColor: index <= currentStepIndex ? getStatusColor() : "#E5E7EB"
+                  }}
                 >
                   <CheckCircle2 size={16} color="white" />
                 </Box>
@@ -271,19 +280,20 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
       <Actionsheet
         isOpen={isOpen}
         onClose={onClose}
-        snapPoints={[65]}
+        snapPoints={[80]}
         closeOnOverlayClick={true}
         isKeyboardDismissable={true}
       >
         <ActionsheetBackdrop onPress={onClose} />
-        <ActionsheetContent className="bg-white rounded-t-3xl">
+        <ActionsheetContent className="bg-white rounded-t-3xl px-0 pt-2 pb-6">
           <ActionsheetDragIndicatorWrapper>
-            <ActionsheetDragIndicator />
+            <ActionsheetDragIndicator className="bg-gray-300 rounded-full w-10 h-1 mx-auto my-2" />
           </ActionsheetDragIndicatorWrapper>
-          <Box className={`${getStatusColor()} px-6 py-3 w-full`}>
-            <Text className="text-white text-lg font-semibold text-center">
+          
+          <Box className="px-6 py-4 border-b border-gray-100">
+            <Text className="text-xl font-bold text-center text-[#1a3148]">
               {requestDetail?.requeststatus === "Pending"
-                ? "Tracking driver in progress..."
+                ? "Finding a driver..."
                 : requestDetail?.requeststatus === "Accepted"
                   ? "Driver accepted your request"
                   : requestDetail?.requeststatus === "Pickup"
@@ -293,8 +303,9 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
                       : "Completed"}
             </Text>
           </Box>
-          <Box className="p-6">
-            <Box className="flex-row items-center w-full mb-6">
+          
+          <Box className="p-6 space-y-4">
+            <Box className="flex-row items-center w-full mb-2">
               <Avatar
                 size={80}
                 rounded
@@ -304,77 +315,126 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
                 containerStyle={{ borderWidth: 2, borderColor: "#f2f2f2" }}
               />
               <Box className="ml-4 flex-1">
-                <Text className="text-xl font-bold">
+                <Text className="text-xl font-bold text-[#1a3148]">
                   {requestDetail?.drivername || "Awaiting Driver"}
                 </Text>
                 <Text className="text-gray-600 mt-1">
                   {requestDetail?.brandname} {requestDetail?.licenseplate}
                 </Text>
               </Box>
-            </Box>
-            <Box className="bg-gray-50 rounded-2xl p-4">
-              <Box className="flex-row justify-between">
-                <Box className="items-center flex-1">
-                  <Box className="flex-row items-center">
-                    <Navigation2 size={20} color="#4B5563" />
-                    <Text className="text-gray-600 ml-2">Distance</Text>
-                  </Box>
-                  <Text className="text-xl font-bold mt-1">{distance}</Text>
-                </Box>
-                <Box className="items-center flex-1 border-r border-gray-200">
-                  <Box className="flex-row items-center">
-                    <Clock size={20} color="#4B5563" />
-                    <Text className="text-gray-600 ml-2">Duration</Text>
-                  </Box>
-                  <Text className="text-xl font-bold mt-1">{eta}</Text>
-                </Box>
-              </Box>
-            </Box>
-            {renderProgressSteps()}            
-            <Box className="flex-row justify-between w-full mt-6">
-              <Button variant="outline" size="md" onPress={handleCall}>
-                <ButtonText>
-                  <Phone size={18} color="#4B5563" style={{ marginTop: 2 }} />{" "}
-                  Call
-                </ButtonText>
-              </Button>
-              <Button variant="outline" size="md" onPress={toChatScreen}>
-                <ButtonText>
-                  <MessageSquare
-                    size={18}
-                    color="#4B5563"
-                    style={{ marginTop: 2 }}
-                  />{" "}
-                  Chat
-                </ButtonText>
-              </Button>
-              <Button
-                variant="solid"
-                size="md"
-                className="bg-red-500"
-                onPress={() => {}}
-              >
-                <ButtonText>
-                  <AlertCircle
-                    size={18}
-                    color="#fff"
-                    style={{ marginTop: 2 }}
-                  />{" "}
-                  SOS
-                </ButtonText>
-              </Button>
-            </Box>
-            {(requestDetail?.requeststatus === "Accepted" ||
-              requestDetail?.requeststatus === "Pickup") && (
-              <Box className="mt-4">
+              
+              <Box className="flex-row gap-2">
                 <Button
-                  onPress={() => setShowCancelActionsheet(true)}
-                  className="bg-red-500"
-                  size="md"
+                  variant="solid"
+                  onPress={handleCall}
+                  className={`rounded-xl h-12 w-12 items-center justify-center ${
+                    requestDetail?.requeststatus === "Done" ? "bg-gray-200" : "bg-[#1a3148]"
+                  }`}
+                  disabled={requestDetail?.requeststatus === "Done"}
                 >
-                  <ButtonText>Cancel Ride</ButtonText>
+                  <Phone 
+                    size={22} 
+                    color={requestDetail?.requeststatus === "Done" ? "#9CA3AF" : "white"} 
+                  />
+                </Button>
+                <Button
+                  variant="solid"
+                  onPress={toChatScreen}
+                  className={`rounded-xl h-12 w-12 items-center justify-center ${
+                    requestDetail?.requeststatus === "Done" ? "bg-gray-200" : "bg-[#fab753]"
+                  }`}
+                  disabled={requestDetail?.requeststatus === "Done"}
+                >
+                  <MessageSquare 
+                    size={22} 
+                    color={requestDetail?.requeststatus === "Done" ? "#9CA3AF" : "white"} 
+                  />
                 </Button>
               </Box>
+            </Box>
+            
+            <Box className="bg-[#f8fafc] rounded-xl p-4">
+              <Box className="flex-row justify-between">
+                <Box className="flex-1 items-center">
+                  <Box className="flex-row items-center">
+                    <Box className="w-12 h-12 bg-[#1a3148]/5 rounded-xl items-center justify-center">
+                      <Navigation2 size={24} color="#1a3148" />
+                    </Box>
+                    <Box className="ml-3">
+                      <Text className="text-sm text-gray-500">
+                        Distance
+                      </Text>
+                      <Text className="text-xl font-bold text-[#1a3148]">
+                        {distance}
+                      </Text>
+                    </Box>
+                  </Box>
+                </Box>
+                
+                <Box className="w-[1px] h-16 bg-gray-200 mx-2 self-center" />
+                
+                <Box className="flex-1 items-center">
+                  <Box className="flex-row items-center">
+                    <Box className="w-12 h-12 bg-[#1a3148]/5 rounded-xl items-center justify-center">
+                      <Clock size={24} color="#1a3148" />
+                    </Box>
+                    <Box className="ml-3">
+                      <Text className="text-sm text-gray-500">
+                        Duration
+                      </Text>
+                      <Text className="text-xl font-bold text-[#1a3148]">
+                        {eta}
+                      </Text>
+                    </Box>
+                  </Box>
+                </Box>
+              </Box>
+            </Box>
+            
+            <Box className="bg-[#f8fafc] rounded-xl p-4 space-y-3 w-full relative">
+              <Box className="absolute left-[31px] top-[60px] w-[1.5px] h-[28px] bg-black/10" />
+              <Box className="flex-row items-center w-full">
+                <Box className="w-10 h-10 bg-[#1a3148]/5 rounded-lg items-center justify-center">
+                  <MapPin size={20} color="#1a3148" />
+                </Box>
+                <Box className="ml-3 flex-1">
+                  <Text className="text-sm text-gray-500">
+                    Pickup Location
+                  </Text>
+                  <Text className="text-base font-medium text-[#1a3148]">
+                    {requestDetail?.pickuplocation}
+                  </Text>
+                </Box>
+              </Box>
+              
+              {requestDetail?.destination && (
+                <Box className="flex-row items-center w-full">
+                  <Box className="w-10 h-10 bg-[#fab753]/10 rounded-lg items-center justify-center">
+                    <AlertCircle size={20} color="#fab753" />
+                  </Box>
+                  <Box className="ml-3 flex-1">
+                    <Text className="text-sm text-gray-500">
+                      Destination
+                    </Text>
+                    <Text className="text-base font-medium text-[#1a3148]">
+                      {requestDetail?.destination}
+                    </Text>
+                  </Box>
+                </Box>
+              )}
+            </Box>
+            
+            {renderProgressSteps()}
+            
+            {(requestDetail?.requeststatus === "Accepted" ||
+              requestDetail?.requeststatus === "Pickup") && (
+              <Button
+                onPress={() => setShowCancelActionsheet(true)}
+                className="bg-red-50 border border-red-200 h-14 rounded-xl active:opacity-80 shadow-sm"
+                size="lg"
+              >
+                <ButtonText className="text-red-600 font-bold">Cancel Ride</ButtonText>
+              </Button>
             )}
           </Box>
         </ActionsheetContent>
@@ -389,65 +449,71 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
         isKeyboardDismissable={true}
       >
         <ActionsheetBackdrop onPress={() => setShowCancelActionsheet(false)} />
-        <ActionsheetContent className="bg-white rounded-t-3xl p-4">
+        <ActionsheetContent className="bg-white rounded-t-3xl px-0 pt-2 pb-6">
           <ActionsheetDragIndicatorWrapper>
-            <ActionsheetDragIndicator />
+            <ActionsheetDragIndicator className="bg-gray-300 rounded-full w-10 h-1 mx-auto my-2" />
           </ActionsheetDragIndicatorWrapper>
-          <Text className="text-lg font-bold text-center mb-4">
-            Cancel Ride
-          </Text>
-          <VStack space="md">
-            <FormControl isRequired>
-              <FormControlLabel>
-                <FormControlLabelText>
-                  Select a reason for cancellation
-                </FormControlLabelText>
-              </FormControlLabel>
-              <RadioGroup
-                value={selectedReason}
-                onChange={(nextValue: React.SetStateAction<string>) =>
-                  setSelectedReason(nextValue)
-                }
-              >
-                {cancelReasons.map((reason) => (
-                  <Radio key={reason} value={reason}>
-                    <RadioLabel>{reason}</RadioLabel>
-                  </Radio>
-                ))}
-              </RadioGroup>
-            </FormControl>
-            {selectedReason === "Other" && (
-              <FormControl isRequired isInvalid={!customReason.trim()}>
+          
+          <Box className="px-6 py-4 border-b border-gray-100">
+            <Text className="text-xl font-bold text-center text-[#1a3148]">
+              Cancel Ride
+            </Text>
+          </Box>
+          
+          <Box className="p-6">
+            <VStack space="md">
+              <FormControl isRequired>
                 <FormControlLabel>
-                  <FormControlLabelText>
-                    Enter custom reason
+                  <FormControlLabelText className="text-[#1a3148] font-medium">
+                    Select a reason for cancellation
                   </FormControlLabelText>
                 </FormControlLabel>
-                <Input variant="outline" size="md">
-                  <InputField
-                    placeholder="Enter reason..."
-                    value={customReason}
-                    onChangeText={setCustomReason}
-                  />
-                </Input>
-                {!customReason.trim() && (
-                  <FormControlError>
-                    <FormControlErrorIcon />
-                    <FormControlErrorText>
-                      Reason is required.
-                    </FormControlErrorText>
-                  </FormControlError>
-                )}
+                <RadioGroup
+                  value={selectedReason}
+                  onChange={(nextValue: React.SetStateAction<string>) =>
+                    setSelectedReason(nextValue)
+                  }
+                >
+                  {cancelReasons.map((reason) => (
+                    <Radio key={reason} value={reason}>
+                      <RadioLabel className="text-[#1a3148]">{reason}</RadioLabel>
+                    </Radio>
+                  ))}
+                </RadioGroup>
               </FormControl>
-            )}
-            <Button
-              onPress={() => setShowCancelAlert(true)}
-              className="bg-red-500"
-              size="md"
-            >
-              <ButtonText>Submit Cancellation</ButtonText>
-            </Button>
-          </VStack>
+              {selectedReason === "Other" && (
+                <FormControl isRequired isInvalid={!customReason.trim()}>
+                  <FormControlLabel>
+                    <FormControlLabelText className="text-[#1a3148] font-medium">
+                      Enter custom reason
+                    </FormControlLabelText>
+                  </FormControlLabel>
+                  <Input variant="outline" size="md" className="border-gray-200">
+                    <InputField
+                      placeholder="Enter reason..."
+                      value={customReason}
+                      onChangeText={setCustomReason}
+                    />
+                  </Input>
+                  {!customReason.trim() && (
+                    <FormControlError>
+                      <FormControlErrorIcon />
+                      <FormControlErrorText>
+                        Reason is required.
+                      </FormControlErrorText>
+                    </FormControlError>
+                  )}
+                </FormControl>
+              )}
+              <Button
+                onPress={() => setShowCancelAlert(true)}
+                className="bg-[#fab753] h-14 rounded-xl active:opacity-80 shadow-sm"
+                size="lg"
+              >
+                <ButtonText className="font-bold text-lg text-[#1a3148]">Submit Cancellation</ButtonText>
+              </Button>
+            </VStack>
+          </Box>
         </ActionsheetContent>
       </Actionsheet>
 
@@ -460,22 +526,23 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
         <AlertDialogBackdrop />
         <AlertDialogContent>
           <AlertDialogHeader>
-            <Text className="text-lg font-bold">Confirm Cancellation</Text>
+            <Text className="text-lg font-bold text-[#1a3148]">Confirm Cancellation</Text>
           </AlertDialogHeader>
           <AlertDialogBody>
-            <Text>Are you sure you want to cancel the ride?</Text>
+            <Text className="text-gray-600">Are you sure you want to cancel the ride?</Text>
           </AlertDialogBody>
           <AlertDialogFooter>
             <Button
               variant="outline"
               action="secondary"
               size="sm"
+              className="border-gray-200"
               onPress={() => setShowCancelAlert(false)}
             >
-              <ButtonText>Back</ButtonText>
+              <ButtonText className="text-gray-700">Back</ButtonText>
             </Button>
-            <Button size="sm" onPress={handleSubmitCancellation}>
-              <ButtonText>Confirm</ButtonText>
+            <Button size="sm" className="bg-[#fab753]" onPress={handleSubmitCancellation}>
+              <ButtonText className="text-[#1a3148] font-bold">Confirm</ButtonText>
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>

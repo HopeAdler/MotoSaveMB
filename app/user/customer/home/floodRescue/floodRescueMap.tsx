@@ -107,6 +107,7 @@ const FloodRescueMapScreen = () => {
   const [driverAccepted, setDriverAccepted] = useState(false);
   const attemptedDriversRef = useRef<Set<string>>(new Set());
   const [acceptedDriverId, setAcceptedDriverId] = useState<string | null>(null);
+  const [requestActive, setRequestActive] = useState<boolean>(false);
   // const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   // State để lưu vehicle id đã chọn
   const [selectedVehicleId, setSelectedVehicleId] = useState<string>("");
@@ -528,6 +529,9 @@ const FloodRescueMapScreen = () => {
 
       console.log("Request đã được hủy thành công");
       // Cập nhật UI nếu cần
+
+      setShowActionsheet(false);
+      setRequestActive(false);
     } catch (error) {
       console.error("Lỗi chi tiết khi hủy request:", error);
       // Xử lý lỗi (có thể thử hủy lại hoặc hiển thị thông báo)
@@ -614,6 +618,9 @@ const FloodRescueMapScreen = () => {
         );
         setAcceptedDriverId(msg?.publisher);
         createDirectChannel(msg?.publisher, msg.message.requestDetailId);
+
+        //Hide input field
+        setRequestActive(true);
       }
     });
     return () => {
@@ -684,20 +691,24 @@ const FloodRescueMapScreen = () => {
 
       {/* Header: Search input & results */}
       <Box className="absolute top-0 left-0 w-full z-10 p-4 pt-16">
-        <SearchInput
-          value={originQuery}
-          onChangeText={handleOriginChange}
-          placeholder="Vui lòng nhập điểm đón"
-          onClear={() => setOriginQuery("")}
-        />
-        <SearchResults
-          data={originResults}
-          onSelectItem={(item) => {
-            setOriginQuery(item.description);
-            handleFetchLocation(item.description, true);
-          }}
-          visible={originResults.length > 0 && !originSelected}
-        />
+      {!requestActive && (
+        <>      
+          <SearchInput
+            value={originQuery}
+            onChangeText={handleOriginChange}
+            placeholder="Vui lòng nhập điểm đón"
+            onClear={() => setOriginQuery("")}
+          />
+          <SearchResults
+            data={originResults}
+            onSelectItem={(item) => {
+              setOriginQuery(item.description);
+              handleFetchLocation(item.description, true);
+            }}
+            visible={originResults.length > 0 && !originSelected}
+          />
+        </>
+      )}
       </Box>
 
       {/* Map view */}

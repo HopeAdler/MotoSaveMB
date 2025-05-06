@@ -129,10 +129,16 @@ const GenMap: React.FC = () => {
       if (
         result &&
         requestDetail?.requeststatus === "Processing" &&
-        requestDetail?.servicepackagename === "Cứu hộ đến trạm" &&
         requestDetail?.requesttype === "Cứu hộ"
       ) {
-        createRepairRequest(requestDetail?.requestid, token);
+        switch (requestDetail?.servicepackagename) {
+          case "Cứu hộ đến trạm":
+            createRepairRequest(requestDetail?.requestid, token);
+            break;
+          case "Cứu hộ nước ngập":
+            changePaymentTotal();
+            break;
+        }
       }
       return;
     }
@@ -227,9 +233,6 @@ const GenMap: React.FC = () => {
         latitude: results.deslat,
         longitude: results.deslng,
       });
-      if (results.requesttype === 'Cứu hộ nước ngập' && results.requeststatus === 'Done') {
-        changePaymentTotal();
-      }
     } catch (error) {
       console.error("Error fetching request details:", error);
     } finally {

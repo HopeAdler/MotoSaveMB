@@ -67,6 +67,10 @@ export interface RequestDetail {
   requestid: string;
   requestdetailid: string;
   servicepackagename: string;
+  pickuplong?: number,
+  pickuplat?: number,
+  deslng?: number,
+  deslat?: number,
 }
 
 export interface DriverRescueRequestDetail {
@@ -140,6 +144,16 @@ export interface Accessory {
   brandname: string,
   accessoryname: string;
   cost: number;
+}
+
+export interface LatestRequestDetail {
+  requestdetailid: string;
+  requeststatus: string;
+  createddate: string;
+  updateddate: string;
+  requestid: string;
+  servicepackagename: string;
+  requesttype: string;
 }
 
 const formFields = {
