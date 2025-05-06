@@ -100,7 +100,7 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
 
   const fetchRequestDetail = async () => {
     try {
-      const latReqDetId = latestRequestDetail?.requestdetailid || requestdetailid;
+      const latReqDetId = requestdetailid ? requestdetailid : latestRequestDetail?.requestdetailid
       const response = await axios.get<RequestDetail>(
         `https://motor-save-be.vercel.app/api/v1/requests/driver/${latReqDetId}`,
         { headers: { Authorization: "Bearer " + token } }
@@ -123,6 +123,7 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
 
   useEffect(() => {
     if (requestDetail?.requeststatus === "Done") {
+      console.log(requestDetail)
       setRequestId(null)
       const timer = setTimeout(() => {
         onClose();
@@ -290,7 +291,7 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
             <ActionsheetDragIndicator className="bg-gray-300 rounded-full w-10 h-1 mx-auto my-2" />
           </ActionsheetDragIndicatorWrapper>
           
-          <Box className="px-6 py-4 border-b border-gray-100">
+          {/* <Box className="px-6 py-4 border-b border-gray-100">
             <Text className="text-xl font-bold text-center text-[#1a3148]">
               {requestDetail?.requeststatus === "Pending"
                 ? "Finding a driver..."
@@ -302,7 +303,7 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
                       ? "On rescue mission"
                       : "Completed"}
             </Text>
-          </Box>
+          </Box> */}
           
           <Box className="p-6 space-y-4">
             <Box className="flex-row items-center w-full mb-2">
@@ -430,7 +431,7 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
               requestDetail?.requeststatus === "Pickup") && (
               <Button
                 onPress={() => setShowCancelActionsheet(true)}
-                className="bg-red-50 border border-red-200 h-14 rounded-xl active:opacity-80 shadow-sm"
+                className="bg-red-50 border border-red-200 h-14 rounded-xl active:opacity-80 shadow-sm mt-5"
                 size="lg"
               >
                 <ButtonText className="text-red-600 font-bold">Cancel Ride</ButtonText>

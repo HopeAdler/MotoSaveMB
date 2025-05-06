@@ -310,26 +310,6 @@ export default function DriverLayout() {
         />
         {/* <Tabs.Screen name="requestMap" options={{ headerShown: false, href: null }} /> */}
         <Tabs.Screen
-          name="transaction_history"
-          options={{
-            headerShown: false,
-            tabBarLabel: "Lịch sử giao dịch",
-            tabBarIcon: (tabInfo) => (
-              <DollarSign size={24} color={tabInfo.color} />
-            ),
-          }}
-        />
-        {/* <Tabs.Screen
-          name="testTextRecognition"
-          options={{
-            headerShown: false,
-            tabBarLabel: "ImageToText",
-            tabBarIcon: (tabInfo) => (
-              <CameraIcon size={24} color={tabInfo.color} />
-            ),
-          }}
-        /> */}
-        <Tabs.Screen
           name="performance"
           options={{
             href: null,
