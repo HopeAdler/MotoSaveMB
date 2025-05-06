@@ -93,6 +93,11 @@ const GenMap: React.FC = () => {
   const camera = useRef<MapboxGL.Camera>(null);
   const [focusOnMe, setFocusOnMe] = useState<boolean>(true);
 
+  const resetCoordinates = () => {
+    setOriginCoordinates({ latitude: 0, longitude: 0 });
+    setDestinationCoordinates({ latitude: 0, longitude: 0 });
+    setRouteCoordinates([]);
+  }
   const changeRequestStatus = async () => {
     let newStatus = "";
     if (requestDetail?.requesttype === "Cứu hộ") {
@@ -206,12 +211,15 @@ const GenMap: React.FC = () => {
   const fetchUndoneRequestDetails = async () => {
     try {
       const results = await getUndoneRequestDetailIds(token);
-      if (results.length > 0) {
+      if (results && results.length > 0) {
         if (results.length > 1)
           setCurReqDetId(results[1].requestdetailid);
         else setCurReqDetId(results[0].requestdetailid);
       }
-      else setCurReqDetId(null);
+      else {
+        setCurReqDetId(null);
+        resetCoordinates();
+      };
     } catch (error) {
       console.error("Error fetching undone request details:", error);
     } finally {
@@ -316,7 +324,6 @@ const GenMap: React.FC = () => {
     fetchUndoneRequestDetails();
     fetchRequestDetail();
     fetchRoute();
-
   }, [currentLoc, requestDetail?.requeststatus]);
 
   useEffect(() => {

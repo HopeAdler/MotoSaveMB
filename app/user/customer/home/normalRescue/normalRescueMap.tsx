@@ -712,6 +712,7 @@ const RescueMapScreen = () => {
       setRequestDetailId(latestRequestDetail?.requestdetailid)
       fetchRequestDetail(latestRequestDetail?.requestdetailid)
       setShowTracking(true);
+      setRequestActive(true);
     }
     hereNow();
     fetchServicePackage();
