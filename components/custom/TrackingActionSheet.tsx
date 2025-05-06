@@ -122,7 +122,7 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
 
   useEffect(() => {
     if (requestDetail?.requeststatus === "Done") {
-      setRequestId('')
+      setRequestId(null)
       const timer = setTimeout(() => {
         onClose();
         if (requestDetail?.servicepackagename === "Cứu hộ đến trạm") {

@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // Define the shape of the context state
 interface RequestContextState {
   requestId: string | null;
-  setRequestId: (id: string) => void;
+  setRequestId: (id: string | any) => void;
 }
 
 // Create the context with a default value
