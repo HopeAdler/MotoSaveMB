@@ -40,7 +40,7 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
 
   return (
     <Pressable onPress={handlePress} className="mr-3">
-      <Box 
+      <Box
         className="w-[150px] bg-white rounded-2xl p-4 border border-gray-100 shadow-sm"
         style={{ opacity: disabled ? 0.6 : 1 }}
       >
@@ -67,6 +67,7 @@ export default function CHomeScreen() {
     setLatReqDet,
   } = useLatReqDetStore();
 
+
   const fetchRequestDetail = async () => {
     setIsLoading(true);
     try {
@@ -74,6 +75,7 @@ export default function CHomeScreen() {
         `https://motor-save-be.vercel.app/api/v1/requests/latestRequestDetail/${requestId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
+      setLatReqDet(response.data);
       setLatReqDet(response.data);
       setIsLoading(false);
     } catch (error) {
@@ -89,6 +91,10 @@ export default function CHomeScreen() {
     } else {
       setLatReqDet(null);
     }
+  }, [requestId]);
+  useEffect(() => {
+    console.log(latestRequestDetail)
+    console.log(requestId)
   }, [requestId]);
 
   if (!user) {
@@ -129,8 +135,8 @@ export default function CHomeScreen() {
     }
   };
 
-  const hasActiveRequest = requestId !== null && 
-    latestRequestDetail?.requeststatus !== "Done" && 
+  const hasActiveRequest = requestId !== null &&
+    latestRequestDetail?.requeststatus !== "Done" &&
     latestRequestDetail?.requeststatus !== "Cancel";
 
   if (isLoading) return <LoadingScreen />;
