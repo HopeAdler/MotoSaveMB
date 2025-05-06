@@ -25,6 +25,7 @@ import { ActivityIndicator, TouchableOpacity } from "react-native";
 import Icon from "react-native-vector-icons/Feather";
 import { TripAction, tripReducer, TripState } from "../../utils/fareCal";
 import { DriverRescueRequestDetail } from "@/app/context/formFields";
+import { User } from "@pubnub/chat";
 import { UnpaidPaymentList } from "@/components/custom/UnpaidPayments";
 
 interface UnpaidPayments {
@@ -335,7 +336,7 @@ const GenMap: React.FC = () => {
         coords: currentLoc
       } as TripAction);
     }
-    if (requestDetail.requeststatus === 'Done' || requestDetail.requeststatus === 'Cancel') {
+    if (requestDetail.requeststatus === 'Done'|| requestDetail.requeststatus === 'Cancel') {
       dispatch({ type: 'END' } as TripAction);
     }
   }, [requestDetail, currentLoc]);
@@ -361,7 +362,7 @@ const GenMap: React.FC = () => {
       };
       camera.current.setCamera({
         bounds,
-        zoomLevel: 16,
+        zoomLevel: 14,
         animationDuration: 1000,
       });
     }
@@ -395,7 +396,17 @@ const GenMap: React.FC = () => {
             currentLoc={currentLoc}
             focusMode={[focusOnMe, setFocusOnMe]}
             isActionSheetOpen={isActionSheetOpen}
+            role="Driver"
+            // driverHeading={users.get(userId)?.heading || 0} 
+            // driverHeading={users.get(userId ?? '')?.heading || 0}
+            // user={users.get(userId ?? '')?.heading || 0}
+            userId={users.get(userId ?? '')?.uuid || ''}
+            // driverHeading={users.get(userId ?? '')?.heading || 0}
+            
           >
+
+
+            
             {!focusOnMe &&
               requestDetail?.requeststatus === "Pickup" &&
               originCoordinates.latitude !== 0 && (
