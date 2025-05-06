@@ -52,7 +52,6 @@ import { cancelRequest } from "@/app/services/beAPI";
 import axios from "axios";
 import { RequestContext } from "@/app/context/RequestContext";
 import { useLatReqDetStore } from "@/app/hooks/useLatReqDetStore";
-
 const cancelReasons = [
   "Driver delayed",
   "Driver behavior not acceptable",
