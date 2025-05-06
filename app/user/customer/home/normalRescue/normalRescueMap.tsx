@@ -52,6 +52,8 @@ const RescueMapScreen = () => {
     longitude: 0
   });
 
+  const [requestActive, setRequestActive] = useState<boolean>(false);
+
   useEffect(() => {
     // if origin is still at the default, and currentLoc is now non-zero, set it:
     if (
@@ -578,6 +580,12 @@ const RescueMapScreen = () => {
       console.log("Request đã được hủy thành công");
       // Cập nhật UI nếu cần
       setRequestDetailId(null);
+
+      // Hide action sheet
+      setShowActionsheet(false);
+
+      //Show lại input fields
+      setRequestActive(false);
     } catch (error) {
       console.error("Lỗi chi tiết khi hủy request:", error);
       // Xử lý lỗi (có thể thử hủy lại hoặc hiển thị thông báo)
@@ -594,6 +602,9 @@ const RescueMapScreen = () => {
     // Cập nhật UI
     setShowActionsheet(true);
     setShowTracking(false);
+
+    // //Show lại input fields
+    // setRequestActive(false);
 
     // Sử dụng reqId được truyền vào nếu có, nếu không thì dùng state
     const idToCancel = reqId || requestDetailId;
@@ -661,6 +672,9 @@ const RescueMapScreen = () => {
         //Initializing direct chat(driverId, requestDetailId)
         setAcceptedDriverId(msg?.publisher)
         createDirectChannel(msg?.publisher, msg.message.requestDetailId)
+        
+        //Hide input fields origin & destination
+        setRequestActive(true);
       }
     });
     return () => {
@@ -712,41 +726,42 @@ const RescueMapScreen = () => {
       {/* Header: Search origin & destination */}
       {/* {!latestRequestDetail && */}
       <Box className="absolute top-0 left-0 w-full z-10 p-4 pt-16">
-        <Box className="bg-white/95 rounded-xl p-3 shadow-md">
-          <SearchInput
-            value={originQuery}
-            onChangeText={handleOriginChange}
-            placeholder="Vui lòng nhập điểm đón"
-            onClear={() => setOriginQuery("")}
-          />
-          <SearchResults
-            data={originResults}
-            onSelectItem={(item) => {
-              setOriginQuery(item.description);
-              handleFetchLocation(item.description, true);
-            }}
-            visible={originResults.length > 0 && !originSelected}
-          />
-          <Box className="mt-2">
+        {!requestActive && (
+          <Box className="bg-white/95 rounded-xl p-3 shadow-md">
             <SearchInput
-              value={destinationQuery}
-              onChangeText={handleDestinationChange}
-              placeholder="Vui lòng nhập điểm đến"
-              onClear={() => setDestinationQuery("")}
-              isDisabled={!originSelected}
+              value={originQuery}
+              onChangeText={handleOriginChange}
+              placeholder="Vui lòng nhập điểm đón"
+              onClear={() => setOriginQuery("")}
+            />
+            <SearchResults
+              data={originResults}
+              onSelectItem={(item) => {
+                setOriginQuery(item.description);
+                handleFetchLocation(item.description, true);
+              }}
+              visible={originResults.length > 0 && !originSelected}
+            />
+            <Box className="mt-2">
+              <SearchInput
+                value={destinationQuery}
+                onChangeText={handleDestinationChange}
+                placeholder="Vui lòng nhập điểm đến"
+                onClear={() => setDestinationQuery("")}
+                isDisabled={!originSelected}
+              />
+            </Box>
+            <SearchResults
+              data={destinationResults}
+              onSelectItem={(item) => {
+                setDestinationQuery(item.description);
+                handleFetchLocation(item.description, false);
+              }}
+              visible={destinationResults.length > 0 && !destinationSelected}
             />
           </Box>
-          <SearchResults
-            data={destinationResults}
-            onSelectItem={(item) => {
-              setDestinationQuery(item.description);
-              handleFetchLocation(item.description, false);
-            }}
-            visible={destinationResults.length > 0 && !destinationSelected}
-          />
+        )}
         </Box>
-      </Box>
-      {/* } */}
 
       {/* Map view */}
       <Box className="flex-1">

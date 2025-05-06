@@ -6,7 +6,7 @@ import axios from "axios";
 import { router } from "expo-router";
 import { Ambulance, Bell, Car, Search, Wrench } from "lucide-react-native";
 import React, { useContext, useEffect, useState } from "react";
-import { Pressable, ScrollView } from "react-native";
+import { Pressable, ScrollView, Alert } from "react-native";
 import { Avatar } from "react-native-elements";
 import LoadingScreen from "../../../loading/loading";
 import { LatestRequestDetail } from "@/app/context/formFields";
@@ -17,6 +17,7 @@ interface ServiceCardProps {
   title: string;
   color: string;
   onPress: () => void;
+  disabled?: boolean;
 }
 
 const ServiceCard: React.FC<ServiceCardProps> = ({
@@ -24,20 +25,37 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
   title,
   color,
   onPress,
-}) => (
-  <Pressable onPress={onPress} className="mr-3">
-    <Box className="w-[150px] bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
-      <Box
-        className="w-12 h-12 rounded-xl items-center justify-center mb-3"
-        style={{ backgroundColor: `${color}15` }}
+  disabled = false,
+}) => {
+  const handlePress = () => {
+    if (disabled) {
+      Alert.alert(
+        "Không thể tạo yêu cầu mới",
+        "Bạn đã có một yêu cầu đang được xử lý. Vui lòng hoàn thành hoặc hủy yêu cầu hiện tại trước khi tạo yêu cầu mới."
+      );
+    } else {
+      onPress();
+    }
+  };
+
+  return (
+    <Pressable onPress={handlePress} className="mr-3">
+      <Box 
+        className="w-[150px] bg-white rounded-2xl p-4 border border-gray-100 shadow-sm"
+        style={{ opacity: disabled ? 0.6 : 1 }}
       >
-        <Icon color={color} size={24} />
+        <Box
+          className="w-12 h-12 rounded-xl items-center justify-center mb-3"
+          style={{ backgroundColor: `${color}15` }}
+        >
+          <Icon color={disabled ? "#9CA3AF" : color} size={24} />
+        </Box>
+        <Text className="text-[15px] font-semibold text-[#1a3148]">{title}</Text>
+        <Text className="text-xs text-gray-500">Hỗ trợ 24/7</Text>
       </Box>
-      <Text className="text-[15px] font-semibold text-[#1a3148]">{title}</Text>
-      <Text className="text-xs text-gray-500">Hỗ trợ 24/7</Text>
-    </Box>
-  </Pressable>
-);
+    </Pressable>
+  );
+};
 
 export default function CHomeScreen() {
   const { user, token } = useContext(AuthContext);
@@ -111,6 +129,10 @@ export default function CHomeScreen() {
     }
   };
 
+  const hasActiveRequest = requestId !== null && 
+    latestRequestDetail?.requeststatus !== "Done" && 
+    latestRequestDetail?.requeststatus !== "Cancel";
+
   if (isLoading) return <LoadingScreen />;
 
   return (
@@ -142,9 +164,9 @@ export default function CHomeScreen() {
                 </Text>
               </Box>
             </Box>
-            <Pressable className="w-12 h-12 bg-white/10 rounded-xl items-center justify-center border border-white/20">
+            {/* <Pressable className="w-12 h-12 bg-white/10 rounded-xl items-center justify-center border border-white/20">
               <Bell color="#fab753" size={22} />
-            </Pressable>
+            </Pressable> */}
           </Box>
         </Box>
       </Box>
@@ -173,6 +195,7 @@ export default function CHomeScreen() {
                     "/user/customer/home/normalRescue/normalRescueMap"
                   )
                 }
+                disabled={hasActiveRequest}
               />
               <ServiceCard
                 icon={Ambulance}
@@ -183,6 +206,7 @@ export default function CHomeScreen() {
                     "/user/customer/home/emergencyRescue/emergencyRescueMap"
                   )
                 }
+                disabled={hasActiveRequest}
               />
             </ScrollView>
           </Box>
@@ -203,6 +227,7 @@ export default function CHomeScreen() {
                     "/user/customer/home/floodRescue/floodRescueMap"
                   )
                 }
+                disabled={hasActiveRequest}
               />
             </Pressable>
 
@@ -226,18 +251,30 @@ export default function CHomeScreen() {
           latestRequestDetail?.requeststatus !== "Done" &&
           latestRequestDetail?.requeststatus !== "Cancel" && (
             <Box className="flex-row justify-center my-6">
-              <Text
-                className="text-base font-medium text-[#1a3148]"
-                onPress={handleNavigate}
-              >
-                Yêu cầu gần đây của bạn chưa hoàn thành. Tiếp tục?
-              </Text>
+              <Box className="bg-[#fab753]/20 px-4 py-3 rounded-xl">
+                <Text
+                  className="text-base font-medium text-[#1a3148]"
+                  onPress={handleNavigate}
+                >
+                  Yêu cầu gần đây của bạn chưa hoàn thành. Tiếp tục?
+                </Text>
+              </Box>
             </Box>
           )}
 
         <Pressable
-          onPress={() => router.navigate("/user/customer/home/servicePackage")}
+          onPress={() => {
+            if (hasActiveRequest) {
+              Alert.alert(
+                "Không thể tạo yêu cầu mới",
+                "Bạn đã có một yêu cầu đang được xử lý. Vui lòng hoàn thành hoặc hủy yêu cầu hiện tại trước khi tạo yêu cầu mới."
+              );
+            } else {
+              router.navigate("/user/customer/home/servicePackage");
+            }
+          }}
           className="bg-[#fab753] rounded-2xl shadow-sm mb-6 mt-4"
+          style={{ opacity: hasActiveRequest ? 0.6 : 1 }}
         >
           <Box className="px-5 py-4 flex-row items-center justify-center">
             <Box className="w-12 h-12 bg-white/20 rounded-xl items-center justify-center mr-3">
