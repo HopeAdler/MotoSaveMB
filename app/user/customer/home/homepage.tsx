@@ -45,9 +45,9 @@ export default function CHomeScreen() {
   const [isLoading, setIsLoading] = useState(false);
 
   const {
-      latestRequestDetail,
-      setLatReqDet,
-    } = useLatReqDetStore();
+    latestRequestDetail,
+    setLatReqDet,
+  } = useLatReqDetStore();
 
   const fetchRequestDetail = async () => {
     setIsLoading(true);
@@ -64,13 +64,13 @@ export default function CHomeScreen() {
   };
 
   useEffect(() => {
+    console.log(latestRequestDetail);
+    console.log(requestId);
     if (requestId !== null) {
       fetchRequestDetail();
+    } else {
+      setLatReqDet(null);
     }
-  }, [requestId]);
-  useEffect(() => {
-    console.log(latestRequestDetail)
-    console.log(requestId)
   }, [requestId]);
 
   if (!user) {

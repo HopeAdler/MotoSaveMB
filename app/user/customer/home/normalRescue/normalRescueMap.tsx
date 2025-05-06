@@ -668,6 +668,8 @@ const RescueMapScreen = () => {
       // pubnub?.destroy();
     };
   }, [requestDetailId]);
+
+  // Fetch latest request detail
   const fetchRequestDetail = async (reqDetID: string) => {
     const response = await axios.get<RequestDetail>(
       `https://motor-save-be.vercel.app/api/v1/requests/driver/${reqDetID}`,
@@ -683,8 +685,9 @@ const RescueMapScreen = () => {
     });
     setOriginQuery(response.data?.pickuplocation);
     setDestinationQuery(response.data?.destination);
-    setOriginSelected(true),
-    setDestinationSelected(true),
+    setOriginSelected(true);
+    setDestinationSelected(true);
+    setAcceptedDriverId(response.data?.driverid)
     console.log("Fetching request detail...");
   };
 
