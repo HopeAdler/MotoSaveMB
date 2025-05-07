@@ -38,7 +38,6 @@ const RescueMapScreen = () => {
   // Các state chính
   const {
     latestRequestDetail,
-    setLatReqDet,
   } = useLatReqDetStore();
 
 

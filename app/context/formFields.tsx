@@ -60,6 +60,7 @@ export interface RequestDetail {
   driverid: string;
   drivername: string;
   driverphone: string;
+  driverimage: string;
   licenseplate: string;
   brandname: string;
   vehicletype: string;
@@ -67,10 +68,10 @@ export interface RequestDetail {
   requestid: string;
   requestdetailid: string;
   servicepackagename: string;
-  pickuplong?: number,
-  pickuplat?: number,
-  deslng?: number,
-  deslat?: number,
+  pickuplong?: number;
+  pickuplat?: number;
+  deslng?: number;
+  deslat?: number;
 }
 
 export interface DriverRescueRequestDetail {
