@@ -206,7 +206,11 @@ const RescueMapScreen = () => {
 
   // Lấy đường đi và tính toán cước
   useEffect(() => {
-    if (acceptedDriverId === null) {
+    if (acceptedDriverId === null || 
+      ((latestRequestDetail &&
+        latestRequestDetail?.requeststatus !== "Done" &&
+        latestRequestDetail?.requeststatus !== "Cancel"))
+    ) {
       if (
         originSelected &&
         destinationSelected &&
@@ -672,7 +676,7 @@ const RescueMapScreen = () => {
         //Initializing direct chat(driverId, requestDetailId)
         setAcceptedDriverId(msg?.publisher)
         createDirectChannel(msg?.publisher, msg.message.requestDetailId)
-        
+
         //Hide input fields origin & destination
         setRequestActive(true);
       }
@@ -762,7 +766,7 @@ const RescueMapScreen = () => {
             />
           </Box>
         )}
-        </Box>
+      </Box>
 
       {/* Map view */}
       <Box className="flex-1">
@@ -838,7 +842,7 @@ const RescueMapScreen = () => {
       </Box>
 
       {/* Trip details action sheet */}
-      {showActionsheet && directionsInfo && !acceptedReqDetId && (
+      {requestActive || (showActionsheet && directionsInfo && !acceptedReqDetId) && (
         <TripDetailsActionSheet
           isOpen={showActionsheet}
           onClose={() => setShowActionsheet(false)}
@@ -858,8 +862,8 @@ const RescueMapScreen = () => {
 
       {/* Tracking action sheet */}
       {(latestRequestDetail &&
-      latestRequestDetail?.requeststatus !== "Done" &&
-      latestRequestDetail?.requeststatus !== "Cancel") ?
+        latestRequestDetail?.requeststatus !== "Done" &&
+        latestRequestDetail?.requeststatus !== "Cancel") ?
         <>
           {requestDetailId && (
             <TrackingActionSheet
@@ -892,18 +896,26 @@ const RescueMapScreen = () => {
       }
 
       {/* ActionSheet Toggle buttons */}
-      {!latestRequestDetail && !showActionsheet && directionsInfo && (
+      {(!showActionsheet && directionsInfo) && (
         <ActionSheetToggle
           onPress={() => setShowActionsheet(true)}
           visible={!showActionsheet}
         />
       )}
-      {((latestRequestDetail) || (!showTracking && requestDetailId && acceptedReqDetId && acceptedReqDetStatus !== "Pending")) && (
+      {((!showTracking && requestDetailId && acceptedReqDetId && acceptedReqDetStatus !== "Pending")) && (
         <ActionSheetToggle
           onPress={() => setShowTracking(true)}
           visible={true}
         />
       )}
+      {(latestRequestDetail &&
+        latestRequestDetail?.requeststatus !== "Done" &&
+        latestRequestDetail?.requeststatus !== "Cancel") &&
+        <ActionSheetToggle
+          onPress={() => setShowTracking(true)}
+          visible={true}
+        />
+      }
     </Box>
   );
 

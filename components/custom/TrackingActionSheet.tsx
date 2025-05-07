@@ -122,26 +122,24 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
 
   useEffect(() => {
     if (requestDetail?.requeststatus === "Done") {
-      console.log(requestDetail)
-      setRequestId(null)
+      console.log(requestDetail);
+      setRequestId(null);
       const timer = setTimeout(() => {
-        onClose();
         if (requestDetail?.servicepackagename === "Cứu hộ đến trạm") {
-          router.navigate("/user/customer/home/emergencyRescue/repairRequest")
-          setRequestDetailId(null);
-          setLatReqDet(null);
+          router.navigate("/user/customer/home/emergencyRescue/repairRequest");
         } else {
           router.push({
             pathname: "/user/customer/home/feedback",
             params: { requestdetailid },
           });
-          setRequestDetailId(null);
-          setLatReqDet(null);
         }
+        setRequestDetailId(null);
+        onClose();
       }, 3000);
       return () => clearTimeout(timer);
     }
   }, [requestDetail?.requeststatus]);
+  
   console.log("Request Detail:", requestDetail?.requestdetailid);
   console.log("Request Status:", requestDetail?.requeststatus);
   console.log("Request ID:", requestDetail?.requestid);
@@ -226,6 +224,7 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
   };
 
   const toChatScreen = () => {
+    onClose();
     router.push({
       pathname: "/user/customer/home/chatScreen",
       params: {
