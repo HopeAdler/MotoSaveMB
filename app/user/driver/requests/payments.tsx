@@ -85,6 +85,7 @@ const PaymentDetails = () => {
       ) : unpaidPayments?.length === 0 ? (
         <Text className="text-gray-500 text-center">Không có thanh toán chưa hoàn tất.</Text>
       ) : (
+        // Render component UnpaidPayments
         <FlatList
           data={unpaidPayments}
           keyExtractor={(item) => item.paymentid}
