@@ -164,10 +164,10 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
 
   const renderProgressSteps = () => {
     const steps = [
-      { title: "Driver Accepted", status: "Accepted" },
-      { title: "Driver Arriving", status: "Pickup" },
-      { title: "On Rescue Mission", status: "Processing" },
-      { title: "Completed", status: "Done" },
+      { title: "Tài xế đã nhận", status: "Accepted" },
+      { title: "Tài xế đang đến", status: "Pickup" },
+      { title: "Đang xử lý", status: "Processing" },
+      { title: "Hoàn thành", status: "Done" },
     ];
 
     const currentStepIndex = steps.findIndex(
@@ -361,7 +361,7 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
                     </Box>
                     <Box className="ml-3">
                       <Text className="text-sm text-gray-500">
-                        Distance
+                        Khoảng cách
                       </Text>
                       <Text className="text-xl font-bold text-[#1a3148]">
                         {distance}
@@ -379,7 +379,7 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
                     </Box>
                     <Box className="ml-3">
                       <Text className="text-sm text-gray-500">
-                        Duration
+                        Thời gian
                       </Text>
                       <Text className="text-xl font-bold text-[#1a3148]">
                         {eta}
@@ -398,7 +398,7 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
                 </Box>
                 <Box className="ml-3 flex-1">
                   <Text className="text-sm text-gray-500">
-                    Pickup Location
+                    Điểm đón
                   </Text>
                   <Text className="text-base font-medium text-[#1a3148]">
                     {requestDetail?.pickuplocation}
@@ -409,11 +409,11 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
               {requestDetail?.destination && (
                 <Box className="flex-row items-center w-full">
                   <Box className="w-10 h-10 bg-[#fab753]/10 rounded-lg items-center justify-center">
-                    <AlertCircle size={20} color="#fab753" />
+                    <Navigation2 size={20} color="#fab753" />
                   </Box>
                   <Box className="ml-3 flex-1">
                     <Text className="text-sm text-gray-500">
-                      Destination
+                      Đích đến
                     </Text>
                     <Text className="text-base font-medium text-[#1a3148]">
                       {requestDetail?.destination}
@@ -432,7 +432,7 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
                 className="bg-red-50 border border-red-200 h-14 rounded-xl active:opacity-80 shadow-sm mt-5"
                 size="lg"
               >
-                <ButtonText className="text-red-600 font-bold">Cancel Ride</ButtonText>
+                <ButtonText className="text-red-600 font-bold">Huỷ chuyến</ButtonText>
               </Button>
             )}
           </Box>
@@ -455,7 +455,7 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
           
           <Box className="px-6 py-4 border-b border-gray-100">
             <Text className="text-xl font-bold text-center text-[#1a3148]">
-              Cancel Ride
+              Huỷ chuyến
             </Text>
           </Box>
           
@@ -525,10 +525,10 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
         <AlertDialogBackdrop />
         <AlertDialogContent>
           <AlertDialogHeader>
-            <Text className="text-lg font-bold text-[#1a3148]">Confirm Cancellation</Text>
+            <Text className="text-lg font-bold text-[#1a3148]">Xác nhận hủy chuyến</Text>
           </AlertDialogHeader>
           <AlertDialogBody>
-            <Text className="text-gray-600">Are you sure you want to cancel the ride?</Text>
+            <Text className="text-gray-600">Bạn có chắc là muốn hủy chuyến?</Text>
           </AlertDialogBody>
           <AlertDialogFooter>
             <Button
@@ -538,10 +538,10 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
               className="border-gray-200"
               onPress={() => setShowCancelAlert(false)}
             >
-              <ButtonText className="text-gray-700">Back</ButtonText>
+              <ButtonText className="text-gray-700">Huỷ</ButtonText>
             </Button>
             <Button size="sm" className="bg-[#fab753]" onPress={handleSubmitCancellation}>
-              <ButtonText className="text-[#1a3148] font-bold">Confirm</ButtonText>
+              <ButtonText className="text-[#1a3148] font-bold">Xác nhận</ButtonText>
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -125,7 +125,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import MapboxGL, { FillLayerStyle } from "@rnmapbox/maps";
-import { View } from "react-native";
+import { View, Pressable, Animated, StyleSheet } from "react-native";
 import { UserMarker } from "./UserMarker";
 import MyLocationButton from "./MyLocationButton";
 import { Switch } from "@/components/ui/switch";
@@ -133,6 +133,8 @@ import { Text } from "@/components/ui/text";
 import { User } from "../../app/context/formFields";
 import { HStack } from "../ui/hstack";
 import { useIsFocused } from "@react-navigation/native";
+import { ChevronLeft, ChevronRight, View as ViewIcon } from "lucide-react-native";
+
 type Users = Map<string, User>;
 
 const { EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN } = process.env;
@@ -161,9 +163,23 @@ const MapViewComponent: React.FC<MapViewComponentProps> = ({
   const cameraRef = useRef<MapboxGL.Camera>(null);
   const [is3DMode, setIs3DMode] = useState(false);
   const [hasInitialized, setHasInitialized] = useState(false);
+  const [showToggle, setShowToggle] = useState(false);
+  
+  const slideAnim = useRef(new Animated.Value(100)).current;
 
   MapboxGL.setAccessToken(EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN!);
 
+  const toggleViewPanel = () => {
+    const newShowToggle = !showToggle;
+    setShowToggle(newShowToggle);
+    
+    // Animate the panel
+    Animated.timing(slideAnim, {
+      toValue: newShowToggle ? 0 : 100, // 0 = visible, 100 = hidden
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+  };
 
   // 1) Chỉ center+zoom lần đầu khi map load xong
   const handleMapLoad = () => {
@@ -178,7 +194,6 @@ const MapViewComponent: React.FC<MapViewComponentProps> = ({
       setHasInitialized(true);
     }
   };
-
 
   const centerOnUser = () => {
     if (!cameraRef.current) return;
@@ -229,7 +244,6 @@ const MapViewComponent: React.FC<MapViewComponentProps> = ({
       cameraRef.current.setCamera({
         centerCoordinate: [currentLoc.longitude, currentLoc.latitude],
         pitch: 0,
-        // zoomLevel: 14,
         bounds: {
           ne: [currentLoc.longitude + 0.01, currentLoc.latitude + 0.01],
           sw: [currentLoc.longitude - 0.01, currentLoc.latitude - 0.01],
@@ -262,11 +276,10 @@ const MapViewComponent: React.FC<MapViewComponentProps> = ({
     }
   }, [role, is3DMode, users, userId, currentLoc]);
 
-  return (
+return (
     <View style={{ flex: 1 }}>
       <MapboxGL.MapView
         styleURL={loadMap}
-        // styleURL="mapbox://styles/mapbox/dark-v11"
         scrollEnabled={!is3DMode}
         zoomEnabled={!is3DMode}
         ref={mapRef}
@@ -275,13 +288,10 @@ const MapViewComponent: React.FC<MapViewComponentProps> = ({
         attributionEnabled={false}
         onDidFinishLoadingMap={handleMapLoad}
         compassEnabled={true}
-        compassViewMargins={{x: 0, y: 200}}
+        compassViewMargins={{x: 0, y: 180}}
         scaleBarEnabled={false}
         rotateEnabled={!is3DMode}
         pitchEnabled={!is3DMode}
-        // styleJSON={}
-        // projection="globe"
-        // surfaceView={FillLayerStyle}
       >
         <MapboxGL.Camera ref={cameraRef} />
         {Array.from(users.entries()).map(([key, u]) => (
@@ -297,10 +307,8 @@ const MapViewComponent: React.FC<MapViewComponentProps> = ({
 
       {/* MyLocationButton: luôn bật focus và center về user nếu đang 2D */}
       {!is3DMode && (
-
         <MyLocationButton
           onPress={() => {
-            // setFocusOnMe(true);
             centerOnUser();
           }}
         />
@@ -308,28 +316,91 @@ const MapViewComponent: React.FC<MapViewComponentProps> = ({
 
       {/* Toggle 2D/3D chỉ dành cho Driver */}
       {role === "Driver" && (
-        <HStack
-          space="xs"
-          className="absolute top-[50%] right-0 bg-white p-2 rounded-md items-center shadow-sm"
-          collapsable={true}
-        >
-          <Text size="sm" className="mr-2">
-            {is3DMode ? "3D View" : "2D View"}
-          </Text>
-          <Switch
-            size="md"
-            value={is3DMode}
-            onValueChange={(val) => setIs3DMode(val)}
-            thumbColor={is3DMode ? "#fab753" : "#3B82F6"}
-            trackColor={{ true: "#fab75360", false: "#3B82F6" }}
-          />
-        </HStack>
+        <>
+          <Animated.View
+            style={[
+              styles.toggleContainer,
+              {
+                transform: [
+                  {
+                    translateX: slideAnim.interpolate({
+                      inputRange: [0, 100],
+                      outputRange: [0, 120] // Set tầm output cho switch
+                    })
+                  }
+                ]
+              }
+            ]}
+          >
+            <Pressable
+              onPress={toggleViewPanel}
+              style={styles.toggleButton}
+            >
+              {showToggle ? (
+                <ChevronRight size={24} color="#1a3148" />
+              ) : (
+                <ChevronLeft size={24} color="#1a3148" />
+              )}
+            </Pressable>
+            
+            <HStack space="xs" style={styles.switchContainer} className="items-center">
+              <Text size="sm" className="mr-2 text-[#1a3148] font-medium">
+                {is3DMode ? "3D View" : "2D View"}
+              </Text>
+              <Switch
+                size="md"
+                value={is3DMode}
+                onValueChange={(val) => setIs3DMode(val)}
+                thumbColor={is3DMode ? "#fab753" : "#3B82F6"}
+                trackColor={{ true: "#fab75360", false: "#3B82F630" }}
+              />
+            </HStack>
+          </Animated.View>
+        </>
       )}
     </View>
   );
 };
 
+const styles = StyleSheet.create({
+  toggleContainer: {
+    position: 'absolute',
+    top: '15%',
+    right: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    transform: [{ translateY: -20 }],
+  },
+  toggleButton: {
+    backgroundColor: 'white',
+    borderTopLeftRadius: 8,
+    borderBottomLeftRadius: 8,
+    padding: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.22,
+    shadowRadius: 2.22,
+    elevation: 3,
+    zIndex: 2,
+  },
+  switchContainer: {
+    backgroundColor: 'white',
+    borderTopLeftRadius: 0,
+    borderBottomLeftRadius: 0,
+    borderTopRightRadius: 8,
+    borderBottomRightRadius: 8,
+    padding: 12,
+    paddingLeft: 6,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.22,
+    shadowRadius: 2.22,
+    elevation: 3,
+  }
+});
+
 export default MapViewComponent;
+
 // import React, { useEffect, useRef } from "react";
 // import MapboxGL from "@rnmapbox/maps";
 // import { View } from "react-native";
