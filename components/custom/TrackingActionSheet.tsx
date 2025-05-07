@@ -43,7 +43,7 @@ import {
   AlertDialogBody,
   AlertDialogFooter,
 } from "@/components/ui/alert-dialog";
-import { decodedToken, handlePhoneCall } from "@/app/utils/utils";
+import { decodedToken, formatMoney, handlePhoneCall } from "@/app/utils/utils";
 
 // Import interface RequestDetail từ formFields (với các interface khác được đặt trong file formFields)
 import { RequestDetail } from "@/app/context/formFields";
@@ -83,7 +83,7 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
   const [requestDetail, setRequestDetail] = useState<RequestDetail | null>(
     null
   );
-  const {setRequestId} = useContext(RequestContext);
+  const { setRequestId } = useContext(RequestContext);
   const [loading, setLoading] = useState<boolean>(true);
 
   const {
@@ -122,26 +122,24 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
 
   useEffect(() => {
     if (requestDetail?.requeststatus === "Done") {
-      console.log(requestDetail)
-      setRequestId(null)
+      console.log(requestDetail);
+      setRequestId(null);
       const timer = setTimeout(() => {
-        onClose();
         if (requestDetail?.servicepackagename === "Cứu hộ đến trạm") {
-          router.navigate("/user/customer/home/emergencyRescue/repairRequest")
-          setRequestDetailId(null);
-          setLatReqDet(null);
+          router.navigate("/user/customer/home/emergencyRescue/repairRequest");
         } else {
           router.push({
             pathname: "/user/customer/home/feedback",
             params: { requestdetailid },
           });
-          setRequestDetailId(null);
-          setLatReqDet(null);
         }
+        setRequestDetailId(null);
+        onClose();
       }, 3000);
       return () => clearTimeout(timer);
     }
   }, [requestDetail?.requeststatus]);
+
   console.log("Request Detail:", requestDetail?.requestdetailid);
   console.log("Request Status:", requestDetail?.requeststatus);
   console.log("Request ID:", requestDetail?.requestid);
@@ -204,11 +202,10 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
               </Box>
               <Box className="h-12 justify-start pt-2">
                 <Text
-                  className={`text-xs text-center px-1 ${
-                    index <= currentStepIndex
-                      ? "text-gray-900"
-                      : "text-gray-500"
-                  }`}
+                  className={`text-xs text-center px-1 ${index <= currentStepIndex
+                    ? "text-gray-900"
+                    : "text-gray-500"
+                    }`}
                   numberOfLines={2}
                 >
                   {step.title}
@@ -226,6 +223,7 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
   };
 
   const toChatScreen = () => {
+    onClose();
     router.push({
       pathname: "/user/customer/home/chatScreen",
       params: {
@@ -289,7 +287,7 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
           <ActionsheetDragIndicatorWrapper>
             <ActionsheetDragIndicator className="bg-gray-300 rounded-full w-10 h-1 mx-auto my-2" />
           </ActionsheetDragIndicatorWrapper>
-          
+
           {/* <Box className="px-6 py-4 border-b border-gray-100">
             <Text className="text-xl font-bold text-center text-[#1a3148]">
               {requestDetail?.requeststatus === "Pending"
@@ -303,15 +301,13 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
                       : "Completed"}
             </Text>
           </Box> */}
-          
+
           <Box className="p-6 space-y-4">
             <Box className="flex-row items-center w-full mb-2">
               <Avatar
                 size={80}
                 rounded
-                source={{
-                  uri: "https://pbs.twimg.com/media/GEXDdESbIAAd5Qt?format=jpg&name=large",
-                }}
+                source={{ uri: requestDetail?.driverimage }}
                 containerStyle={{ borderWidth: 2, borderColor: "#f2f2f2" }}
               />
               <Box className="ml-4 flex-1">
@@ -322,37 +318,35 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
                   {requestDetail?.brandname} {requestDetail?.licenseplate}
                 </Text>
               </Box>
-              
+
               <Box className="flex-row gap-2">
                 <Button
                   variant="solid"
                   onPress={handleCall}
-                  className={`rounded-xl h-12 w-12 items-center justify-center ${
-                    requestDetail?.requeststatus === "Done" ? "bg-gray-200" : "bg-[#1a3148]"
-                  }`}
+                  className={`rounded-xl h-12 w-12 items-center justify-center ${requestDetail?.requeststatus === "Done" ? "bg-gray-200" : "bg-[#1a3148]"
+                    }`}
                   disabled={requestDetail?.requeststatus === "Done"}
                 >
-                  <Phone 
-                    size={22} 
-                    color={requestDetail?.requeststatus === "Done" ? "#9CA3AF" : "white"} 
+                  <Phone
+                    size={22}
+                    color={requestDetail?.requeststatus === "Done" ? "#9CA3AF" : "white"}
                   />
                 </Button>
                 <Button
                   variant="solid"
                   onPress={toChatScreen}
-                  className={`rounded-xl h-12 w-12 items-center justify-center ${
-                    requestDetail?.requeststatus === "Done" ? "bg-gray-200" : "bg-[#fab753]"
-                  }`}
+                  className={`rounded-xl h-12 w-12 items-center justify-center ${requestDetail?.requeststatus === "Done" ? "bg-gray-200" : "bg-[#fab753]"
+                    }`}
                   disabled={requestDetail?.requeststatus === "Done"}
                 >
-                  <MessageSquare 
-                    size={22} 
-                    color={requestDetail?.requeststatus === "Done" ? "#9CA3AF" : "white"} 
+                  <MessageSquare
+                    size={22}
+                    color={requestDetail?.requeststatus === "Done" ? "#9CA3AF" : "white"}
                   />
                 </Button>
               </Box>
             </Box>
-            
+
             <Box className="bg-[#f8fafc] rounded-xl p-4">
               <Box className="flex-row justify-between">
                 <Box className="flex-1 items-center">
@@ -370,9 +364,9 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
                     </Box>
                   </Box>
                 </Box>
-                
+
                 <Box className="w-[1px] h-16 bg-gray-200 mx-2 self-center" />
-                
+
                 <Box className="flex-1 items-center">
                   <Box className="flex-row items-center">
                     <Box className="w-12 h-12 bg-[#1a3148]/5 rounded-xl items-center justify-center">
@@ -390,7 +384,7 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
                 </Box>
               </Box>
             </Box>
-            
+
             <Box className="bg-[#f8fafc] rounded-xl p-4 space-y-3 w-full relative">
               <Box className="absolute left-[31px] top-[60px] w-[1.5px] h-[28px] bg-black/10" />
               <Box className="flex-row items-center w-full">
@@ -406,7 +400,7 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
                   </Text>
                 </Box>
               </Box>
-              
+
               {requestDetail?.destination && (
                 <Box className="flex-row items-center w-full">
                   <Box className="w-10 h-10 bg-[#fab753]/10 rounded-lg items-center justify-center">
@@ -423,19 +417,25 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
                 </Box>
               )}
             </Box>
-            
+
             {renderProgressSteps()}
-            
+
+            {requestDetail?.totalprice &&
+              <Box className="flex-row items-center justify-center w-full">
+                <Text className="text-green-600 font-bold">Tổng tiền: {formatMoney(requestDetail?.totalprice)}</Text>
+              </Box>
+            }
+
             {(requestDetail?.requeststatus === "Accepted" ||
               requestDetail?.requeststatus === "Pickup") && (
-              <Button
-                onPress={() => setShowCancelActionsheet(true)}
-                className="bg-red-50 border border-red-200 h-14 rounded-xl active:opacity-80 shadow-sm mt-5"
-                size="lg"
-              >
-                <ButtonText className="text-red-600 font-bold">Huỷ chuyến</ButtonText>
-              </Button>
-            )}
+                <Button
+                  onPress={() => setShowCancelActionsheet(true)}
+                  className="bg-red-50 border border-red-200 h-14 rounded-xl active:opacity-80 shadow-sm mt-5"
+                  size="lg"
+                >
+                  <ButtonText className="text-red-600 font-bold">Huỷ chuyến</ButtonText>
+                </Button>
+              )}
           </Box>
         </ActionsheetContent>
       </Actionsheet>
@@ -453,13 +453,13 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
           <ActionsheetDragIndicatorWrapper>
             <ActionsheetDragIndicator className="bg-gray-300 rounded-full w-10 h-1 mx-auto my-2" />
           </ActionsheetDragIndicatorWrapper>
-          
+
           <Box className="px-6 py-4 border-b border-gray-100">
             <Text className="text-xl font-bold text-center text-[#1a3148]">
               Huỷ chuyến
             </Text>
           </Box>
-          
+
           <Box className="p-6">
             <VStack space="md">
               <FormControl isRequired>

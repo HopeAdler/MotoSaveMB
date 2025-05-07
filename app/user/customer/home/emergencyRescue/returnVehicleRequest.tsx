@@ -215,20 +215,18 @@ const ReturnVehicleRequestScreen = () => {
             <Box key={step.status} className="items-center flex-1">
               <Box className="h-8 flex items-center justify-center relative z-10">
                 <Box
-                  className={`w-8 h-8 rounded-full ${
-                    index <= currentStepIndex ? getStatusColor() : "bg-gray-200"
-                  } items-center justify-center`}
+                  className={`w-8 h-8 rounded-full ${index <= currentStepIndex ? getStatusColor() : "bg-gray-200"
+                    } items-center justify-center`}
                 >
                   <CheckCircle2 size={16} color="white" />
                 </Box>
               </Box>
               <Box className="h-12 justify-start pt-2">
                 <Text
-                  className={`text-xs text-center px-1 ${
-                    index <= currentStepIndex
-                      ? "text-gray-900"
-                      : "text-gray-500"
-                  }`}
+                  className={`text-xs text-center px-1 ${index <= currentStepIndex
+                    ? "text-gray-900"
+                    : "text-gray-500"
+                    }`}
                   numberOfLines={2}
                 >
                   {step.title}
@@ -260,12 +258,10 @@ const ReturnVehicleRequestScreen = () => {
         <Box className="bg-white rounded-2xl shadow-sm p-4 mb-4">
           <Box className="flex-row items-center w-full mb-6">
             <Avatar
-              size={80}
+              size={52}
               rounded
-              source={{
-                uri: "https://pbs.twimg.com/media/GEXDdESbIAAd5Qt?format=jpg&name=large",
-              }}
-              containerStyle={{ borderWidth: 2, borderColor: "#f2f2f2" }}
+              source={{ uri: requestDetail?.driverimage || "https://example.com/default-avatar.png" }}
+              containerStyle={{ borderWidth: 2, borderColor: 'white' }}
             />
             <Box className="ml-4">
               <Text className="text-xl font-bold">

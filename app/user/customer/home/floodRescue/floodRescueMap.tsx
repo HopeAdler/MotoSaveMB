@@ -38,7 +38,9 @@ import { decodedToken } from "@/app/utils/utils";
 import { OriginMarker } from "../../../../../components/custom/CustomMapMarker";
 import { ActionSheetToggle, BackButton, SearchInput, SearchResults } from "../../../../../components/custom/MapUIComponents";
 import MapViewComponent from "../../../../../components/custom/MapViewComponent";
-import { User } from "../../../../context/formFields";
+import { RequestDetail, User } from "../../../../context/formFields";
+import { useLatReqDetStore } from "@/app/hooks/useLatReqDetStore";
+import axios from "axios";
 const { EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN } = process.env;
 MapboxGL.setAccessToken(`${EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN}`);
 const INITIAL_RADIUS = 5000; // 5 km
@@ -58,6 +60,10 @@ const FloodRescueMapScreen = () => {
   const { PayZaloBridge } = NativeModules;
   const userId = decodedToken(token)?.id;
   // Các state chính
+  const {
+    latestRequestDetail,
+  } = useLatReqDetStore();
+
   const [focusOnMe, setFocusOnMe] = useState<boolean>(true);
   const currentLoc = useSmoothedLocation();
 
@@ -85,7 +91,7 @@ const FloodRescueMapScreen = () => {
     []
   );
   const [directionsInfo, setDirectionsInfo] = useState<any>(null);
-  const [fare, setFare] = useState<number >(0);
+  const [fare, setFare] = useState<number>(0);
   // const [fareLoading, setFareLoading] = useState<boolean>(false);
   const [paymentLoading, setPaymentLoading] = useState<boolean>(false);
   const [originSelected, setOriginSelected] = useState(false);
@@ -256,6 +262,21 @@ const FloodRescueMapScreen = () => {
     } catch (error) {
       console.error("Error creating request:", error);
     }
+  };
+
+  const fetchRequestDetail = async (reqDetID: string) => {
+    const response = await axios.get<RequestDetail>(
+      `https://motor-save-be.vercel.app/api/v1/requests/driver/${reqDetID}`,
+      { headers: { Authorization: "Bearer " + token } }
+    );
+    setOriginCoordinates({
+      longitude: response.data?.pickuplong || 0,
+      latitude: response.data?.pickuplat || 0
+    });
+    setOriginQuery(response.data?.pickuplocation);
+    setOriginSelected(true);
+    setAcceptedDriverId(response.data?.driverid)
+    console.log("Fetching request detail...");
   };
 
   const handlePayment = async () => {
@@ -629,6 +650,14 @@ const FloodRescueMapScreen = () => {
     };
   }, []);
   useEffect(() => {
+    if (latestRequestDetail &&
+      latestRequestDetail?.requeststatus !== "Done" &&
+      latestRequestDetail?.requeststatus !== "Cancel") {
+      setRequestDetailId(latestRequestDetail?.requestdetailid)
+      fetchRequestDetail(latestRequestDetail?.requestdetailid)
+      setShowTracking(true);
+      setRequestActive(true);
+    }
     hereNow();
   }, []);
 
@@ -691,24 +720,24 @@ const FloodRescueMapScreen = () => {
 
       {/* Header: Search input & results */}
       <Box className="absolute top-0 left-0 w-full z-10 p-4 pt-16">
-      {!requestActive && (
-        <>      
-          <SearchInput
-            value={originQuery}
-            onChangeText={handleOriginChange}
-            placeholder="Vui lòng nhập điểm đón"
-            onClear={() => setOriginQuery("")}
-          />
-          <SearchResults
-            data={originResults}
-            onSelectItem={(item) => {
-              setOriginQuery(item.description);
-              handleFetchLocation(item.description, true);
-            }}
-            visible={originResults.length > 0 && !originSelected}
-          />
-        </>
-      )}
+        {!requestActive && (
+          <>
+            <SearchInput
+              value={originQuery}
+              onChangeText={handleOriginChange}
+              placeholder="Vui lòng nhập điểm đón"
+              onClear={() => setOriginQuery("")}
+            />
+            <SearchResults
+              data={originResults}
+              onSelectItem={(item) => {
+                setOriginQuery(item.description);
+                handleFetchLocation(item.description, true);
+              }}
+              visible={originResults.length > 0 && !originSelected}
+            />
+          </>
+        )}
       </Box>
 
       {/* Map view */}
@@ -724,7 +753,7 @@ const FloodRescueMapScreen = () => {
           {originCoordinates.latitude !== 0 && (
             <MapboxGL.Camera
               ref={camera}
-              // centerCoordinate={[originCoordinates.longitude, originCoordinates.latitude]}
+            // centerCoordinate={[originCoordinates.longitude, originCoordinates.latitude]}
             />
           )}
           {currentLoc.latitude !== 0 && (
@@ -786,17 +815,39 @@ const FloodRescueMapScreen = () => {
       )}
 
       {/* Tracking action sheet */}
-      {showTracking && requestDetailId && acceptedReqDetId && acceptedReqDetStatus !== "Pending" && (
-        <TrackingActionSheet
-          isOpen={showTracking}
-          onClose={() => setShowTracking(false)}
-          requestDetailIdState={[requestDetailId, setRequestDetailId]}
-          eta={directionsInfo?.duration?.text}
-          distance={directionsInfo?.distance?.text}
-          driverId={acceptedDriverId}
-          setAcceptedReqDetStatus={setAcceptedReqDetStatus}
-        />
-      )}
+      {(latestRequestDetail &&
+        latestRequestDetail?.requeststatus !== "Done" &&
+        latestRequestDetail?.requeststatus !== "Cancel") ?
+        <>
+          {requestDetailId && (
+            <TrackingActionSheet
+              isOpen={showTracking}
+              onClose={() => setShowTracking(false)}
+              // requestdetailid={requestDetailId}
+              eta={directionsInfo?.duration?.text}
+              distance={directionsInfo?.distance?.text}
+              driverId={null}
+              setAcceptedReqDetStatus={setAcceptedReqDetStatus}
+              requestDetailIdState={[requestDetailId, setRequestDetailId]}
+            />
+          )}
+        </>
+        :
+        <>
+          {showTracking && requestDetailId && acceptedReqDetId && acceptedReqDetStatus !== "Pending" && (
+            <TrackingActionSheet
+              isOpen={showTracking}
+              onClose={() => setShowTracking(false)}
+              // requestdetailid={requestDetailId}
+              eta={directionsInfo?.duration?.text}
+              distance={directionsInfo?.distance?.text}
+              driverId={acceptedDriverId}
+              setAcceptedReqDetStatus={setAcceptedReqDetStatus}
+              requestDetailIdState={[requestDetailId, setRequestDetailId]}
+            />
+          )}
+        </>
+      }
 
       {/* Action sheet toggle buttons */}
       {!showActionsheet && currentLoc.latitude != 0 && (
@@ -811,6 +862,14 @@ const FloodRescueMapScreen = () => {
           visible={true}
         />
       )}
+      {(latestRequestDetail &&
+        latestRequestDetail?.requeststatus !== "Done" &&
+        latestRequestDetail?.requeststatus !== "Cancel") &&
+        <ActionSheetToggle
+          onPress={() => setShowTracking(true)}
+          visible={true}
+        />
+      }
     </Box>
   );
 
