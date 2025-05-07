@@ -44,7 +44,7 @@ import axios from "axios";
 const { EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN } = process.env;
 MapboxGL.setAccessToken(`${EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN}`);
 const INITIAL_RADIUS = 1000; // 5 km
-const MAX_RADIUS = 5000; // 5 km
+const MAX_RADIUS = 50000; // 5 km
 // Các hằng số cảnh báo khoảng cách (đơn vị mét)
 const MAX_WARN_PICKUP_DISTANCE = 500; // 500m cho điểm đón
 const MAX_WARN_DESTINATION_DISTANCE = 10000; // 10 km cho điểm đến
@@ -276,6 +276,7 @@ const FloodRescueMapScreen = () => {
     setOriginQuery(response.data?.pickuplocation);
     setOriginSelected(true);
     setAcceptedDriverId(response.data?.driverid)
+   
     console.log("Fetching request detail...");
   };
 
@@ -384,8 +385,8 @@ const FloodRescueMapScreen = () => {
         reqId
       );
       Alert.alert(
-        "No drivers available",
-        "No drivers available in search radius"
+        "Vui lòng thử lại sau.",
+        "Hiện không có tài xế trong phạm vi phục vụ."
       );
 
       // Đặt UI state
@@ -661,12 +662,79 @@ const FloodRescueMapScreen = () => {
     hereNow();
   }, []);
 
+  // useEffect(() => {
+  //   if (acceptedDriverId && users.size > 0) {
+  //     if (
+  //       (latestRequestDetail &&
+  //         latestRequestDetail?.requeststatus !== "Done" &&
+  //         latestRequestDetail?.requeststatus !== "Cancel")
+  //     ) {
+  //       if (originSelected && originCoordinates.latitude) {
+  //         const originStr = `${originCoordinates.latitude},${originCoordinates.longitude}`;
+  //         const driverLoc = `${users.get(acceptedDriverId)?.latitude},${users.get(acceptedDriverId)?.longitude}`;
+  //         console.log("Calculating direction..");
+  //         getDirections(originStr, driverLoc)
+  //           .then((data) => {
+  //             if (data.routes && data.routes.length > 0) {
+  //               const encodedPolyline = data.routes[0].overview_polyline.points;
+  //               const decoded = decodePolyline(encodedPolyline);
+  //               setRouteCoordinates(decoded);
+  //               if (data.routes[0].legs && data.routes[0].legs.length > 0) {
+  //                 setDirectionsInfo(data.routes[0].legs[0]);
+  //               }
+  //             } else {
+  //               console.log("No routes found:", data);
+  //             }
+  //           })
+  //           .catch((error) => console.error("Error fetching directions:", error));
+  //       }
+  //     }
+  //   }
+  // }, [originCoordinates, originSelected]);
+
+
+  // useEffect(() => {
+  //   if (acceptedDriverId && users.size > 0) {
+  //     if (
+  //       (latestRequestDetail &&
+  //         latestRequestDetail?.requeststatus !== "Done" &&
+  //         latestRequestDetail?.requeststatus !== "Cancel")
+  //     ) {
+  //       if (originSelected && originCoordinates.latitude) {
+  //         const originStr = `${originCoordinates.latitude},${originCoordinates.longitude}`;
+  //         const driverLoc = `${users.get(acceptedDriverId)?.latitude},${users.get(acceptedDriverId)?.longitude}`;
+  //         console.log("adsadadsasd"+acceptedDriverId)
+  //         console.log("Calculating direction..");
+  //         getDirections(originStr, driverLoc)
+  //           .then((data) => {
+  //             if (data.routes && data.routes.length > 0) {
+  //               const encodedPolyline = data.routes[0].overview_polyline.points;
+  //               const decoded = decodePolyline(encodedPolyline);
+  //               setRouteCoordinates(decoded);
+  //               if (data.routes[0].legs && data.routes[0].legs.length > 0) {
+  //                 setDirectionsInfo(data.routes[0].legs[0]);
+  //               }
+  //             } else {
+  //               console.log("No routes found:", data);
+  //             }
+  //           })
+  //           .catch((error) => console.error("Error fetching directions:", error));
+  //       }
+  //     }
+  //   }
+  // }, [originCoordinates, originSelected]);
+
+
   //Fetching route based on driver progress:
   const fetchRoute = () => {
+   
     if (acceptedDriverId && users.size > 0) {
+     
       if (originSelected && originCoordinates.latitude) {
         const driverLoc = `${users.get(acceptedDriverId)?.latitude},${users.get(acceptedDriverId)?.longitude}`;
         const originStr = `${originCoordinates.latitude},${originCoordinates.longitude}`;
+        console.log("adsadadsasd"+acceptedDriverId)
+        console.log("driver:"+driverLoc);
         let startStr = "";
         let endStr = "";
 
@@ -708,7 +776,9 @@ const FloodRescueMapScreen = () => {
   };
   useEffect(() => {
     fetchRoute();
+    console.log("adsadadsasdasdasdasd                    "+fetchRoute());
   }, [currentLoc, acceptedReqDetStatus]);
+
   return (
     <Box className="flex-1">
       {/* Back button */}
@@ -778,15 +848,19 @@ const FloodRescueMapScreen = () => {
           {routeCoordinates.length > 0 && (
             <MapboxGL.ShapeSource
               id="routeSource"
+              lineMetrics={true}
               shape={{
                 type: "Feature",
                 geometry: { type: "LineString", coordinates: routeCoordinates },
                 properties: {},
+
               }}
             >
               <MapboxGL.LineLayer
                 id="routeLine"
-                style={{ lineColor: "#ff0000", lineWidth: 4 }}
+                style={{
+                  lineColor: "#fab753", lineWidth: 3, lineOpacity: 0.8
+                }}
               />
             </MapboxGL.ShapeSource>
           )}
@@ -794,7 +868,7 @@ const FloodRescueMapScreen = () => {
       </Box>
 
       {/* Trip details action sheet */}
-      {showActionsheet && !acceptedReqDetId && (
+      {requestActive || (showActionsheet && !acceptedReqDetId) && (
         <TripDetailsActionSheet
           isOpen={showActionsheet}
           onClose={() => setShowActionsheet(false)}

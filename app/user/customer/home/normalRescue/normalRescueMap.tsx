@@ -26,7 +26,7 @@ import axios from "axios";
 const { EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN } = process.env;
 MapboxGL.setAccessToken(`${EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN}`);
 const INITIAL_RADIUS = 5000; // 5 km
-const MAX_RADIUS = 15000;    // 15 km
+const MAX_RADIUS = 150000;    // 15 km
 // Các hằng số cảnh báo khoảng cách (đơn vị mét)
 const MAX_WARN_PICKUP_DISTANCE = 500;       // 500m cho điểm đón
 const MAX_WARN_DESTINATION_DISTANCE = 10000;   // 10 km cho điểm đến
@@ -205,7 +205,7 @@ const RescueMapScreen = () => {
 
   // Lấy đường đi và tính toán cước
   useEffect(() => {
-    if (acceptedDriverId === null || 
+    if (acceptedDriverId === null ||
       ((latestRequestDetail &&
         latestRequestDetail?.requeststatus !== "Done" &&
         latestRequestDetail?.requeststatus !== "Cancel"))
@@ -451,7 +451,11 @@ const RescueMapScreen = () => {
     // Nếu vượt quá bán kính tối đa, dừng tìm kiếm và kích hoạt hủy
     if (radius > MAX_RADIUS) {
       console.log(`Đã vượt quá bán kính tối đa ${MAX_RADIUS}. Dừng tìm kiếm với reqId:`, reqId);
-      Alert.alert("No drivers available", "No drivers available in search radius");
+      Alert.alert(
+        "Vui lòng thử lại sau.",
+        "Hiện không có tài xế trong phạm vi phục vụ."
+      );
+
 
       // Đặt UI state
       isSearchingRef.current = false;
@@ -705,9 +709,15 @@ const RescueMapScreen = () => {
     setOriginSelected(true);
     setDestinationSelected(true);
     setAcceptedDriverId(response.data?.driverid)
+    setAcceptedReqDetStatus(response.data?.requeststatus);
     console.log("Fetching request detail...");
   };
 
+  useEffect(() => {
+
+    hereNow();
+    fetchServicePackage();
+  }, []);
   useEffect(() => {
     if (latestRequestDetail &&
       latestRequestDetail?.requeststatus !== "Done" &&
@@ -717,10 +727,9 @@ const RescueMapScreen = () => {
       setShowTracking(true);
       setRequestActive(true);
     }
-    hereNow();
-    fetchServicePackage();
-  }, []);
+  
 
+  }, [latestRequestDetail]);
   return (
     <Box className="flex-1">
       {/* Back button */}
