@@ -19,6 +19,7 @@ import { getStatusColor } from "@/components/custom/StatusBadge";
 import { formatDate } from "@/app/utils/utils";
 import { handlePhoneCall, decodedToken } from "@/app/utils/utils";
 import { GoBackButton } from "@/components/custom/GoBackButton";
+import { Avatar } from "react-native-elements";
 
 interface RequestDetail {
   customername: string;
@@ -41,6 +42,7 @@ interface RequestDetail {
   servicepackagename: string;
   drivername: string | null;
   driverphone: string | null;
+  driverimage: string | null;
   licenseplate: string | null;
   brandname: string | null;
   vehicletype: string | null;
@@ -222,15 +224,11 @@ export default function RequestDetailsScreen() {
                 <Box className="space-y-4">
                   <Box className="flex-row items-center">
                     <Box className="w-16 h-16 rounded-full overflow-hidden border-2 border-gray-100">
-                      <Image
-                        source={{
-                          uri: fallbackImage
-                            ? "https://example.com/default-avatar.png"
-                            : "https://pbs.twimg.com/media/GEXDdESbIAAd5Qt?format=jpg&name=large",
-                        }}
-                        className="w-full h-full"
-                        resizeMode="cover"
-                        onError={handleImageError}
+                      <Avatar
+                        size={52}
+                        rounded
+                        source={{ uri: requestDetail?.driverimage || "https://example.com/default-avatar.png" }}
+                        containerStyle={{ borderWidth: 2, borderColor: 'white' }}
                       />
                     </Box>
                     <Box className="ml-4 flex-1">
@@ -278,19 +276,19 @@ export default function RequestDetailsScreen() {
               </Text> */}
               <Box className="space-y-4">
                 {requestDetail.requesttype !== "Sửa xe" && (
-                <Box className="flex-row items-center">
-                  <Box className="w-10 h-10 rounded-xl bg-[#1a3148]/5 items-center justify-center">
-                    <MapPin size={20} color="#1a3148" />
+                  <Box className="flex-row items-center">
+                    <Box className="w-10 h-10 rounded-xl bg-[#1a3148]/5 items-center justify-center">
+                      <MapPin size={20} color="#1a3148" />
+                    </Box>
+                    <Box className="ml-3 flex-1">
+                      <Text className="text-sm text-gray-500">
+                        Điểm đón
+                      </Text>
+                      <Text className="text-base text-[#1a3148]">
+                        {requestDetail.pickuplocation}
+                      </Text>
+                    </Box>
                   </Box>
-                  <Box className="ml-3 flex-1">
-                    <Text className="text-sm text-gray-500">
-                      Điểm đón
-                    </Text>
-                    <Text className="text-base text-[#1a3148]">
-                      {requestDetail.pickuplocation}
-                    </Text>
-                  </Box>
-                </Box>
                 )}
 
                 {requestDetail.destination && (

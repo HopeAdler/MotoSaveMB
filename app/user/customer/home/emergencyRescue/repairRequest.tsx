@@ -78,6 +78,7 @@ import {
   AlertDialogHeader,
 } from "@/components/ui/alert-dialog";
 import { Divider } from "@/components/ui/divider";
+import { Avatar } from "react-native-elements";
 
 const RepairRequestScreen = () => {
   const { PayZaloBridge } = NativeModules;
@@ -240,7 +241,7 @@ const RepairRequestScreen = () => {
   useEffect(() => {
     if (directionsInfo) {
       const distanceValue = directionsInfo.distance?.value || 0;
-      calculateFare(distanceValue,1,0)
+      calculateFare(distanceValue, 1, 0)
         .then((money) => {
           setReturnFare(money);
           console.log("Set fare success");
@@ -453,20 +454,18 @@ const RepairRequestScreen = () => {
             <Box key={step.status} className="items-center flex-1">
               <Box className="h-8 flex items-center justify-center relative z-10">
                 <Box
-                  className={`w-8 h-8 rounded-full ${
-                    index <= currentStepIndex ? getStatusColor() : "bg-gray-200"
-                  } items-center justify-center`}
+                  className={`w-8 h-8 rounded-full ${index <= currentStepIndex ? getStatusColor() : "bg-gray-200"
+                    } items-center justify-center`}
                 >
                   <CheckCircle2 size={16} color="white" />
                 </Box>
               </Box>
               <Box className="h-12 justify-start pt-2">
                 <Text
-                  className={`text-xs text-center px-1 ${
-                    index <= currentStepIndex
-                      ? "text-gray-900"
-                      : "text-gray-500"
-                  }`}
+                  className={`text-xs text-center px-1 ${index <= currentStepIndex
+                    ? "text-gray-900"
+                    : "text-gray-500"
+                    }`}
                   numberOfLines={2}
                 >
                   {step.title}
@@ -500,7 +499,12 @@ const RepairRequestScreen = () => {
             Thông tin thợ sửa xe
           </Text>
           <Box className="flex-row items-center">
-            <User size={20} color="#6B7280" />
+            <Avatar
+              size={52}
+              rounded
+              source={{ uri: requestDetail?.mechanicavatar || "https://example.com/default-avatar.png" }}
+              containerStyle={{ borderWidth: 2, borderColor: 'white' }}
+            />
             <Box className="ml-3">
               <Text className="text-sm text-gray-500">Họ và tên</Text>
               <Text className="text-base text-gray-900">
