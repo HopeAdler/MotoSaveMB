@@ -48,10 +48,10 @@ MapboxGL.setAccessToken(`${EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN}`);
 
 // Các hằng số
 const INITIAL_RADIUS = 5000; // 5 km
-const MAX_RADIUS = 20000; // 20 km
-const MAX_WARN_PICKUP_DISTANCE = 2000; // 2 km cho điểm đón
-const MAX_WARN_DESTINATION_DISTANCE = 50000; // 50 km cho điểm đến
-const SERVICE_STATION_RADIUS = 20000; // 20 km phạm vi phục vụ
+const MAX_RADIUS = 15000; // 15 km
+const MAX_WARN_PICKUP_DISTANCE = 500; // 500m cho điểm đón
+const MAX_WARN_DESTINATION_DISTANCE = 10000; // 10 km cho điểm đến
+const SERVICE_STATION_RADIUS = 10000; // 10 km phạm vi phục vụ
 
 const EmergencyRescueMapScreen = () => {
   const {

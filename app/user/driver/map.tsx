@@ -138,16 +138,19 @@ const GenMap: React.FC = () => {
       ) {
         switch (requestDetail?.servicepackagename) {
           case "Cứu hộ đến trạm":
-            createRepairRequest(requestDetail?.requestid, token);
+            createRepairRequest(requestDetail?.requestid, token); 
             break;
           case "Cứu hộ nước ngập":
             changePaymentTotal();
             break;
+          }
+          router.push({
+            pathname: "/user/driver/requests/requestMap",
+            params: { requestdetailid: curReqDetId },
+          })
         }
       }
       return;
-    }
-    console.error("curReqDetId is undefined");
   };
 
   const changePaymentTotal = async () => {
@@ -478,8 +481,10 @@ const GenMap: React.FC = () => {
                   <ActionsheetDragIndicator className="bg-gray-300" />
                 </ActionsheetDragIndicatorWrapper>
 
-                {loading ? (
-                  <ActivityIndicator size="large" color="#fab753" />
+                {!requestDetail?.servicepackagename ? (
+                    <Box className="flex items-center justify-center h-2/5">
+                      <ActivityIndicator size="large" color="#fab753" />
+                    </Box>
                 ) : (
                   <Box className="space-y-4 px-4 w-full">
                     <Box className="flex-row items-center justify-between w-full">
@@ -640,9 +645,9 @@ const GenMap: React.FC = () => {
           }
         </>
       )}
-      {requestDetail?.requestid && requestDetail?.requeststatus === "Done" && unpaidPayments.length > 0 &&
+      {/* {requestDetail?.requestid && requestDetail?.requeststatus === "Done" && unpaidPayments.length > 0 &&
         <UnpaidPaymentList requestId={requestDetail?.requestid} />
-      }
+      } */}
     </Box>
   );
 };
