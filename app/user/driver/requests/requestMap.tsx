@@ -21,9 +21,9 @@ import { Text } from "@/components/ui/text";
 import MapboxGL from "@rnmapbox/maps";
 import axios from "axios";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { AlertCircle, Clock, CreditCard, MapPin, MapPinCheckInsideIcon, MessageSquare, Navigation2, Phone } from "lucide-react-native";
+import { AlertCircle, Clock, CreditCard, MapPin, MapPinCheckInsideIcon, MessageSquare, Navigation2, Phone, ChevronLeft } from "lucide-react-native";
 import React, { useContext, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, TouchableOpacity } from "react-native";
+import { ActivityIndicator, TouchableOpacity, Pressable } from "react-native";
 import Icon from "react-native-vector-icons/Feather";
 
 type User = {
@@ -343,7 +343,14 @@ const RequestMap: React.FC = () => {
   }, [requestDetail?.requeststatus]);
   return (
     <Box className="flex-1">
-      <GoBackButton />
+      <Box className="absolute top-4 left-4 z-20">
+        <Pressable
+          onPress={() => router.navigate('/user/driver/requests/request')}
+          className="w-10 h-10 bg-white rounded-full items-center justify-center shadow-sm"
+        >
+          <ChevronLeft size={24} color="#374151" />
+        </Pressable>
+      </Box>
       {loading ? (
         <ActivityIndicator size="large" color="#fab753" />
       ) : requestDetail?.requeststatus === "Done" ? (
