@@ -134,23 +134,24 @@ const GenMap: React.FC = () => {
       if (
         result &&
         requestDetail?.requeststatus === "Processing" &&
-        requestDetail?.requesttype === "Cứu hộ"
+        (requestDetail?.requesttype === "Cứu hộ" ||
+          requestDetail?.requesttype === "Trả xe")
       ) {
         switch (requestDetail?.servicepackagename) {
           case "Cứu hộ đến trạm":
-            createRepairRequest(requestDetail?.requestid, token); 
+            createRepairRequest(requestDetail?.requestid, token);
             break;
           case "Cứu hộ nước ngập":
             changePaymentTotal();
             break;
-          }
-          router.push({
-            pathname: "/user/driver/requests/requestMap",
-            params: { requestdetailid: curReqDetId },
-          })
         }
+        router.push({
+          pathname: "/user/driver/requests/requestMap",
+          params: { requestdetailid: curReqDetId },
+        })
       }
-      return;
+    }
+    return;
   };
 
   const changePaymentTotal = async () => {
@@ -339,7 +340,7 @@ const GenMap: React.FC = () => {
         coords: currentLoc
       } as TripAction);
     }
-    if (requestDetail.requeststatus === 'Done'|| requestDetail.requeststatus === 'Cancel') {
+    if (requestDetail.requeststatus === 'Done' || requestDetail.requeststatus === 'Cancel') {
       dispatch({ type: 'END' } as TripAction);
     }
   }, [requestDetail, currentLoc]);
@@ -404,12 +405,12 @@ const GenMap: React.FC = () => {
             // driverHeading={users.get(userId ?? '')?.heading || 0}
             // user={users.get(userId ?? '')?.heading || 0}
             userId={users.get(userId ?? '')?.uuid || ''}
-            // driverHeading={users.get(userId ?? '')?.heading || 0}
-            
+          // driverHeading={users.get(userId ?? '')?.heading || 0}
+
           >
 
 
-            
+
             {!focusOnMe &&
               requestDetail?.requeststatus === "Pickup" &&
               originCoordinates.latitude !== 0 && (
@@ -482,9 +483,9 @@ const GenMap: React.FC = () => {
                 </ActionsheetDragIndicatorWrapper>
 
                 {!requestDetail?.servicepackagename ? (
-                    <Box className="flex items-center justify-center h-2/5">
-                      <ActivityIndicator size="large" color="#fab753" />
-                    </Box>
+                  <Box className="flex items-center justify-center h-2/5">
+                    <ActivityIndicator size="large" color="#fab753" />
+                  </Box>
                 ) : (
                   <Box className="space-y-4 px-4 w-full">
                     <Box className="flex-row items-center justify-between w-full">
