@@ -1,30 +1,40 @@
-import React, { useState } from "react";
-import axios from "axios";
-import { useRouter } from "expo-router";
+import { registerForm } from "@/app/context/formFields";
+import {
+  translateFieldName,
+  validateField
+} from "@/app/utils/utils";
 import { Box } from "@/components/ui/box";
-import { Text } from "@/components/ui/text";
 import { Button } from "@/components/ui/button";
-import { Input, InputField } from "@/components/ui/input";
 import {
   FormControl,
   FormControlError,
   FormControlErrorText,
 } from "@/components/ui/form-control";
-import {
-  validateField,
-  handleBlurField,
-  translateFieldName,
-} from "@/app/utils/utils";
-import { registerForm } from "@/app/context/formFields";
+import { Input, InputField } from "@/components/ui/input";
+import { Text } from "@/components/ui/text";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { Check, Lock, Phone, User, UserPlus } from "lucide-react-native";
+import React, { useEffect, useRef, useState } from "react";
 import { Image } from "react-native";
-import { UserPlus, Lock, User, Phone, Check } from "lucide-react-native";
+import { checkFieldAvailability } from "../services/beAPI";
 
 export default function RegisterScreen() {
   const router = useRouter();
+  const { serverError } = useLocalSearchParams<{ serverError?: string }>();
 
   const [form, setForm] = useState(registerForm);
   const [errors, setErrors] = useState<any>({});
   const [touched, setTouched] = useState<any>({});
+  const debounceTimers = useRef<{ [key: string]: NodeJS.Timeout }>({});
+  // true if any field has an error string or is still blank
+  const hasErrors = Object
+    .keys(form)
+    .some(key => {
+      const k = key as keyof typeof form;
+      // you might also want to treat empty values as “error”:
+      return !!errors[k] || form[k].trim() === "";
+    });
+
 
   const getIcon = (field: string) => {
     switch (field) {
@@ -50,99 +60,82 @@ export default function RegisterScreen() {
     // handleBlurField(field, form, setTouched, setErrors);
   };
 
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      Object.values(debounceTimers.current).forEach(clearTimeout);
+    };
+  }, []);
+
   const handleChange = (field: string, value: string) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
+    // 1) update form
+    setForm(prev => ({ ...prev, [field]: value }));
 
+    // 2) if already touched, run your sync validation
     if (touched[field]) {
-      const updatedForm = { ...form, [field]: value };
-      const error = validateField(field, value);
-      setErrors((prev: any) => ({ ...prev, [field]: error }));
+      const syncError = validateField(field, value, form);
+      setErrors((prev: Record<string, string>) => ({ ...prev, [field]: syncError }));
 
-      if (field === "password" && touched.confirmPassword) {
+      // special case: re‑validate confirmPassword whenever password changes
+      if (field === 'password' && touched.confirmPassword) {
         const confirmError = validateField(
-          "confirmPassword",
-          updatedForm.confirmPassword,
-          updatedForm
+          'confirmPassword',
+          form.confirmPassword,
+          { ...form, password: value }
         );
-        setErrors((prev: any) => ({
+        setErrors((prev: Record<string, string>) => ({ ...prev, confirmPassword: confirmError }));
+      }
+    }
+
+    // 3) if field is username or phone, debounce an availability check
+    if (field === 'username' || field === 'phone') {
+      // clear any existing timer
+      if (debounceTimers.current[field]) {
+        clearTimeout(debounceTimers.current[field]);
+      }
+
+      // set a new debounce
+      debounceTimers.current[field] = setTimeout(async () => {
+        const { available, message } = await checkFieldAvailability(field, value);
+
+        // only show an error if unavailable
+        setErrors((prev: Record<string, string>) => ({
           ...prev,
-          confirmPassword: confirmError,
-        }))
-      }
+          [field]: available ? prev[field] : message
+        }));
+      }, 600);
     }
   };
 
-  const handleSubmit = async () => {
-    const newErrors: any = {};
-    Object.keys(form).forEach((field) => {
-      const error = validateField(
-        field,
-        form[field as keyof typeof form],
-        form
-      );
-      if (error) newErrors[field] = error;
+
+  useEffect(() => {
+    if (serverError) {
+      setErrors((prev: any) => ({ ...prev, server: serverError }));
+      // clear it from URL so it doesn’t persist on reload:
+      router.replace({ pathname: "/auth/register", params: {} });
+    }
+  }, [serverError]);
+
+  const handleRegisterPress = () => {
+    // 1. run blur/validation on every field
+    Object.keys(form).forEach((f) => handleBlur(f));
+
+    // 2. if there are errors, don’t navigate
+    const hasErrors = Object
+      .keys(form)
+      .some((k) => errors[k] || form[k as keyof typeof form].trim() === "");
+    if (hasErrors) return;
+
+    // 3. navigate to OTP, passing every form field as a string param
+    router.push({
+      pathname: "/auth/otp",
+      params: {
+        username: form.username,
+        password: form.password,
+        fullName: form.fullName,
+        phone: form.phone,
+      },
     });
-
-    if (Object.keys(newErrors).length) {
-      setErrors(newErrors);
-      setTouched(
-        Object.keys(form).reduce(
-          (acc, field) => ({
-            ...acc,
-            [field]: true,
-          }),
-          {}
-        )
-      );
-      return;
-    }
-
-    const { confirmPassword, ...payload } = form;
-
-    try {
-      const response = await axios.post(
-        "https://motor-save-be.vercel.app/api/v1/auth/register",
-        payload,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (response.status === 201) {
-        router.navigate("/auth/login");
-      } else if (response.status === 400) {
-        const errorData = response.data;
-        setErrors({ server: errorData.message });
-      } else if (response.status === 404) {
-        const errorData = response.data;
-        setErrors({ server: errorData.message });
-      } else {
-        const errorData = response.data;
-        setErrors({ server: errorData.message });
-      }
-    } catch (error: any) {
-      if (error.response) {
-        setErrors({ server: error.response.data.message });
-      } else if (error.request) {
-        setErrors({ server: "Không thể kết nối đến máy chủ." });
-      } else {
-        setErrors({ server: "Đã xảy ra lỗi. Vui lòng thử lại sau." });
-      }
-    }
-  };
-
-  const handleOTPSend = async () => {
-    const { phone } = form;
-    try {
-      router.push({
-        pathname: "/auth/otp",
-        params: { phoneNumber: phone },
-      });
-    } catch (error) {
-      setErrors({ server: "Gửi OTP không thành công." });
-    }
   };
   return (
     <Box className="flex-1 bg-[#f8fafc]">
@@ -180,8 +173,8 @@ export default function RegisterScreen() {
                     secureTextEntry={field === "password" || field === "confirmPassword"}
                     keyboardType={field === "phone" ? "numeric" : "default"}
                     className={`w-full bg-gray-50 h-[52px] pl-14 rounded-xl ${errors[field]
-                        ? "border-red-500 border-2"
-                        : "border border-gray-200"
+                      ? "border-red-500 border-2"
+                      : "border border-gray-200"
                       }`}
                     style={{
                       fontSize: 16,
@@ -214,19 +207,24 @@ export default function RegisterScreen() {
           )}
 
           <Button
-            onPress={handleSubmit}
-            className="h-14 rounded-xl bg-[#fab753] mt-2 shadow-sm shadow-[#fab753]/20"
+            onPress={handleRegisterPress}
+            disabled={hasErrors}
+            className={`
+    h-14 rounded-xl 
+    mt-2 shadow-sm 
+    ${hasErrors
+                ? "bg-gray-400 shadow-none"    // disabled style
+                : "bg-[#fab753] shadow-[#fab753]/20"  // normal style
+              }
+  `}
           >
-            <Box className="flex-row items-center">
-              <Text className="text-white font-bold text-lg">Đăng ký</Text>
-            </Box>
-          </Button>
-          <Button
-            onPress={handleOTPSend}
-            className="h-14 rounded-xl bg-[#fab753] mt-2 shadow-sm shadow-[#fab753]/20"
-          >
-            <Box className="flex-row items-center">
-              <Text className="text-white font-bold text-lg">TestOTP</Text>
+            <Box className="flex-row items-center justify-center">
+              <Text
+                className={`text-lg font-bold ${hasErrors ? "text-gray-200" : "text-white"
+                  }`}
+              >
+                Đăng ký
+              </Text>
             </Box>
           </Button>
 

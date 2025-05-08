@@ -25,7 +25,7 @@ import { useLatReqDetStore } from "@/app/hooks/useLatReqDetStore";
 import axios from "axios";
 const { EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN } = process.env;
 MapboxGL.setAccessToken(`${EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN}`);
-const INITIAL_RADIUS = 5000; // 5 km
+const INITIAL_RADIUS = 17000; // 5 km
 const MAX_RADIUS = 150000;    // 15 km
 // Các hằng số cảnh báo khoảng cách (đơn vị mét)
 const MAX_WARN_PICKUP_DISTANCE = 500;       // 500m cho điểm đón
@@ -239,19 +239,22 @@ const RescueMapScreen = () => {
 
   //Fetching route based on driver progress:
   const fetchRoute = () => {
-    if (acceptedDriverId && users.size > 0) {
+    console.log('one')
+    if (acceptedDriverId) {
+      console.log('two')
       if (
         originSelected &&
         destinationSelected &&
         originCoordinates.latitude &&
         destinationCoordinates.latitude
       ) {
+        console.log('three')
         const driverLoc = `${users.get(acceptedDriverId)?.latitude},${users.get(acceptedDriverId)?.longitude}`;
         const originStr = `${originCoordinates.latitude},${originCoordinates.longitude}`;
         const destinationStr = `${destinationCoordinates.latitude},${destinationCoordinates.longitude}`;
         let startStr = "";
         let endStr = "";
-
+        
         if (acceptedReqDetStatus === 'Done') return setRouteCoordinates([]);
         switch (acceptedReqDetStatus) {
           case "Accepted":
@@ -290,7 +293,7 @@ const RescueMapScreen = () => {
   };
   useEffect(() => {
     fetchRoute();
-  }, [currentLoc, acceptedReqDetStatus]);
+  }, [currentLoc, acceptedReqDetStatus, acceptedDriverId]);
 
   useEffect(() => {
     if (directionsInfo && !acceptedDriverId && !showActionsheet && servicePackage) {
@@ -728,7 +731,6 @@ const RescueMapScreen = () => {
       setRequestActive(true);
     }
   
-
   }, [latestRequestDetail]);
   return (
     <Box className="flex-1">

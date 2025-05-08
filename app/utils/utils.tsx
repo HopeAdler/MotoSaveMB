@@ -61,12 +61,12 @@ export const validateField = (field: string, value: string, formData?:any): stri
       if (value !== formData?.password) return "Mật khẩu không khớp.";
       return "";
 
-    case "phone":
-      if (value.length < 10) {
-        return "Số điện thoại phải là 10 chữ số";
-      }
-      break;
-    case "userName":
+      case "phone":
+        if (!/^0\d{9}$/.test(value)) {
+          return "Số điện thoại phải gồm 10 chữ số và bắt đầu bằng số 0";
+        }
+        break;
+      
     case "identifier":
       // Giả sử identifier có thể là username hoặc phone, nếu bạn cần kiểm tra dạng khác, có thể tùy chỉnh
       if (value.length < 6) {

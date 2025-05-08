@@ -680,6 +680,39 @@ export async function getServicePackageByName(serPacName: string): Promise<any> 
   }
 }
 
+export async function checkFieldAvailability(
+  fieldName: string,
+  fieldValue: string
+): Promise<{ available: boolean; message: string }> {
+  try {
+    const response = await axios.get(
+      `https://motor-save-be.vercel.app/api/v1/auth/check-field`,
+      {
+        params: { fieldName, fieldValue },
+      }
+    );
+
+    return {
+      available: true,
+      message: response.data.message, // e.g., "username có thể sử dụng"
+    };
+  } catch (error: any) {
+    if (axios.isAxiosError(error) && error.response) {
+      if (error.response.status === 409) {
+        return {
+          available: false,
+          message: error.response.data.message, // e.g., "username đã tồn tại"
+        };
+      }
+    }
+
+    return {
+      available: false,
+      message: 'Không thể kiểm tra. Vui lòng thử lại sau.',
+    };
+  }
+}
+
 export const updateRequestVehicle = async (requestid: string | any, vehicleId: string | any, token: string) => {
   try {
     const response = await axios.put(
