@@ -1,6 +1,6 @@
 // src/utils/fareCal.ts
-import {getDistance} from 'geolib';
-
+import { getDistance } from 'geolib';
+import { roundToThousand } from './utils';
 export type LatLng = { latitude: number; longitude: number };
 export type TripAction =
     | { type: 'START'; timestamp: number; coords: LatLng }
@@ -71,6 +71,7 @@ export function tripReducer(
             const newDistance = state.distance + (moved ? d : 0);
             const newWaiting = state.waiting + (moved ? 0 : dt);
             const newFare = calculateFare(newDistance, newWaiting);
+            const roundedFare = roundToThousand(newFare);
 
             return {
                 status: 'running',
@@ -78,7 +79,8 @@ export function tripReducer(
                 lastCoords: action.coords,
                 distance: newDistance,
                 waiting: newWaiting,
-                fare: newFare,
+                // fare: newFare,
+                fare: roundedFare
             };
 
         case 'END':

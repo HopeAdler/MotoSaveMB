@@ -44,7 +44,7 @@ import axios from "axios";
 const { EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN } = process.env;
 MapboxGL.setAccessToken(`${EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN}`);
 const INITIAL_RADIUS = 1000; // 5 km
-const MAX_RADIUS = 50000; // 5 km
+const MAX_RADIUS = 5000; // 5 km
 // Các hằng số cảnh báo khoảng cách (đơn vị mét)
 const MAX_WARN_PICKUP_DISTANCE = 500; // 500m cho điểm đón
 const MAX_WARN_DESTINATION_DISTANCE = 10000; // 10 km cho điểm đến
@@ -91,7 +91,7 @@ const FloodRescueMapScreen = () => {
     []
   );
   const [directionsInfo, setDirectionsInfo] = useState<any>(null);
-  const [fare, setFare] = useState<number>(0);
+  const [fare] = useState<number>(0);
   // const [fareLoading, setFareLoading] = useState<boolean>(false);
   const [paymentLoading, setPaymentLoading] = useState<boolean>(false);
   const [originSelected, setOriginSelected] = useState(false);
@@ -104,8 +104,8 @@ const FloodRescueMapScreen = () => {
   // const [countdown, setCountdown] = useState(10);
   const [zpTransId, setZpTransId] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState(false);
-  const [isCancel, setIsCancel] = useState(false);
-  const [sentDriverIds, setSentDriverIds] = useState<Set<string>>(new Set());
+  // const [isCancel, setIsCancel] = useState(false);
+  // const [sentDriverIds, setSentDriverIds] = useState<Set<string>>(new Set());
   const [acceptedReqDetId, setAcceptedReqDetId] = useState<string>();
   const [acceptedReqDetStatus, setAcceptedReqDetStatus] =
     useState<string>("Pending");
@@ -276,7 +276,7 @@ const FloodRescueMapScreen = () => {
     setOriginQuery(response.data?.pickuplocation);
     setOriginSelected(true);
     setAcceptedDriverId(response.data?.driverid)
-   
+    setAcceptedReqDetStatus(response.data?.requeststatus);
     console.log("Fetching request detail...");
   };
 
@@ -726,23 +726,73 @@ const FloodRescueMapScreen = () => {
 
 
   //Fetching route based on driver progress:
+  // const fetchRoute = () => {
+
+  //   if (acceptedDriverId && users.size > 0) {
+
+  //     if (originSelected && originCoordinates.latitude) {
+  //       const driverLoc = `${users.get(acceptedDriverId)?.latitude},${users.get(acceptedDriverId)?.longitude}`;
+  //       const originStr = `${originCoordinates.latitude},${originCoordinates.longitude}`;
+  //       // console.log("adsadadsasd"+acceptedDriverId)
+  //       // console.log("driver:"+driverLoc);
+  //       let startStr = "";
+  //       let endStr = "";
+
+  //       if (acceptedReqDetStatus === "Done") return setRouteCoordinates([]);
+  //       switch (acceptedReqDetStatus) {
+  //         case "Accepted":
+  //           startStr = originStr;
+  //           endStr = originStr;
+  //           break;
+  //         case "Pickup":
+  //           startStr = driverLoc;
+  //           endStr = originStr;
+  //           break;
+  //         case "Processing":
+  //           startStr = driverLoc;
+  //           endStr = originStr;
+  //           break;
+  //       }
+
+  //       getDirections(startStr, endStr)
+  //         .then((data: any) => {
+  //           if (data.routes && data.routes.length > 0) {
+  //             const encodedPolyline = data.routes[0].overview_polyline.points;
+  //             const decoded = decodePolyline(encodedPolyline);
+  //             setRouteCoordinates(decoded);
+  //             if (data.routes[0].legs && data.routes[0].legs.length > 0) {
+  //               setDirectionsInfo(data.routes[0].legs[0]);
+  //               console.log("Switching route...");
+  //             }
+  //           } else {
+  //             console.log("No routes found:", data);
+  //           }
+  //         })
+  //         .catch((error: any) =>
+  //           console.error("Error fetching directions:", error)
+  //         );
+  //     }
+  //   }
+  // };
   const fetchRoute = () => {
-   
-    if (acceptedDriverId && users.size > 0) {
-     
-      if (originSelected && originCoordinates.latitude) {
+    console.log('one')
+    if (acceptedDriverId) {
+      console.log('two')
+      if (
+        originSelected &&
+        originCoordinates.latitude
+      ) {
+        console.log('three')
         const driverLoc = `${users.get(acceptedDriverId)?.latitude},${users.get(acceptedDriverId)?.longitude}`;
         const originStr = `${originCoordinates.latitude},${originCoordinates.longitude}`;
-        console.log("adsadadsasd"+acceptedDriverId)
-        console.log("driver:"+driverLoc);
         let startStr = "";
         let endStr = "";
 
-        if (acceptedReqDetStatus === "Done") return setRouteCoordinates([]);
+        if (acceptedReqDetStatus === 'Done') return setRouteCoordinates([]);
         switch (acceptedReqDetStatus) {
           case "Accepted":
             startStr = originStr;
-            endStr = originStr;
+            endStr = driverLoc;
             break;
           case "Pickup":
             startStr = driverLoc;
@@ -750,7 +800,7 @@ const FloodRescueMapScreen = () => {
             break;
           case "Processing":
             startStr = driverLoc;
-            endStr = originStr;
+            endStr = driverLoc;
             break;
         }
 
@@ -774,11 +824,15 @@ const FloodRescueMapScreen = () => {
       }
     }
   };
+
+  // useEffect(() => {
+  //   fetchRoute();
+  //   console.log("adsadadsasdasdasdasd                    "+fetchRoute());
+  // }, [currentLoc, acceptedReqDetStatus]);
+
   useEffect(() => {
     fetchRoute();
-    console.log("adsadadsasdasdasdasd                    "+fetchRoute());
-  }, [currentLoc, acceptedReqDetStatus]);
-
+  }, [currentLoc, acceptedReqDetStatus, acceptedDriverId]);
   return (
     <Box className="flex-1">
       {/* Back button */}

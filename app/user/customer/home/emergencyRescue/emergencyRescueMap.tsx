@@ -41,7 +41,8 @@ import {
 import { ActionSheetToggle, BackButton, SearchInput, SearchResults } from "../../../../../components/custom/MapUIComponents";
 import MapViewComponent from "../../../../../components/custom/MapViewComponent";
 import VehicleAlertDialog from "../../../../../components/custom/VehicleAlertDialog";
-import { User } from "../../../../context/formFields";
+import { RequestDetail, User } from "../../../../context/formFields";
+import axios from "axios";
 
 const { EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN } = process.env;
 MapboxGL.setAccessToken(`${EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN}`);
@@ -55,7 +56,7 @@ const SERVICE_STATION_RADIUS = 10000; // 10 km phạm vi phục vụ
 
 const EmergencyRescueMapScreen = () => {
   const {
-    publishLocation,
+    // publishLocation,
     publishRescueRequest,
     subscribeToChannel,
     subscribeToRescueChannel,
@@ -125,6 +126,7 @@ const EmergencyRescueMapScreen = () => {
 
   // State để lưu station đã chọn (ID)
   const [selectedStationId, setSelectedStationId] = useState<string>("");
+  const [selectedStationAddress, setSelectedStationAddress]= useState<string>("");
   // State để lưu vehicle id đã chọn
   const [selectedVehicleId, setSelectedVehicleId] = useState<string>("");
   // State để lưu danh sách station (fetch qua beAPI)
@@ -192,6 +194,32 @@ const EmergencyRescueMapScreen = () => {
     }
   }, [currentLoc, stations, destinationCoordinates]);
 
+// Fetch latest request detail
+  const fetchRequestDetail = async (reqDetID: string) => {
+    const response = await axios.get<RequestDetail>(
+      `https://motor-save-be.vercel.app/api/v1/requests/driver/${reqDetID}`,
+      { headers: { Authorization: "Bearer " + token } }
+    );
+    setOriginCoordinates({
+      longitude: response.data?.pickuplong || 0,
+      latitude: response.data?.pickuplat || 0
+    });
+    setDestinationCoordinates({
+      longitude: response.data?.deslng || 0,
+      latitude: response.data?.deslat || 0
+    });
+    setOriginQuery(response.data?.pickuplocation);
+    // setStationQuery(response.data?.destination);
+    setSelectedStationAddress(response.data?.destination);
+    setOriginSelected(true);
+    // setDestinationSelected(true);
+    setAcceptedDriverId(response.data?.driverid)
+    setAcceptedReqDetStatus(response.data?.requeststatus);
+    console.log("Fetching request detail...");
+  };
+
+
+
   // Xử lý khi người dùng chọn điểm đón (origin)
   const handleFetchOriginLocation = async (address: string) => {
     const result = await geocodeAddress(address);
@@ -244,6 +272,7 @@ const EmergencyRescueMapScreen = () => {
   useEffect(() => {
     if (
       originSelected &&
+      selectedStationAddress &&
       destinationCoordinates.latitude !== 0 &&
       originCoordinates.latitude !== 0
     ) {
@@ -267,58 +296,115 @@ const EmergencyRescueMapScreen = () => {
   }, [originCoordinates, destinationCoordinates, originSelected]);
 
   //Fetching route based on driver progress:
-  const fetchRoute = () => {
-    if (acceptedDriverId && users.size > 0) {
-      if (
-        originSelected &&
-        originCoordinates.latitude &&
-        destinationCoordinates.latitude
-      ) {
-        const driverLoc = `${users.get(acceptedDriverId)?.latitude},${users.get(acceptedDriverId)?.longitude}`;
-        const originStr = `${originCoordinates.latitude},${originCoordinates.longitude}`;
-        const destinationStr = `${destinationCoordinates.latitude},${destinationCoordinates.longitude}`;
-        let startStr = "";
-        let endStr = "";
+  // const fetchRoute = () => {
+  //   if (acceptedDriverId && users.size > 0) {
+  //     if (
+  //       originSelected &&
+  //       originCoordinates.latitude &&
+  //       destinationCoordinates.latitude
+  //     ) {
+  //       const driverLoc = `${users.get(acceptedDriverId)?.latitude},${users.get(acceptedDriverId)?.longitude}`;
+  //       const originStr = `${originCoordinates.latitude},${originCoordinates.longitude}`;
+  //       const destinationStr = `${destinationCoordinates.latitude},${destinationCoordinates.longitude}`;
+  //       let startStr = "";
+  //       let endStr = "";
 
-        if (acceptedReqDetStatus === 'Done') return setRouteCoordinates([]);
-        switch (acceptedReqDetStatus) {
-          case "Accepted":
-            startStr = originStr;
-            endStr = destinationStr;
-            break;
-          case "Pickup":
-            startStr = driverLoc;
-            endStr = originStr;
-            break;
-          case "Processing":
-            startStr = driverLoc;
-            endStr = destinationStr;
-            break;
-        }
+  //       if (acceptedReqDetStatus === 'Done') return setRouteCoordinates([]);
+  //       switch (acceptedReqDetStatus) {
+  //         case "Accepted":
+  //           startStr = originStr;
+  //           endStr = destinationStr;
+  //           break;
+  //         case "Pickup":
+  //           startStr = driverLoc;
+  //           endStr = originStr;
+  //           break;
+  //         case "Processing":
+  //           startStr = driverLoc;
+  //           endStr = destinationStr;
+  //           break;
+  //       }
 
-        getDirections(startStr, endStr)
-          .then((data: any) => {
-            if (data.routes && data.routes.length > 0) {
-              const encodedPolyline = data.routes[0].overview_polyline.points;
-              const decoded = decodePolyline(encodedPolyline);
-              setRouteCoordinates(decoded);
-              if (data.routes[0].legs && data.routes[0].legs.length > 0) {
-                setDirectionsInfo(data.routes[0].legs[0]);
-                console.log("Switching route...");
+  //       getDirections(startStr, endStr)
+  //         .then((data: any) => {
+  //           if (data.routes && data.routes.length > 0) {
+  //             const encodedPolyline = data.routes[0].overview_polyline.points;
+  //             const decoded = decodePolyline(encodedPolyline);
+  //             setRouteCoordinates(decoded);
+  //             if (data.routes[0].legs && data.routes[0].legs.length > 0) {
+  //               setDirectionsInfo(data.routes[0].legs[0]);
+  //               console.log("Switching route...");
+  //             }
+  //           } else {
+  //             console.log("No routes found:", data);
+  //           }
+  //         })
+  //         .catch((error: any) =>
+  //           console.error("Error fetching directions:", error)
+  //         );
+  //     }
+  //   }
+  // };
+   const fetchRoute = () => {
+      console.log('one')
+      if (acceptedDriverId) {
+        console.log('two')
+        if (
+          originSelected &&
+          selectedStationAddress &&
+          // destinationSelected &&
+          originCoordinates.latitude &&
+          destinationCoordinates.latitude
+        ) {
+          console.log('three')
+          const driverLoc = `${users.get(acceptedDriverId)?.latitude},${users.get(acceptedDriverId)?.longitude}`;
+          const originStr = `${originCoordinates.latitude},${originCoordinates.longitude}`;
+          const destinationStr = `${destinationCoordinates.latitude},${destinationCoordinates.longitude}`;
+          let startStr = "";
+          let endStr = "";
+          
+          if (acceptedReqDetStatus === 'Done') return setRouteCoordinates([]);
+          switch (acceptedReqDetStatus) {
+            case "Accepted":
+              startStr = originStr;
+              endStr = destinationStr;
+              break;
+            case "Pickup":
+              startStr = driverLoc;
+              endStr = originStr;
+              break;
+            case "Processing":
+              startStr = driverLoc;
+              endStr = destinationStr;
+              break;
+          }
+  
+          getDirections(startStr, endStr)
+            .then((data: any) => {
+              if (data.routes && data.routes.length > 0) {
+                const encodedPolyline = data.routes[0].overview_polyline.points;
+                const decoded = decodePolyline(encodedPolyline);
+                setRouteCoordinates(decoded);
+                if (data.routes[0].legs && data.routes[0].legs.length > 0) {
+                  setDirectionsInfo(data.routes[0].legs[0]);
+                  console.log("Switching route...");
+                }
+              } else {
+                console.log("No routes found:", data);
               }
-            } else {
-              console.log("No routes found:", data);
-            }
-          })
-          .catch((error: any) =>
-            console.error("Error fetching directions:", error)
-          );
+            })
+            .catch((error: any) =>
+              console.error("Error fetching directions:", error)
+            );
+        }
       }
-    }
-  };
-  useEffect(() => {
-    fetchRoute();
-  }, [currentLoc, acceptedReqDetStatus]);
+    };
+  // useEffect(() => {
+  //   fetchRoute();
+  // }, [currentLoc, acceptedReqDetStatus]);
+   useEffect(() => {
+      fetchRoute();
+    }, [currentLoc, acceptedReqDetStatus, acceptedDriverId]);
   // Tính toán cước phí khi có thông tin đường đi
   useEffect(() => {
     if (directionsInfo && !showActionsheet && servicePackage) {

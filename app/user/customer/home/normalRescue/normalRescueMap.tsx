@@ -25,8 +25,8 @@ import { useLatReqDetStore } from "@/app/hooks/useLatReqDetStore";
 import axios from "axios";
 const { EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN } = process.env;
 MapboxGL.setAccessToken(`${EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN}`);
-const INITIAL_RADIUS = 17000; // 5 km
-const MAX_RADIUS = 150000;    // 15 km
+const INITIAL_RADIUS = 5000; // 5 km
+const MAX_RADIUS = 15000;    // 15 km
 // Các hằng số cảnh báo khoảng cách (đơn vị mét)
 const MAX_WARN_PICKUP_DISTANCE = 500;       // 500m cho điểm đón
 const MAX_WARN_DESTINATION_DISTANCE = 10000;   // 10 km cho điểm đến
@@ -84,12 +84,12 @@ const RescueMapScreen = () => {
   // const [countdown, setCountdown] = useState(10);
   const [zpTransId, setZpTransId] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState(false);
-  const [isCancel, setIsCancel] = useState(false);
-  const [sentDriverIds, setSentDriverIds] = useState<Set<string>>(new Set());
+  // const [isCancel, setIsCancel] = useState(false);
+  // const [sentDriverIds, setSentDriverIds] = useState<Set<string>>(new Set());
   const [acceptedReqDetId, setAcceptedReqDetId] = useState<string>();
   const [acceptedReqDetStatus, setAcceptedReqDetStatus] = useState<string>('Pending');
   // Flag đánh dấu nếu có driver chấp nhận request
-  const [driverAccepted, setDriverAccepted] = useState(false);
+  // const [driverAccepted, setDriverAccepted] = useState(false);
   const attemptedDriversRef = useRef<Set<string>>(new Set());
   //For initializing chat
   const {
@@ -400,7 +400,7 @@ const RescueMapScreen = () => {
             if (transactionResponse) {
               isSearchingRef.current = true;
               setIsSearching(true);
-              setDriverAccepted(false);
+              // setDriverAccepted(false);
               sendRideRequestToDrivers(INITIAL_RADIUS, reqId);
             }
             console.log("Transaction created:", transactionResponse);
@@ -558,7 +558,7 @@ const RescueMapScreen = () => {
     // Đặt trạng thái tìm kiếm
     isSearchingRef.current = true;
     setIsSearching(true);
-    setDriverAccepted(false);
+    // setDriverAccepted(false);
 
     // Truyền reqId trực tiếp vào hàm tìm kiếm
     sendRideRequestToDrivers(INITIAL_RADIUS, reqId);
