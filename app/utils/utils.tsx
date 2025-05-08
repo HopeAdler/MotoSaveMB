@@ -146,6 +146,11 @@ export const handlePhoneCall = async (phoneNumber: string | undefined) => {
   }
 };
 
+export function roundToThousand(value: number): number {
+  // Math.ceil làm tròn lên. Floor là xuống
+  return Math.ceil(value / 1000) * 1000;
+}
+
 export const formatDate = (dateString: string) => {
   const date = new Date(dateString);
   return date.toLocaleDateString('en-GB', {
