@@ -53,6 +53,18 @@ export const usePubNubService = () => {
     });
   };
 
+  const publishCancelRescueForCust = (requestDetailId: string, reason: string): Promise<any> => {
+    return pubnub.publish({
+      channel: "rescue-service",
+      message: {
+        senderRole: "Customer",
+        requestDetailId,
+        reqStatus: 'Cancel',
+        reason,
+      },
+    });
+  };
+
   const subscribeToChannel = (user: User, messageCallback: (msg: any) => void, presenceCallback?: (event: any) => void) => {
     pubnub.subscribe({ channels: ["global"], withPresence: true });
 
@@ -170,6 +182,7 @@ export const usePubNubService = () => {
     publishLocation,
     publishRescueRequest,
     publishAcceptRequest,
+    publishCancelRescueForCust,
     subscribeToChannel,
     subscribeToRescueChannel,
     hereNow,

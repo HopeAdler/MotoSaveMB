@@ -52,6 +52,7 @@ import { cancelRequest } from "@/app/services/beAPI";
 import axios from "axios";
 import { RequestContext } from "@/app/context/RequestContext";
 import { useLatReqDetStore } from "@/app/hooks/useLatReqDetStore";
+import { usePubNubService } from "@/app/services/pubnubService";
 const cancelReasons = [
   "Driver delayed",
   "Driver behavior not acceptable",
@@ -88,8 +89,10 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
 
   const {
     latestRequestDetail,
-    setLatReqDet,
   } = useLatReqDetStore();
+  const {
+    publishCancelRescueForCust,
+  } = usePubNubService();
 
   // State cho cancellation actionsheet và alert confirmation
   const [showCancelActionsheet, setShowCancelActionsheet] = useState(false);
@@ -254,6 +257,7 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
         token,
         reasonToSend
       );
+      if (response) await publishCancelRescueForCust(requestdetailid,reasonToSend);
       console.log("Cancel response:", response);
       Alert.alert("Ride has been cancelled", response.message);
       onClose();
