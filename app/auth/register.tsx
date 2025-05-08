@@ -1,23 +1,21 @@
-import React, { useEffect, useRef, useState } from "react";
-import axios from "axios";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { registerForm } from "@/app/context/formFields";
+import {
+  translateFieldName,
+  validateField
+} from "@/app/utils/utils";
 import { Box } from "@/components/ui/box";
-import { Text } from "@/components/ui/text";
 import { Button } from "@/components/ui/button";
-import { Input, InputField } from "@/components/ui/input";
 import {
   FormControl,
   FormControlError,
   FormControlErrorText,
 } from "@/components/ui/form-control";
-import {
-  validateField,
-  handleBlurField,
-  translateFieldName,
-} from "@/app/utils/utils";
-import { registerForm } from "@/app/context/formFields";
+import { Input, InputField } from "@/components/ui/input";
+import { Text } from "@/components/ui/text";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { Check, Lock, Phone, User, UserPlus } from "lucide-react-native";
+import React, { useEffect, useRef, useState } from "react";
 import { Image } from "react-native";
-import { UserPlus, Lock, User, Phone, Check } from "lucide-react-native";
 import { checkFieldAvailability } from "../services/beAPI";
 
 export default function RegisterScreen() {
