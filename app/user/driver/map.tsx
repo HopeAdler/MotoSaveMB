@@ -1,4 +1,5 @@
 import { AuthContext } from "@/app/context/AuthContext";
+import { DriverRescueRequestDetail } from "@/app/context/formFields";
 import { useCurrentLocStore } from "@/app/hooks/currentLocStore";
 import { useUsersStore } from "@/app/hooks/usersStore";
 import { createRepairRequest, fetchRescueRequestDetail, getUndoneRequestDetailIds, getUnpaidPaymentsByRequestId, updatePaymentTotal, updateRequestStatus } from "@/app/services/beAPI";
@@ -21,12 +22,10 @@ import MapboxGL from "@rnmapbox/maps";
 import { useRouter } from "expo-router";
 import { AlertCircle, Clock, CreditCard, MapPin, MapPinCheckInsideIcon, MessageSquare, Navigation2, Phone } from "lucide-react-native";
 import React, { useContext, useEffect, useReducer, useRef, useState } from "react";
-import { ActivityIndicator, TouchableOpacity } from "react-native";
+import { ActivityIndicator, Alert, TouchableOpacity } from "react-native";
 import Icon from "react-native-vector-icons/Feather";
 import { TripAction, tripReducer, TripState } from "../../utils/fareCal";
-import { DriverRescueRequestDetail } from "@/app/context/formFields";
-import { User } from "@pubnub/chat";
-import { UnpaidPaymentList } from "@/components/custom/UnpaidPayments";
+import { usePubNubService } from "@/app/services/pubnubService";
 
 interface UnpaidPayments {
   paymentid: string;
@@ -80,6 +79,10 @@ const GenMap: React.FC = () => {
   const {
     users,
   } = useUsersStore();
+
+  const {
+    subscribeToRescueChannel,
+  } = usePubNubService();
 
   const [trip, dispatch] = useReducer(tripReducer, initialTrip);
 
@@ -382,6 +385,22 @@ const GenMap: React.FC = () => {
       },
     });
   };
+
+  useEffect(() => {
+    //Listen to cancel request event from customer
+    subscribeToRescueChannel((msg: any) => {
+      if (
+        msg.message.senderRole === "Customer" &&
+        msg.message.requestDetailId === curReqDetId &&
+        msg.message.reqStatus === "Cancel"
+      ) {
+        Alert.alert(`Khách hàng đã hủy yêu cầu cứu hộ, lý do: ${msg.message.reason} `)
+      }
+    });
+
+    return () => {
+    };
+  }, []);
 
   return (
     <Box className="flex-1">
