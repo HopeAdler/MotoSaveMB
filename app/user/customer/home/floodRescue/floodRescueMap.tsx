@@ -43,7 +43,7 @@ import { useLatReqDetStore } from "@/app/hooks/useLatReqDetStore";
 import axios from "axios";
 const { EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN } = process.env;
 MapboxGL.setAccessToken(`${EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN}`);
-const INITIAL_RADIUS = 1000; // 5 km
+const INITIAL_RADIUS = 1000; // 1 km
 const MAX_RADIUS = 5000; // 5 km
 // Các hằng số cảnh báo khoảng cách (đơn vị mét)
 const MAX_WARN_PICKUP_DISTANCE = 500; // 500m cho điểm đón

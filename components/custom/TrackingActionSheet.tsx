@@ -34,7 +34,7 @@ import {
 } from "@/components/ui/form-control";
 import { Input, InputField } from "@/components/ui/input";
 import { VStack } from "@/components/ui/vstack";
-import { Radio, RadioGroup, RadioLabel } from "@/components/ui/radio";
+import { Radio, RadioGroup, RadioIcon, RadioIndicator, RadioLabel } from "@/components/ui/radio";
 import {
   AlertDialog,
   AlertDialogBackdrop,
@@ -52,6 +52,8 @@ import { cancelRequest } from "@/app/services/beAPI";
 import axios from "axios";
 import { RequestContext } from "@/app/context/RequestContext";
 import { useLatReqDetStore } from "@/app/hooks/useLatReqDetStore";
+import { CircleIcon } from "../ui/icon";
+import { usePubNubService } from "@/app/services/pubnubService";
 const cancelReasons = [
   "Driver delayed",
   "Driver behavior not acceptable",
@@ -88,8 +90,10 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
 
   const {
     latestRequestDetail,
-    setLatReqDet,
   } = useLatReqDetStore();
+  const {
+    publishCancelRescueForCust,
+  } = usePubNubService();
 
   // State cho cancellation actionsheet và alert confirmation
   const [showCancelActionsheet, setShowCancelActionsheet] = useState(false);
@@ -254,6 +258,7 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
         token,
         reasonToSend
       );
+      if (response) await publishCancelRescueForCust(requestdetailid,reasonToSend);
       console.log("Cancel response:", response);
       Alert.alert("Ride has been cancelled", response.message);
       onClose();
@@ -477,6 +482,9 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
                 >
                   {cancelReasons.map((reason) => (
                     <Radio key={reason} value={reason}>
+                      <RadioIndicator>
+                        <RadioIcon as={CircleIcon} />
+                      </RadioIndicator>
                       <RadioLabel className="text-[#1a3148]">{reason}</RadioLabel>
                     </Radio>
                   ))}

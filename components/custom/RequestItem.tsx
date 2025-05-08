@@ -96,19 +96,21 @@ export const renderItem = ({
                 // Wait for acceptRequest to complete and return a result
                 const result = await acceptRequest(item.requestdetailid, token);
                 // If there is a valid result, proceed to publishAcceptRequest
+                await publishAcceptRequest(item.requestdetailid);
                 if (result && item.requesttype !== "Trả xe") {
                   try {
-                    await publishAcceptRequest(item.requestdetailid);
                     Alert.alert("Success", "Đã chấp nhận yêu cầu cứu hộ!");
                     router.push({
-                      pathname: "/user/driver/map"})
+                      pathname: "/user/driver/map"
+                    })
                   } catch (pubnubError) {
                     Alert.alert("Warning", "Request accepted, but notification failed");
                   }
                 } else {
                   Alert.alert("Success", "Đã chấp nhận yêu cầu trả xe!");
                   router.push({
-                    pathname: "/user/driver/map"})
+                    pathname: "/user/driver/map"
+                  })
                 }
               } catch (apiError: any) {
                 Alert.alert("Error", apiError.message);
