@@ -13,13 +13,17 @@ import {
   CreditCard,
   MessageSquare,
   Navigation2,
+  Settings,
+  Wrench,
+  DollarSign,
 } from "lucide-react-native";
 import { Pressable } from "@/components/ui/pressable";
 import { getStatusColor } from "@/components/custom/StatusBadge";
-import { formatDate } from "@/app/utils/utils";
+import { formatDate, formatMoney } from "@/app/utils/utils";
 import { handlePhoneCall, decodedToken } from "@/app/utils/utils";
 import { GoBackButton } from "@/components/custom/GoBackButton";
 import { Avatar } from "react-native-elements";
+import { RepairQuote } from "@/app/context/formFields";
 
 interface RequestDetail {
   customername: string;
@@ -104,6 +108,8 @@ export default function RequestDetailsScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [fallbackImage, setFallbackImage] = useState(false);
+  const [repairQuotes, setRepairQuotes] = useState<RepairQuote[]>([]);
+  const [repairQuotesLoading, setRepairQuotesLoading] = useState<boolean>(true);
   const router = useRouter();
 
   const fetchRequestDetail = useCallback(async () => {
@@ -120,6 +126,27 @@ export default function RequestDetailsScreen() {
       setLoading(false);
     }
   }, [requestdetailid, token]);
+
+  const fetchRepairQuotes = useCallback(async () => {
+    if (
+      !requestDetail?.requestdetailid ||
+      requestDetail?.requesttype !== "Sửa xe"
+    )
+      return;
+
+    setRepairQuotesLoading(true);
+    try {
+      const response = await axios.get<RepairQuote[]>(
+        `https://motor-save-be.vercel.app/api/v1/repairquotes/requestdetail/${requestDetail.requestdetailid}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setRepairQuotes(response.data);
+    } catch (error) {
+      console.error("Error fetching repair quotes:", error);
+    } finally {
+      setRepairQuotesLoading(false); // Set loading state to false after fetching
+    }
+  }, [requestDetail?.requestdetailid, requestDetail?.requesttype, token]);
 
   // const handleCallDriver = useCallback(() => {
   //   if (requestDetail?.driverphone) {
@@ -154,6 +181,12 @@ export default function RequestDetailsScreen() {
   useEffect(() => {
     fetchRequestDetail();
   }, [fetchRequestDetail]);
+
+  useEffect(() => {
+    if (requestDetail && requestDetail.requesttype === "Sửa xe") {
+      fetchRepairQuotes();
+    }
+  }, [fetchRepairQuotes, requestDetail]);
 
   if (loading) {
     return <LoadingSkeleton />;
@@ -219,7 +252,9 @@ export default function RequestDetailsScreen() {
             <Box className="bg-white rounded-2xl shadow-sm overflow-hidden mb-4 border border-gray-100/50">
               <Box className="p-4">
                 <Text className="text-lg font-semibold text-[#1a3148] mb-4">
-                  {requestDetail.requesttype === "Sửa xe" ? "Thợ sửa" : "Tài xế"}
+                  {requestDetail.requesttype === "Sửa xe"
+                    ? "Thợ sửa"
+                    : "Tài xế"}
                 </Text>
                 <Box className="space-y-4">
                   <Box className="flex-row items-center">
@@ -227,8 +262,15 @@ export default function RequestDetailsScreen() {
                       <Avatar
                         size={52}
                         rounded
-                        source={{ uri: requestDetail?.driverimage || "https://example.com/default-avatar.png" }}
-                        containerStyle={{ borderWidth: 2, borderColor: 'white' }}
+                        source={{
+                          uri:
+                            requestDetail?.driverimage ||
+                            "https://example.com/default-avatar.png",
+                        }}
+                        containerStyle={{
+                          borderWidth: 2,
+                          borderColor: "white",
+                        }}
                       />
                     </Box>
                     <Box className="ml-4 flex-1">
@@ -244,7 +286,7 @@ export default function RequestDetailsScreen() {
                   <Box className="flex-row space-x-3 mt-2 pt-4 border-t border-gray-100">
                     <Pressable
                       onPress={handleCall}
-                      className={`flex-1 flex-row items-center justify-center bg-[#1a3148]/5 p-3 rounded-xl active:opacity-80 ${isRequestDone ? 'opacity-50' : ''}`}
+                      className={`flex-1 flex-row items-center justify-center bg-[#1a3148]/5 p-3 rounded-xl active:opacity-80 ${isRequestDone ? "opacity-50" : ""}`}
                       disabled={isRequestDone}
                     >
                       <Phone size={20} color="#1a3148" />
@@ -255,7 +297,7 @@ export default function RequestDetailsScreen() {
 
                     <Pressable
                       onPress={handleChat}
-                      className={`flex-1 flex-row items-center justify-center bg-[#fab753]/10 p-3 rounded-xl active:opacity-80 ${isRequestDone ? 'opacity-50' : ''}`}
+                      className={`flex-1 flex-row items-center justify-center bg-[#fab753]/10 p-3 rounded-xl active:opacity-80 ${isRequestDone ? "opacity-50" : ""}`}
                       disabled={isRequestDone}
                     >
                       <MessageSquare size={20} color="#fab753" />
@@ -281,9 +323,7 @@ export default function RequestDetailsScreen() {
                       <MapPin size={20} color="#1a3148" />
                     </Box>
                     <Box className="ml-3 flex-1">
-                      <Text className="text-sm text-gray-500">
-                        Điểm đón
-                      </Text>
+                      <Text className="text-sm text-gray-500">Điểm đón</Text>
                       <Text className="text-base text-[#1a3148]">
                         {requestDetail.pickuplocation}
                       </Text>
@@ -305,7 +345,179 @@ export default function RequestDetailsScreen() {
                   </Box>
                 )}
 
-                <Box className="flex-row items-center">
+                {requestDetail.requesttype === "Sửa xe" && (
+                  <Box className="flex-row items-center">
+                    <Box className="w-10 h-10 rounded-xl bg-[#1a3148]/10 items-center justify-center">
+                      <Wrench size={20} color="#1a3148" />
+                    </Box>
+                    <Box className="ml-2 flex-1">
+                      <Text className="text-sm text-gray-500">
+                        Loại dịch vụ sửa chữa
+                      </Text>
+                      <Box className="mt-1">
+                        {repairQuotesLoading ? (
+                          <Box className="bg-[#f8fafc] rounded-lg p-2">
+                            <Box className="flex-row justify-between items-center mb-2">
+                              <Box className="h-5 w-36 bg-gray-200 rounded animate-pulse" />
+                              <Box className="h-5 w-20 bg-gray-200 rounded animate-pulse" />
+                            </Box>
+                            <Box className="flex-row justify-between items-center">
+                              <Box className="h-5 w-28 bg-gray-200 rounded animate-pulse" />
+                              <Box className="h-5 w-20 bg-gray-200 rounded animate-pulse" />
+                            </Box>
+                          </Box>
+                        ) : repairQuotes.filter(
+                            (quote) => quote.repairpackagename === "Basic"
+                          ).length > 0 ? (
+                          <Box className="bg-[#f8fafc] rounded-lg p-2">
+                            {repairQuotes
+                              .filter(
+                                (quote) => quote.repairpackagename === "Basic"
+                              )
+                              .map((item, index) => (
+                                <Box
+                                  key={index}
+                                  className="flex-row justify-between items-center mb-1 last:mb-0"
+                                >
+                                  <Text className="text-base text-[#1a3148] flex-1">
+                                    {item.repairname}
+                                  </Text>
+                                  <Text className="text-base font-medium text-[#1a3148]">
+                                    {formatMoney(
+                                      item.repairpackagename === "Basic"
+                                        ? item.wage || 0
+                                        : item.cost
+                                    )}
+                                  </Text>
+                                </Box>
+                              ))}
+                          </Box>
+                        ) : (
+                          <Text className="text-base text-[#1a3148]">
+                            Chưa có thông tin
+                          </Text>
+                        )}
+                      </Box>
+                    </Box>
+                  </Box>
+                )}
+
+                {requestDetail.requesttype === "Sửa xe" && (
+                  <Box className="flex-row items-center">
+                    <Box className="w-10 h-10 rounded-xl bg-[#1a3148]/5 items-center justify-center">
+                      <Settings size={20} color="#1a3148" />
+                    </Box>
+                    <Box className="ml-2 flex-1">
+                      <Text className="text-sm text-gray-500">
+                        Linh kiện thay thế
+                      </Text>
+                      <Box className="mt-1">
+                        {repairQuotesLoading ? (
+                          <Box className="bg-[#f8fafc] rounded-lg p-2">
+                            <Box className="mb-2">
+                              <Box className="h-5 w-32 bg-gray-200 rounded animate-pulse mb-1" />
+                              <Box className="h-4 w-24 bg-gray-100 rounded animate-pulse mb-1" />
+                              <Box className="h-3 w-20 bg-gray-100 rounded animate-pulse" />
+                            </Box>
+                            <Box>
+                              <Box className="h-5 w-40 bg-gray-200 rounded animate-pulse mb-1" />
+                              <Box className="h-4 w-28 bg-gray-100 rounded animate-pulse" />
+                            </Box>
+                          </Box>
+                        ) : repairQuotes.filter(
+                            (quote) => quote.repairpackagename === "Addons"
+                          ).length > 0 ? (
+                          <Box className="bg-[#f8fafc] rounded-lg p-2">
+                            {repairQuotes
+                              .filter(
+                                (quote) => quote.repairpackagename === "Addons"
+                              )
+                              .map((item, index) => (
+                                <Box
+                                  key={index}
+                                  className="flex-row justify-between items-center mb-1 last:mb-0"
+                                >
+                                  <Box className="flex-1">
+                                    <Text className="text-base text-[#1a3148]">
+                                      {item.accessoryname || item.repairname}
+                                    </Text>
+                                    {item.partcategoryname && (
+                                      <Text className="text-xs text-gray-500">
+                                        {item.partcategoryname}
+                                      </Text>
+                                    )}
+                                    <Text className="text-xs">
+                                      Phụ thu: {formatMoney(item.wage)}
+                                    </Text>
+                                  </Box>
+                                  <Text className="text-base font-medium text-[#1a3148]">
+                                    {formatMoney(item.cost)}
+                                  </Text>
+                                </Box>
+                              ))}
+                          </Box>
+                        ) : (
+                          <Text className="text-base text-[#1a3148]">
+                            Không có linh kiện
+                          </Text>
+                        )}
+                      </Box>
+                    </Box>
+                  </Box>
+                )}
+
+                {requestDetail.requesttype === "Sửa xe" &&
+                  repairQuotes.length > 0 && (
+                    <Box className="flex-row items-center">
+                      <Box className="w-10 h-10 rounded-xl bg-[#1a3148]/5 items-center justify-center">
+                        <DollarSign size={20} color="#1a3148" />
+                      </Box>
+                      <Box className=" ml-2 flex-1">
+                        <Text className="text-sm text-gray-500">
+                          Tổng phụ thu
+                        </Text>
+                        <Box className="mt-1">
+                          {repairQuotesLoading ? (
+                            <Box className="bg-[#f8fafc] rounded-lg p-2">
+                            <Box className="flex-row justify-between items-center mb-2">
+                              <Box className="h-5 w-36 bg-gray-200 rounded animate-pulse" />
+                              <Box className="h-5 w-20 bg-gray-200 rounded animate-pulse" />
+                            </Box>
+                            <Box className="flex-row justify-between items-center">
+                              <Box className="h-5 w-28 bg-gray-200 rounded animate-pulse" />
+                              <Box className="h-5 w-20 bg-gray-200 rounded animate-pulse" />
+                            </Box>
+                          </Box>
+                          ) : repairQuotes.length > 0 ? (
+                            <Box className="bg-[#f8fafc] rounded-lg p-2">
+                              <Box className="flex-row justify-between items-center mb-1 last:mb-0">
+                                <Box className="flex-1">
+                                  <Text className="text-base text-[#1a3148]">
+                                    Phụ thu linh kiện & công
+                                  </Text>
+                                </Box>
+                                <Text className="text-base font-medium text-[#1a3148]">
+                                  {formatMoney(
+                                    repairQuotes
+                                      .filter(
+                                        (quote) =>
+                                          quote.repairpackagename !== "Basic"
+                                      )
+                                      .reduce(
+                                        (sum, item) => sum + (item.wage || 0),
+                                        0
+                                      )
+                                  )}
+                                </Text>
+                              </Box>
+                            </Box>
+                          ) : null}
+                        </Box>
+                      </Box>
+                    </Box>
+                  )}
+
+                <Box className="flex-row items-center mt-1">
                   <Box className="w-10 h-10 rounded-xl bg-[#1a3148]/5 items-center justify-center">
                     <Clock size={20} color="#1a3148" />
                   </Box>
@@ -322,21 +534,19 @@ export default function RequestDetailsScreen() {
 
           <Box className="bg-white rounded-2xl shadow-sm mb-4 border border-gray-100/50">
             <Box className="p-4">
-              <Text className="text-lg font-semibold text-[#1a3148] mb-4">
+              {/* <Text className="text-lg font-semibold text-[#1a3148] mb-4">
                 Phương thức thanh toán
-              </Text>
+              </Text> */}
               <Box className="w-full bg-[#f8fafc] rounded-xl p-4">
                 <Box className="flex-row items-center justify-between">
                   <Box>
                     <Box className="flex-row items-center mb-1">
                       <CreditCard size={18} color="#1a3148" />
-                      <Text className="text-sm text-gray-500 ml-2">
-                        Tổng
-                      </Text>
+                      <Text className="text-sm text-gray-500 ml-2">Tổng</Text>
                     </Box>
                     {/* Error ngay toLocaleString() sua lai cho gia tri default 00000VND */}
                     <Text className="text-xl font-bold text-[#1a3148]">
-                      {requestDetail?.totalprice?.toLocaleString("vi-VN")} VND
+                      {formatMoney(requestDetail.totalprice)}
                     </Text>
                   </Box>
                   {requestDetail?.paymentmethod && (
