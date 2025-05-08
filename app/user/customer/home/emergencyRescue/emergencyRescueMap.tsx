@@ -920,7 +920,8 @@ const EmergencyRescueMapScreen = () => {
         // </Pressable>
         <ActionSheetToggle
           onPress={() => setShowTracking(true)}
-          visible={!!(!showActionsheet && directionsInfo)} />
+          visible={true} 
+        />
       )}
       <VehicleAlertDialog
         isOpen={showVehicleAlert}
