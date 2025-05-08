@@ -11,15 +11,24 @@ import { getAuth, PhoneAuthProvider } from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 
 import auth from '@react-native-firebase/auth'; // For backward compatibility where needed
+import axios from 'axios';
 const CELL_COUNT = 6; // Number of OTP digits
 const RESEND = 90;
 let interval: string | number | NodeJS.Timeout | undefined;
 const appCheckForDefaultApp = firebase.appCheck();
 export default function OTPScreen() {
   const router = useRouter();
-  const { phoneNumber } = useLocalSearchParams();
   const [otpValue, setOtpValue] = useState('');
   const [resendButtonDisabledTime, setResendButtonDisabledTime] = useState(RESEND);
+
+  const { username, password, fullName, phone } =
+    useLocalSearchParams<{
+      username: string;
+      password: string;
+      fullName: string;
+      phone: string;
+    }>();
+  const [errors, setErrors] = useState<{ server?: string }>({});
 
   const [confirm, setConfirm] = useState<any>(null);
   // Start the resend OTP timer
@@ -51,9 +60,9 @@ export default function OTPScreen() {
         setIsVerificationSent(true);
 
         try {
-          const VNphoneNumber = '+84' + phoneNumber;
+          const VNphone = '+84' + phone;
 
-          const unsubscribe = getAuth().verifyPhoneNumber(VNphoneNumber).on(
+          const unsubscribe = getAuth().verifyPhoneNumber(VNphone).on(
             'state_changed',
             async (phoneAuthSnapshot) => {
               switch (phoneAuthSnapshot.state) {
@@ -98,8 +107,50 @@ export default function OTPScreen() {
     }
   };
 
+  const handleSignUp = async () => {
+    const payload = { username, password, fullName, phone };
+
+    try {
+      const response = await axios.post(
+        "https://motor-save-be.vercel.app/api/v1/auth/register",
+        payload,
+        { headers: { "Content-Type": "application/json" } }
+      );
+
+      if (response.status === 201) {
+        Alert.alert("Tạo tài khoản thành công");
+        router.replace("/auth/login");
+        return;
+      }
+
+      // any non‑201 we treat as error
+      const msg = response.data?.message || "Đăng ký thất bại";
+      setErrors({ server: msg });
+
+      // push back to register with error message
+      router.replace({
+        pathname: "/auth/register",
+        params: { serverError: msg },
+      });
+    } catch (error: any) {
+      let msg = "Đã xảy ra lỗi. Vui lòng thử lại sau.";
+      if (error.response?.data?.message) {
+        msg = error.response.data.message;
+      } else if (error.request) {
+        msg = "Không thể kết nối đến máy chủ.";
+      }
+      setErrors({ server: msg });
+
+      router.replace({
+        pathname: "/auth/register",
+        params: { serverError: msg },
+      });
+    }
+  };
+
+  // …
   useEffect(() => {
-    console.log(phoneNumber);
+    console.log(phone);
     // Uncomment the following line to send verification on component mount
     sendVerification();
   }, []);
@@ -136,17 +187,6 @@ export default function OTPScreen() {
   };
 
 
-  const handleSignUp = async () => {
-    try {
-      Alert.alert('OTP successfully verified!');
-      console.log('OTP successfully verified!');
-      router.navigate('/auth/login')
-    } catch (error: any) {
-      Alert.alert(error.response.data.error)
-      console.log(error.response.data.error);
-    }
-  };
-
   useEffect(() => {
     const interval = setInterval(() => {
       setResendButtonDisabledTime(prevTime => (prevTime > 0 ? prevTime - 1 : 0));
@@ -164,7 +204,7 @@ export default function OTPScreen() {
     <Box style={styles.container}>
       <Text style={styles.title}>Xác nhận OTP</Text>
       <Text style={styles.reminder}>Vui lòng đợi trong giây lát (khoảng 10s) để app tiến hành xử lí</Text>
-      <Text style={styles.subTitle}>Chúng tôi sẽ gửi mã OTP đến: {phoneNumber}</Text>
+      <Text style={styles.subTitle}>Chúng tôi sẽ gửi mã OTP đến: {phone}</Text>
       <CodeField
         ref={ref}
         {...props}

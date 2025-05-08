@@ -509,10 +509,11 @@ const EmergencyRescueMapScreen = () => {
         `Đã vượt quá bán kính tối đa ${MAX_RADIUS}. Dừng tìm kiếm với reqId:`,
         reqId
       );
-      Alert.alert(
-        "No drivers available",
-        "No drivers available in search radius"
-      );
+     Alert.alert(
+             "Vui lòng thử lại sau.",
+             "Hiện không có tài xế trong phạm vi phục vụ."
+           );
+     
 
       // Đặt UI state
       isSearchingRef.current = false;

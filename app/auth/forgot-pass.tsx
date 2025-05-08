@@ -10,7 +10,7 @@ export default function ForgotPassScreen() {
     return (
         <Box className='flex-1 justify-center items-center'>
             <Text bold size='2xl'>
-                Welcome to My App bitches
+                Welcome to MotorSave
                 This is ForgotPassScreen
             </Text>
             <Button onPress={() =>  router.navigate("/auth/login")}> <Text>Login</Text> </Button>

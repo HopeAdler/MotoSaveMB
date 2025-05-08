@@ -307,7 +307,7 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
               <Avatar
                 size={80}
                 rounded
-                source={{ uri: requestDetail?.driverimage }}
+                source={{ uri: requestDetail?.driverimage || "https://example.com/default-avatar.png" }}
                 containerStyle={{ borderWidth: 2, borderColor: "#f2f2f2" }}
               />
               <Box className="ml-4 flex-1">
@@ -408,7 +408,7 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
                   </Box>
                   <Box className="ml-3 flex-1">
                     <Text className="text-sm text-gray-500">
-                      Đích đến
+                      Điểm đến
                     </Text>
                     <Text className="text-base font-medium text-[#1a3148]">
                       {requestDetail?.destination}
@@ -422,7 +422,8 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
 
             {requestDetail?.totalprice &&
               <Box className="flex-row items-center justify-center w-full">
-                <Text className="text-green-600 font-bold">Tổng tiền: {formatMoney(requestDetail?.totalprice)}</Text>
+                <Text className="text-green-600 font-bold">Tổng tiền:</Text>
+                <Text className="text-green-600 font-bold">{formatMoney(requestDetail?.totalprice)}</Text>
               </Box>
             }
 
