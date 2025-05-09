@@ -68,11 +68,7 @@ export default function DHomeScreen() {
   const checkUndoneRequest = async () => {
     try {
       const results = await getUndoneRequestDetailIds(token);
-<<<<<<< Updated upstream
       // console.log(results)
-=======
-      console.log(results);
->>>>>>> Stashed changes
       return results.length > 1 ? true : false;
     } catch (error) {
       console.error("Error fetching undone request details:", error);
@@ -81,13 +77,8 @@ export default function DHomeScreen() {
 
   const fetchPendingRescueRequests = async () => {
     try {
-<<<<<<< Updated upstream
       // console.log('Fetching...')
       // console.log(pendingReqDetailIds)
-=======
-      console.log("Fetching...");
-      console.log(pendingReqDetailIds);
->>>>>>> Stashed changes
       const requests = await Promise.all(
         Array.from(pendingReqDetailIds.values()).map(async (id) => {
           // console.log(id);
@@ -144,11 +135,7 @@ export default function DHomeScreen() {
   useEffect(() => {
     const interval = setInterval(async () => {
       const result = await checkUndoneRequest();
-<<<<<<< Updated upstream
       // console.log(result)
-=======
-      console.log(result);
->>>>>>> Stashed changes
       if (!result) {
         // console.log(pendingReqDetailIds.size);
         fetchPendingReturnRequest(); // Fetch initially
