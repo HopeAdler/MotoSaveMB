@@ -120,7 +120,7 @@ export default function MRequestScreen() {
     <Box className="flex-1 bg-[#f1f5f9]">
       <Box className="bg-white p-5 shadow-sm">
         <Box className="flex-row items-center justify-between mb-2">
-          <Box>
+          <Box className="flex-1 mt-1 items-center">
             <Text className="text-[#1a3148] text-xl font-bold">Yêu cầu sửa chữa</Text>
           </Box>
         </Box>

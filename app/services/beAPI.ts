@@ -600,7 +600,7 @@ export async function createRepairRequest(requestId: string, token: string): Pro
       {},
       { headers: { Authorization: "Bearer " + token } }
     );
-    Alert.alert("Success", "Repair request created!");
+    Alert.alert("Success", "Đã tạo yêu cầu sửa chữa!");
   } catch (error) {
     console.error("Error creating reppair request:", error);
     Alert.alert("Error", "Failed to create repair request");

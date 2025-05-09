@@ -4,9 +4,10 @@ import { Text } from "@/components/ui/text";
 import { Router } from "expo-router";
 import moment from "moment";
 import { Alert, StyleSheet, TouchableOpacity } from "react-native";
-import { Clock, Phone, User } from "lucide-react-native";
+import { Calendar, Clock, Phone, User } from "lucide-react-native";
 import { StatusBadge } from "@/components/custom/StatusBadge";
 import React from "react";
+import { Button, ButtonText } from "../ui/button";
 
 interface RepairRequestItemProps {
   requestid: string;
@@ -28,13 +29,22 @@ export const RepairRequestItem = React.memo(
     return (
       <Box className="bg-white p-5 mb-4 rounded-2xl shadow-sm border border-gray-100/50">
         <Box className="flex-row items-center justify-between mb-3">
-          <Text
-            className="text-[#fab753] text-lg font-bold flex-1 mr-2"
-            numberOfLines={1}
-          >
-            {item.servicepackagename}
-          </Text>
-          <StatusBadge status={item.requeststatus} />
+          <Box>
+            <Text className="text-lg font-bold text-[#1a3148]">
+              {item.servicepackagename}
+            </Text>
+            <Text className="text-sm font-medium text-gray-500">
+              {item.requesttype}
+            </Text>
+          </Box>
+          <Box className="gap-1">
+            <Box className="bg-[#1a3148]/10 px-3 py-1 rounded-full">
+              <Text className="text-[#1a3148] text-xs font-medium">
+                {moment(item.createddate).format("HH:mm")}
+              </Text>
+            </Box>
+            <StatusBadge status={item.requeststatus} />
+          </Box>
         </Box>
 
         <Box className="flex-row items-center mb-3">
@@ -42,24 +52,18 @@ export const RepairRequestItem = React.memo(
             <User color="#1a3148" size={18} />
           </Box>
           {item.customername ? (
-            <Text
-              className="text-[#1a3148] text-lg font-bold flex-1"
-              numberOfLines={1}
-            >
+            <Text className="text-base text-[#1a3148] font-medium">
               {item.customername}
             </Text>
           ) : (
-            <Text
-              className="text-[#1a3148] text-lg font-bold flex-1"
-              numberOfLines={1}
-            >
+            <Text className="text-base text-[#1a3148] font-medium">
               {item.receivername}
             </Text>
           )}
         </Box>
 
         <Box className="pl-1 mb-4">
-          <Box className="flex-row items-center mb-2">
+          {/* <Box className="flex-row items-center mb-2">
             <Phone size={16} color="#64748b" style={styles.icon} />
             {item.customerphone ? (
               <Text className="text-gray-600" numberOfLines={1}>
@@ -70,36 +74,37 @@ export const RepairRequestItem = React.memo(
                 {item.receiverphone}
               </Text>
             )}
-          </Box>
+          </Box> */}
 
           <Box className="flex-row items-center">
-            <Clock size={16} color="#64748b" style={styles.icon} />
+            <Calendar size={16} color="#64748b" style={styles.icon} />
             <Text className="text-gray-500" numberOfLines={1}>
-              {moment(item.createddate).format("DD/MM/YYYY HH:mm")}
+              {moment(item.createddate).format("DD/MM/YYYY")}
             </Text>
           </Box>
         </Box>
 
         {item.requeststatus === "Pending" ? (
-          <TouchableOpacity
-            style={styles.acceptButton}
+          <Button
+            variant="solid"
+            className="bg-[#fab753] rounded-xl h-12 active:opacity-80"
             onPress={async () => {
               try {
                 await acceptRepairRequest(item.requestdetailid, token);
-                Alert.alert(
-                  "Success",
-                  "Request accepted and notification sent!"
-                );
+                Alert.alert("Success", "Đã chấp nhận yêu cầu!");
               } catch (apiError: any) {
                 Alert.alert("Error", apiError);
               }
             }}
           >
-            <Text style={styles.buttonText}>Chấp nhận</Text>
-          </TouchableOpacity>
+            <ButtonText className="text-[#1a3148] font-bold">
+              Chấp nhận
+            </ButtonText>
+          </Button>
         ) : (
-          <TouchableOpacity
-            style={styles.viewButton}
+          <Button
+            variant="outline"
+            className="border-[#1a3148] rounded-xl h-12 active:opacity-80"
             onPress={() =>
               router.push({
                 pathname: "/user/mechanic/requests/repairRequestDetails",
@@ -110,8 +115,10 @@ export const RepairRequestItem = React.memo(
               })
             }
           >
-            <Text style={styles.buttonText}>Xem chi tiết</Text>
-          </TouchableOpacity>
+            <ButtonText className="text-[#1a3148] font-semibold">
+              Xem chi tiết
+            </ButtonText>
+          </Button>
         )}
       </Box>
     );

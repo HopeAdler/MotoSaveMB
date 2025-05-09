@@ -42,41 +42,53 @@ export const CustomerInfo = ({
           />
         )}
 
-        <Box className="flex-1">
-          <Text className="text-lg font-bold text-[#1a3148] mb-2">
-            {repairRequestDetail?.customername
-              ? repairRequestDetail?.customername
-              : repairRequestDetail?.receivername}
-          </Text>
+        <Box></Box>
 
-          <TouchableOpacity
-            onPress={onCallPress}
-            className="flex-row items-center"
-            accessibilityLabel={`Gọi ${repairRequestDetail?.customername}`}
-            accessibilityRole="button"
-          >
-            <Phone color="#64748b" size={16} />
-            <Text className="text-gray-600 ml-2">
+        <Box>
+          <Box className="flex-1">
+            <Text className="text-lg font-bold text-[#1a3148] mb-2">
+              {repairRequestDetail?.customername
+                ? repairRequestDetail?.customername
+                : repairRequestDetail?.receivername}
+            </Text>
+          </Box>
+
+          <Box className="flex-row items-center gap-2">
+            {repairRequestDetail?.customerphone && (
+              <TouchableOpacity
+                className="bg-[#1a3148] px-4 py-2.5 rounded-xl shadow-sm active:opacity-90"
+                onPress={onCallPress}
+                // className="flex-row items-center"
+                accessibilityLabel={`Gọi ${repairRequestDetail?.customername}`}
+                accessibilityRole="button"
+              >
+                <Box className="flex-row items-center">
+                  <Phone color="white" size={18} />
+                  {/* <Text className="text-white font-semibold ml-2">Gọi</Text> */}
+                </Box>
+                {/* <Text className="text-gray-600 ml-2">
               {repairRequestDetail?.customerphone
                 ? repairRequestDetail?.customerphone
                 : repairRequestDetail?.receiverphone}
-            </Text>
-          </TouchableOpacity>
-        </Box>
+            </Text> */}
+              </TouchableOpacity>
+            )}
 
-        {repairRequestDetail?.customerid && (
-          <TouchableOpacity
-            className="bg-[#fab753] px-4 py-2.5 rounded-xl shadow-sm active:opacity-90"
-            onPress={toChatScreen}
-            accessibilityLabel={`Chat with ${repairRequestDetail?.customername}`}
-            accessibilityRole="button"
-          >
-            <Box className="flex-row items-center">
-              <MessageCircle color="white" size={18} />
-              <Text className="text-white font-semibold ml-2">Nhắn tin</Text>
-            </Box>
-          </TouchableOpacity>
-        )}
+            {repairRequestDetail?.customerid && (
+              <TouchableOpacity
+                className="bg-[#fab753] px-4 py-2.5 rounded-xl shadow-sm active:opacity-90"
+                onPress={toChatScreen}
+                accessibilityLabel={`Chat with ${repairRequestDetail?.customername}`}
+                accessibilityRole="button"
+              >
+                <Box className="flex-row items-center">
+                  <MessageCircle color="white" size={18} />
+                  {/* <Text className="text-white font-semibold ml-2">Chat</Text> */}
+                </Box>
+              </TouchableOpacity>
+            )}
+          </Box>
+        </Box>
       </Box>
     </Box>
   );
