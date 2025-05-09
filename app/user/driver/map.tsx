@@ -142,7 +142,9 @@ const GenMap: React.FC = () => {
       ) {
         switch (requestDetail?.servicepackagename) {
           case "Cứu hộ đến trạm":
-            createRepairRequest(requestDetail?.requestid, token);
+            if (requestDetail?.requesttype === "Cứu hộ") {
+              createRepairRequest(requestDetail?.requestid, token);
+            }
             break;
           case "Cứu hộ nước ngập":
             changePaymentTotal();

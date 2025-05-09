@@ -188,7 +188,7 @@ const TripDetailsActionSheet: React.FC<TripDetailsActionSheetProps> = ({
                     >
                       <Box className="flex-row items-center justify-center">
                         <ButtonText className="text-red-600 font-medium">
-                          Cancel Search
+                          Hủy tìm kiếm
                         </ButtonText>
                       </Box>
                     </Button>
@@ -261,7 +261,7 @@ const TripDetailsActionSheet: React.FC<TripDetailsActionSheetProps> = ({
                       <Box className="bg-red-50 rounded-2xl p-4 mt-4">
                         <Box className="items-center">
                           <Text className="text-gray-600 mb-1 font-semibold align-middle text-center">
-                            Fare will be calculated based on traveled distance
+                            Giá tiền sẽ được cập nhật sau khi hoàn thành chuyến đi
                           </Text>
                         </Box>
                       </Box>
