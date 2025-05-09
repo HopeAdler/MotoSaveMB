@@ -52,6 +52,8 @@ interface RequestDetail {
   vehicletype: string | null;
   vehiclestatus: string | null;
   paymentmethod: string | null;
+  paymentstatus?: string | null;
+  zptransid?: string | null;
 }
 
 const LoadingSkeleton = () => (
@@ -367,8 +369,8 @@ export default function RequestDetailsScreen() {
                             </Box>
                           </Box>
                         ) : repairQuotes.filter(
-                            (quote) => quote.repairpackagename === "Basic"
-                          ).length > 0 ? (
+                          (quote) => quote.repairpackagename === "Basic"
+                        ).length > 0 ? (
                           <Box className="bg-[#f8fafc] rounded-lg p-2">
                             {repairQuotes
                               .filter(
@@ -425,8 +427,8 @@ export default function RequestDetailsScreen() {
                             </Box>
                           </Box>
                         ) : repairQuotes.filter(
-                            (quote) => quote.repairpackagename === "Addons"
-                          ).length > 0 ? (
+                          (quote) => quote.repairpackagename === "Addons"
+                        ).length > 0 ? (
                           <Box className="bg-[#f8fafc] rounded-lg p-2">
                             {repairQuotes
                               .filter(
@@ -479,15 +481,15 @@ export default function RequestDetailsScreen() {
                         <Box className="mt-1">
                           {repairQuotesLoading ? (
                             <Box className="bg-[#f8fafc] rounded-lg p-2">
-                            <Box className="flex-row justify-between items-center mb-2">
-                              <Box className="h-5 w-36 bg-gray-200 rounded animate-pulse" />
-                              <Box className="h-5 w-20 bg-gray-200 rounded animate-pulse" />
+                              <Box className="flex-row justify-between items-center mb-2">
+                                <Box className="h-5 w-36 bg-gray-200 rounded animate-pulse" />
+                                <Box className="h-5 w-20 bg-gray-200 rounded animate-pulse" />
+                              </Box>
+                              <Box className="flex-row justify-between items-center">
+                                <Box className="h-5 w-28 bg-gray-200 rounded animate-pulse" />
+                                <Box className="h-5 w-20 bg-gray-200 rounded animate-pulse" />
+                              </Box>
                             </Box>
-                            <Box className="flex-row justify-between items-center">
-                              <Box className="h-5 w-28 bg-gray-200 rounded animate-pulse" />
-                              <Box className="h-5 w-20 bg-gray-200 rounded animate-pulse" />
-                            </Box>
-                          </Box>
                           ) : repairQuotes.length > 0 ? (
                             <Box className="bg-[#f8fafc] rounded-lg p-2">
                               <Box className="flex-row justify-between items-center mb-1 last:mb-0">
@@ -548,11 +550,24 @@ export default function RequestDetailsScreen() {
                     <Text className="text-xl font-bold text-[#1a3148]">
                       {formatMoney(requestDetail.totalprice)}
                     </Text>
+                    {requestDetail?.zptransid &&
+                    <Box className="flex-col mb-1 mt-2">
+                      <Text selectable={true} className="text-slate-600 font-bold">
+                        Mã giao dịch
+                      </Text>
+                      <Text selectable={true} className="text-blue-600 font-bold">
+                        {requestDetail?.zptransid}
+                      </Text>
+                    </Box>
+                    }
                   </Box>
                   {requestDetail?.paymentmethod && (
-                    <Box className="bg-black px-4 py-2 rounded-lg">
+                    <Box className="bg-black px-4 py-2 justify-center items-center rounded-lg">
                       <Text className="text-white font-bold">
                         {requestDetail.paymentmethod}
+                      </Text>
+                      <Text className="text-white font-bold">
+                        ({requestDetail.paymentstatus})
                       </Text>
                     </Box>
                   )}

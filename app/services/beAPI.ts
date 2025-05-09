@@ -57,6 +57,22 @@ export interface Payment {
   paymentstatus: string;
 }
 
+export interface PaymentHistory {
+  paymentid: string;
+  requestid: string;
+  requestdetailid: string;
+  servicepackagename: string;
+  requesttypename: string;
+  requeststatus: string;
+  updateddate: string;
+  paymentmethod: string;
+  paymentstatus: string;
+  totalamount: number;
+  transactionid: string | null;
+  zptransid: string | null;
+  transactiondate: string | null;
+}
+
 export interface UpdatedPayment {
   requestDetailId: string | any;
   newStatus: string;
