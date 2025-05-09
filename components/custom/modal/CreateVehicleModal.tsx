@@ -44,8 +44,8 @@ export interface Brand {
 const formatLicensePlate = (input: string): string => {
   let cleaned = input.replace(/[^A-Z0-9\-\.]/gi, "").toUpperCase();
   // Nếu chưa có dấu gạch ngang và độ dài > 3, chèn sau 3 ký tự
-  if (!cleaned.includes("-") && cleaned.length > 3) {
-    cleaned = cleaned.slice(0, 3) + "-" + cleaned.slice(3);
+  if (!cleaned.includes("-") && cleaned.length > 4) {
+    cleaned = cleaned.slice(0, 4) + "-" + cleaned.slice(4);
   }
   // Giới hạn độ dài tối đa (ví dụ: 10 ký tự)
   if (cleaned.length > 10) {
@@ -77,7 +77,7 @@ const CreateVehicleModal: React.FC<CreateVehicleModalProps> = ({
     const formatted = formatLicensePlate(text);
     setLicensePlate(formatted);
     // Ví dụ: yêu cầu tối thiểu 6 ký tự
-    if (formatted.length < 6) {
+    if (formatted.length < 9) {
       setIsInvalid(true);
     } else {
       setIsInvalid(false);
@@ -85,17 +85,17 @@ const CreateVehicleModal: React.FC<CreateVehicleModalProps> = ({
   };
 
   const handleCreateVehicle = async () => {
-    if (!selectedBrand || !licensePlate || licensePlate.length < 6) {
+    if (!selectedBrand || !licensePlate || licensePlate.length < 9) {
       Alert.alert("Error", "Thương hiệu và biển số xe hợp lệ là bắt buộc.");
       return;
     }
     Alert.alert(
-      "Confirm Create Vehicle",
+      "Xác nhận tạo xe",
       `Bạn có chắc muốn tạo xe với thương hiệu ${selectedBrand} và biển số ${licensePlate}?`,
       [
-        { text: "Cancel", style: "cancel" },
+        { text: "Huỷ", style: "cancel" },
         {
-          text: "Create",
+          text: "Tạo",
           onPress: async () => {
             try {
               const response = await fetch("https://motor-save-be.vercel.app/api/v1/customerVehicles", {
@@ -138,7 +138,7 @@ const CreateVehicleModal: React.FC<CreateVehicleModalProps> = ({
       <ModalContent>
         <ModalHeader>
           <Heading size="md" className="text-typography-950">
-            Create New Vehicle
+           Tạo xe mới
           </Heading>
           <ModalCloseButton />
         </ModalHeader>
@@ -183,7 +183,7 @@ const CreateVehicleModal: React.FC<CreateVehicleModalProps> = ({
             </Input>
             <FormControlHelper>
               <FormControlHelperText>
-                Biển số xe phải có ít nhất 6 ký tự.
+                Biển số xe phải có ít nhất 9 ký tự.
               </FormControlHelperText>
             </FormControlHelper>
             {isInvalid && (
@@ -197,10 +197,10 @@ const CreateVehicleModal: React.FC<CreateVehicleModalProps> = ({
         </ModalBody>
         <ModalFooter>
           <Button variant="outline" onPress={onClose}>
-            <ButtonText>Cancel</ButtonText>
+            <ButtonText>Huỷ</ButtonText>
           </Button>
           <Button onPress={handleCreateVehicle}>
-            <ButtonText>Create</ButtonText>
+            <ButtonText>Tạo</ButtonText>
           </Button>
         </ModalFooter>
       </ModalContent>

@@ -115,6 +115,7 @@ const RescueMapScreen = () => {
   // const [showCountdownSheet, setShowCountdownSheet] = useState(false);
   const [requestDetailId, setRequestDetailId] = useState<string | null>(null);
   const [showTracking, setShowTracking] = useState(false);
+  const [showTracking2, setShowTracking2] = useState(false);
   // const [countdown, setCountdown] = useState(10);
   const [zpTransId, setZpTransId] = useState<string | any>(null);
   const [isSearching, setIsSearching] = useState(false);
@@ -222,7 +223,7 @@ const RescueMapScreen = () => {
   };
   useEffect(() => {
     const timeout = setTimeout(() => {
-      if (originQuery.trim()) {
+      if (originQuery?.trim()) {
         getAutocomplete(
           originQuery,
           originCoordinates.latitude && originCoordinates.longitude
@@ -238,7 +239,7 @@ const RescueMapScreen = () => {
 
   useEffect(() => {
     const timeout = setTimeout(() => {
-      if (destinationQuery.trim()) {
+      if (destinationQuery?.trim()) {
         getAutocomplete(
           destinationQuery,
           originCoordinates.latitude && originCoordinates.longitude
@@ -1006,7 +1007,7 @@ const RescueMapScreen = () => {
                 style={{
                   lineColor: "#fab753",
                   lineWidth: 3,
-                  lineOpacity: 0.8,
+                  lineOpacity: 1,
                 }}
               />
             </MapboxGL.ShapeSource>
@@ -1037,14 +1038,15 @@ const RescueMapScreen = () => {
         ))}
 
       {/* Tracking action sheet */}
-      {latestRequestDetail &&
-      latestRequestDetail?.requeststatus !== "Done" &&
-      latestRequestDetail?.requeststatus !== "Cancel" ? (
+      {(showTracking2 && latestRequestDetail &&
+        latestRequestDetail?.requeststatus !== "Done" &&
+        latestRequestDetail?.requeststatus !== "Cancel") ? (
         <>
           {requestDetailId && (
+            // setShowTracking2(true),
             <TrackingActionSheet
-              isOpen={showTracking}
-              onClose={() => setShowTracking(false)}
+              isOpen={showTracking2}
+              onClose={() => setShowTracking2(false)}
               // requestdetailid={requestDetailId}
               eta={directionsInfo?.duration?.text}
               distance={directionsInfo?.distance?.text}
@@ -1091,13 +1093,13 @@ const RescueMapScreen = () => {
           />
         )}
       {latestRequestDetail &&
-        latestRequestDetail?.requeststatus !== "Done" &&
-        latestRequestDetail?.requeststatus !== "Cancel" && (
-          <ActionSheetToggle
-            onPress={() => setShowTracking(true)}
-            visible={true}
-          />
-        )}
+        (latestRequestDetail?.requeststatus !== "Done" &&
+        latestRequestDetail?.requeststatus !== "Cancel") &&
+        <ActionSheetToggle
+          onPress={() => setShowTracking2(true)}
+          visible={true}
+        />
+      }
     </Box>
   );
 };

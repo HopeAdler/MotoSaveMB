@@ -79,13 +79,14 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Divider } from "@/components/ui/divider";
 import { Avatar } from "react-native-elements";
+import { getDistance } from "geolib";
 
 const RepairRequestScreen = () => {
   const { PayZaloBridge } = NativeModules;
-  const { requestId, setRequestId } = useContext(RequestContext);
-  // const { requestid } = useLocalSearchParams<{
-  //   requestid: string;
-  // }>();
+  // const { requestId, setRequestId } = useContext(RequestContext);
+  const { requestId } = useLocalSearchParams<{
+    requestId: string;
+  }>();
   const [paymentLoading, setPaymentLoading] = useState<boolean>(false);
   const [paymentMethod, setPaymentMethod] = useState("Tiền mặt");
   const [fare, setFare] = useState<number | any>(0);
@@ -108,7 +109,7 @@ const RepairRequestScreen = () => {
   const [showCancelAlert, setShowCancelAlert] = useState(false);
   const [selectedReason, setSelectedReason] = useState("");
   const [customReason, setCustomReason] = useState("");
-
+const MAX_WARN_DESTINATION_DISTANCE = 10000; // 10 km cho điểm đến
   const cancelReasons = [
     "Repair cost too high",
     "Mechanic behavior not acceptable",
@@ -121,6 +122,26 @@ const RepairRequestScreen = () => {
     const result = await geocodeAddress(address);
     if (result) {
       const { lat, lng } = result;
+      console.log("Geocode result:", lat, lng);
+      console.log("longitude:", requestDetail?.long);
+      if (
+        requestDetail &&
+          requestDetail?.long !== 0 &&
+          requestDetail?.lat !== 0
+        ) {
+          const distance = getDistance({latitude: requestDetail.lat, longitude: requestDetail.long}, {
+            latitude: lat,
+            longitude: lng,
+          });
+          console.log("Distance:", distance);
+          if (distance > MAX_WARN_DESTINATION_DISTANCE) {
+            Alert.alert(
+              "Điểm đến quá xa",
+              "Điểm đến bạn chọn quá xa so với điểm đón. Vui lòng chọn lại điểm đến hợp lý hơn."
+            );
+            return;
+          }
+        }
       setDestinationCoordinates({ latitude: lat, longitude: lng });
       setDestinationResults([]);
       setDestinationSelected(true);
@@ -425,12 +446,12 @@ const RepairRequestScreen = () => {
 
   const renderProgressSteps = () => {
     const steps = [
-      { title: "Pending", status: "Pending" },
-      { title: "Inspecting", status: "Inspecting" },
-      { title: "Waiting", status: "Waiting" },
-      { title: "Accepted", status: "Accepted" },
-      { title: "Repairing", status: "Repairing" },
-      { title: "Done", status: "Done" },
+      { title: "Đang chờ", status: "Pending" },
+      { title: "Đang kiểm tra", status: "Inspecting" },
+      { title: "Đợi phản hồi", status: "Waiting" },
+      { title: "Đã chấp nhận", status: "Accepted" },
+      { title: "Đang sửa", status: "Repairing" },
+      { title: "Hoàn thành", status: "Done" },
     ];
 
     const currentStepIndex = steps.findIndex(
@@ -714,7 +735,16 @@ const RepairRequestScreen = () => {
                 //   )}
                 // />
               )}
+              <Box className="flex-row justify-between items-center my-4 pt-3">
+                <Text className="text-lg font-bold text-gray-900">
+                  Phí trả xe
+                </Text>
+                <Text className="bg-pink-100 text-black-800 text-base font-bold px-3 py-1 rounded-full">
+                  {formatMoney(returnFare || 0)}
+                </Text>
+              </Box>
               {/* Payment method */}
+              {requestDetail?.requeststatus === "Waiting" && (
               <Box className="mt-4">
                 <Text className="text-base font-semibold text-gray-900 mb-2">
                   Phương thức thanh toán
@@ -739,6 +769,7 @@ const RepairRequestScreen = () => {
                   </SelectPortal>
                 </Select>
               </Box>
+              )}
 
               {/* Action Buttons */}
               {requestDetail?.requeststatus === "Waiting" && (

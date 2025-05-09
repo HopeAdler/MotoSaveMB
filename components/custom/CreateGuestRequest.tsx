@@ -188,7 +188,7 @@ export const CreateGuestRequest: React.FC<CreateGuestRequestProps> = ({
   return (
     <View className="p-4">
       <Button onPress={() => setShowModal(true)} className="bg-blue-500">
-        <ButtonText>Create Guest Rescue Request</ButtonText>
+        <ButtonText>Tạo yêu cầu cho khách vãng lai</ButtonText>
       </Button>
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} size="md">
@@ -199,7 +199,7 @@ export const CreateGuestRequest: React.FC<CreateGuestRequestProps> = ({
               size="md"
               className="text-center text-gray-800 font-semibold"
             >
-              Create Rescue Request
+              Tạo yêu cầu
             </Heading>
             <ModalCloseButton>
               <Icon as={CloseIcon} size="md" className="text-red-600" />
@@ -208,7 +208,7 @@ export const CreateGuestRequest: React.FC<CreateGuestRequestProps> = ({
 
           <ModalBody className="px-4 py-3 space-y-4">
             <View className="mb-3">
-              <Text className="text-sm text-gray-700 mb-1">Customer Name</Text>
+              <Text className="text-sm text-gray-700 mb-1">Tên khách hàng</Text>
               <TextInput
                 // className="border border-gray-300 rounded-lg px-3 py-2 text-base"
                 placeholder="Enter name"
@@ -230,7 +230,7 @@ export const CreateGuestRequest: React.FC<CreateGuestRequestProps> = ({
             </View>
 
             <View className="mb-3">
-              <Text className="text-sm text-gray-700 mb-1">Customer Phone</Text>
+              <Text className="text-sm text-gray-700 mb-1">Số điện thoại</Text>
               <TextInput
                 // className="border border-gray-300 rounded-lg px-3 py-2 text-base"
                 placeholder="Enter phone"
@@ -254,20 +254,20 @@ export const CreateGuestRequest: React.FC<CreateGuestRequestProps> = ({
 
             <View className="mb-3">
               <Text className="text-sm text-gray-700 mb-1">
-                Pickup Location
+                Điểm đón
               </Text>
               <Text className="text-base text-gray-900">
                 {formData.pickuplocation}
               </Text>
             </View>
             <View className="mb-3">
-              <Text className="text-sm text-gray-700 mb-1">Destination</Text>
+              <Text className="text-sm text-gray-700 mb-1">Đích đến</Text>
               <Text className="text-base text-gray-900">
                 {formData.destination}
               </Text>
             </View>
             <View>
-              <Text className="text-sm text-gray-700 mb-1">Price</Text>
+              <Text className="text-sm text-gray-700 mb-1">Giá</Text>
               <Text className="text-black-800 text-base font-bold">
                 {formatMoney(formData.totalprice || 0)}
               </Text>
@@ -280,10 +280,10 @@ export const CreateGuestRequest: React.FC<CreateGuestRequestProps> = ({
               className="flex-1 mx-2 border-red-500"
               onPress={handleCancel}
             >
-              <ButtonText className="text-red-500">Cancel</ButtonText>
+              <ButtonText className="text-red-500">Huỷ</ButtonText>
             </Button>
             <Button onPress={handleSubmit} className="flex-1 mx-2 bg-blue-500">
-              <ButtonText>Submit</ButtonText>
+              <ButtonText>Tạo</ButtonText>
             </Button>
           </ModalFooter>
         </ModalContent>

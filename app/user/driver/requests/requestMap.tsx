@@ -362,11 +362,12 @@ const RequestMap: React.FC = () => {
       ) : (
         <>
           <MapViewComponent
-            users={users}
-            currentLoc={currentLoc}
-            focusMode={[focusOnMe, setFocusOnMe]}
-            isActionSheetOpen={isActionSheetOpen}
-          >
+                users={users}
+                currentLoc={currentLoc}
+                focusMode={[focusOnMe, setFocusOnMe]}
+                isActionSheetOpen={isActionSheetOpen} 
+                role={"Driver"} 
+                userId={users.get(userId ?? "")?.uuid || ""} >
             {!focusOnMe &&
               requestDetail?.requeststatus === "Pickup" &&
               originCoordinates.latitude !== 0 && (
@@ -585,7 +586,7 @@ const RequestMap: React.FC = () => {
                         <Box className="flex-row items-center mb-1">
                           <CreditCard size={18} color="#1a3148" />
                           <Text className="text-sm text-gray-500 ml-2">
-                            Total Price
+                            Tổng tiền
                           </Text>
                         </Box>
                         <Text className="text-xl font-bold text-[#1a3148]">

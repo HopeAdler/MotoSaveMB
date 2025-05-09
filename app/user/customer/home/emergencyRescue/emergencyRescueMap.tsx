@@ -49,6 +49,7 @@ import MapViewComponent from "../../../../../components/custom/MapViewComponent"
 import VehicleAlertDialog from "../../../../../components/custom/VehicleAlertDialog";
 import { RequestDetail, User } from "../../../../context/formFields";
 import axios from "axios";
+import { useLatReqDetStore } from "@/app/hooks/useLatReqDetStore";
 
 const { EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN } = process.env;
 MapboxGL.setAccessToken(`${EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN}`);
@@ -110,6 +111,7 @@ const EmergencyRescueMapScreen = () => {
   const [paymentMethod, setPaymentMethod] = useState("Tiền mặt");
   const [requestDetailId, setRequestDetailId] = useState<string | null>(null);
   const [showTracking, setShowTracking] = useState(false);
+  const [showTracking2, setShowTracking2] = useState(false);
   const [zpTransId, setZpTransId] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [acceptedReqDetId, setAcceptedReqDetId] = useState<string>("");
@@ -138,6 +140,9 @@ const EmergencyRescueMapScreen = () => {
   const [selectedVehicleId, setSelectedVehicleId] = useState<string>("");
   // State để lưu danh sách station (fetch qua beAPI)
   const [stations, setStations] = useState<Station[]>([]);
+
+  const { latestRequestDetail } = useLatReqDetStore();
+
   useEffect(() => {
     beAPI
       .fetchStations()
@@ -259,7 +264,7 @@ const EmergencyRescueMapScreen = () => {
   // Lấy gợi ý địa chỉ cho origin
   useEffect(() => {
     const timeout = setTimeout(() => {
-      if (originQuery.trim()) {
+      if (originQuery?.trim()) {
         getAutocomplete(
           originQuery,
           originCoordinates.latitude && originCoordinates.longitude
@@ -880,6 +885,19 @@ const EmergencyRescueMapScreen = () => {
     fetchServicePackage();
   }, []);
 
+  useEffect(() => {
+    if (
+      latestRequestDetail &&
+      latestRequestDetail?.requeststatus !== "Done" &&
+      latestRequestDetail?.requeststatus !== "Cancel"
+    ) {
+      setRequestDetailId(latestRequestDetail?.requestdetailid);
+      fetchRequestDetail(latestRequestDetail?.requestdetailid);
+      setShowTracking(true);
+      setRequestActive(true);
+    }
+  }, [latestRequestDetail]);
+
   return (
     <Box className="flex-1">
       {/* Header & Back button */}
@@ -1018,41 +1036,64 @@ const EmergencyRescueMapScreen = () => {
       </Box>
 
       {/* Action Sheets */}
-      {showActionsheet && directionsInfo && !acceptedReqDetId && (
-        <TripDetailsActionSheet
-          isOpen={showActionsheet}
-          onClose={() => setShowActionsheet(false)}
-          onPayment={
-            paymentMethod === "Tiền mặt" ? handleFindDriver : handlePayment
-          }
-          onCancelSearch={handleCancelSearch}
-          fare={fare}
-          fareLoading={fareLoading}
-          paymentLoading={paymentLoading}
-          isSearching={isSearching}
-          directionsInfo={directionsInfo}
-          paymentMethodState={[paymentMethod, setPaymentMethod]}
-          selectVehicleState={[selectedVehicleId, setSelectedVehicleId]}
-          confirmDisabled={!isLocationValid()}
-          rescueType="emergency"
-        />
-      )}
-
-      {showTracking &&
-        requestDetailId &&
-        acceptedReqDetId &&
-        acceptedReqDetStatus !== "Pending" && (
-          <TrackingActionSheet
-            isOpen={showTracking}
-            onClose={() => setShowTracking(false)}
-            requestDetailIdState={[requestDetailId, setRequestDetailId]}
-            eta={directionsInfo?.duration?.text}
-            distance={directionsInfo?.distance?.text}
-            driverId={acceptedDriverId}
-            setAcceptedReqDetStatus={setAcceptedReqDetStatus}
+      {requestActive ||
+        (showActionsheet && directionsInfo && !acceptedReqDetId && (
+          <TripDetailsActionSheet
+            isOpen={showActionsheet}
+            onClose={() => setShowActionsheet(false)}
+            onPayment={
+              paymentMethod === "Tiền mặt" ? handleFindDriver : handlePayment
+            }
+            onCancelSearch={handleCancelSearch}
+            fare={fare}
+            fareLoading={fareLoading}
+            paymentLoading={paymentLoading}
+            isSearching={isSearching}
+            directionsInfo={directionsInfo}
+            paymentMethodState={[paymentMethod, setPaymentMethod]}
+            selectVehicleState={[selectedVehicleId, setSelectedVehicleId]}
+            confirmDisabled={!isLocationValid()}
+            rescueType="emergency"
           />
-        )}
+        ))}
 
+      {showTracking2 &&
+      latestRequestDetail &&
+      latestRequestDetail?.requeststatus !== "Done" &&
+      latestRequestDetail?.requeststatus !== "Cancel" ? (
+        <>
+          {requestDetailId && (
+            // setShowTracking2(true),
+            <TrackingActionSheet
+              isOpen={showTracking2}
+              onClose={() => setShowTracking2(false)}
+              // requestdetailid={requestDetailId}
+              eta={directionsInfo?.duration?.text}
+              distance={directionsInfo?.distance?.text}
+              driverId={null}
+              setAcceptedReqDetStatus={setAcceptedReqDetStatus}
+              requestDetailIdState={[requestDetailId, setRequestDetailId]}
+            />
+          )}
+        </>
+      ) : (
+        <>
+          {showTracking &&
+            requestDetailId &&
+            acceptedReqDetId &&
+            acceptedReqDetStatus !== "Pending" && (
+              <TrackingActionSheet
+                isOpen={showTracking}
+                onClose={() => setShowTracking(false)}
+                requestDetailIdState={[requestDetailId, setRequestDetailId]}
+                eta={directionsInfo?.duration?.text}
+                distance={directionsInfo?.distance?.text}
+                driverId={acceptedDriverId}
+                setAcceptedReqDetStatus={setAcceptedReqDetStatus}
+              />
+            )}
+        </>
+      )}
       {/* Action sheet toggle buttons */}
 
       {/* <ActionSheetToggle
@@ -1079,6 +1120,15 @@ const EmergencyRescueMapScreen = () => {
             visible={true}
           />
         )}
+      {latestRequestDetail &&
+        latestRequestDetail?.requeststatus !== "Done" &&
+        latestRequestDetail?.requeststatus !== "Cancel" && (
+          <ActionSheetToggle
+            onPress={() => setShowTracking2(true)}
+            visible={true}
+          />
+        )}
+
       <VehicleAlertDialog
         isOpen={showVehicleAlert}
         onClose={() => setShowVehicleAlert(false)}

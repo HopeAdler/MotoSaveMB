@@ -59,7 +59,7 @@ export const renderItem = ({
           </Text>
         </HStack>
 
-        {item.requesttype === 'Cứu hộ' && (
+        {item.requesttype === "Cứu hộ" && (
           <HStack className="items-start space-x-3 mt-1">
             <Box className="w-10 h-10 bg-[#1a3148]/5 rounded-lg items-center justify-center">
               <MapPin size={20} color="#1a3148" />
@@ -69,7 +69,17 @@ export const renderItem = ({
             </Text>
           </HStack>
         )}
-
+        
+        {/* {item.requesttype === "Trả xe" && (
+          <HStack className="items-start space-x-3 mt-1">
+            <Box className="w-10 h-10 bg-[#1a3148]/5 rounded-lg items-center justify-center">
+              <MapPin size={20} color="#1a3148" />
+            </Box>
+            <Text className="text-base text-gray-600 ml-2 flex-1 leading-5 pt-1">
+              {item.pickuplocation}
+            </Text>
+          </HStack>
+        )} */}
         {item.destination && (
           <HStack className="items-start space-x-3 mt-1">
             <Box className="w-10 h-10 bg-[#fab753]/10 rounded-lg items-center justify-center">
@@ -101,16 +111,19 @@ export const renderItem = ({
                   try {
                     Alert.alert("Success", "Đã chấp nhận yêu cầu cứu hộ!");
                     router.push({
-                      pathname: "/user/driver/map"
-                    })
+                      pathname: "/user/driver/map",
+                    });
                   } catch (pubnubError) {
-                    Alert.alert("Warning", "Request accepted, but notification failed");
+                    Alert.alert(
+                      "Warning",
+                      "Request accepted, but notification failed"
+                    );
                   }
                 } else {
                   Alert.alert("Success", "Đã chấp nhận yêu cầu trả xe!");
                   router.push({
-                    pathname: "/user/driver/map"
-                  })
+                    pathname: "/user/driver/map",
+                  });
                 }
               } catch (apiError: any) {
                 Alert.alert("Error", apiError.message);
@@ -126,17 +139,15 @@ export const renderItem = ({
             variant="outline"
             className="border-[#1a3148] rounded-xl h-12 active:opacity-80"
             onPress={() => {
-              console.log(item.requestdetailid.toString())
+              console.log(item.requestdetailid.toString());
               router.push({
                 pathname: "/user/driver/requests/requestMap",
                 params: { requestdetailid: item.requestdetailid.toString() },
-              })
+              });
             }}
           >
             <HStack className="items-center space-x-2 h-full justify-center">
-              <Text className="text-[#1a3148] font-semibold">
-                Xem chi tiết
-              </Text>
+              <Text className="text-[#1a3148] font-semibold">Xem chi tiết</Text>
             </HStack>
           </Button>
         )}

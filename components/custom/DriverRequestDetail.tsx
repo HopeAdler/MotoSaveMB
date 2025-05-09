@@ -2,12 +2,18 @@ import { formatMoney, handlePhoneCall } from "@/app/utils/utils";
 import { Box } from "@/components/ui/box";
 import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
-import { CreditCard, MapPin, MapPinCheckInsideIcon, MessageSquare, Phone } from "lucide-react-native";
-import React, { useContext, useEffect, useState } from 'react';
-import { UnpaidPaymentList } from './UnpaidPayments';
+import {
+  CreditCard,
+  MapPin,
+  MapPinCheckInsideIcon,
+  MessageSquare,
+  Phone,
+} from "lucide-react-native";
+import React, { useContext, useEffect, useState } from "react";
+import { UnpaidPaymentList } from "./UnpaidPayments";
 import { ScrollView } from "react-native-gesture-handler";
-import AuthContext from '@/app/context/AuthContext';
-import { getUnpaidPaymentsByRequestId } from '@/app/services/beAPI';
+import AuthContext from "@/app/context/AuthContext";
+import { getUnpaidPaymentsByRequestId } from "@/app/services/beAPI";
 import { ActivityIndicator } from "react-native";
 
 interface RequestDetail {
@@ -35,7 +41,7 @@ interface DriverRequestDetailProps {
 const DriverRequestDetail: React.FC<DriverRequestDetailProps> = ({
   requestDetail,
   changeButtonTitle,
-  toChatScreen
+  toChatScreen,
 }) => {
   const { token } = useContext(AuthContext);
   const [unpaidCashPayments, setUnpaidCashPayments] = useState<any[]>([]);
@@ -45,9 +51,14 @@ const DriverRequestDetail: React.FC<DriverRequestDetailProps> = ({
     const fetchUnpaidCashPayments = async () => {
       if (requestDetail?.requestid) {
         try {
-          const results = await getUnpaidPaymentsByRequestId(requestDetail.requestid, token);
+          const results = await getUnpaidPaymentsByRequestId(
+            requestDetail.requestid,
+            token
+          );
           const unpaidCash = results.filter(
-            (payment:any) => payment.paymentstatus === 'Unpaid' && payment.paymentmethod === 'Tiền mặt'
+            (payment: any) =>
+              payment.paymentstatus === "Unpaid" &&
+              payment.paymentmethod === "Tiền mặt"
           );
           setUnpaidCashPayments(unpaidCash);
         } catch (error) {
@@ -65,9 +76,14 @@ const DriverRequestDetail: React.FC<DriverRequestDetailProps> = ({
     setLoading(true);
     if (requestDetail?.requestid) {
       try {
-        const results = await getUnpaidPaymentsByRequestId(requestDetail.requestid, token);
+        const results = await getUnpaidPaymentsByRequestId(
+          requestDetail.requestid,
+          token
+        );
         const unpaidCash = results.filter(
-          (payment: any) => payment.paymentstatus === 'Unpaid' && payment.paymentmethod === 'Tiền mặt'
+          (payment: any) =>
+            payment.paymentstatus === "Unpaid" &&
+            payment.paymentmethod === "Tiền mặt"
         );
         setUnpaidCashPayments(unpaidCash);
       } catch (error) {
@@ -78,7 +94,6 @@ const DriverRequestDetail: React.FC<DriverRequestDetailProps> = ({
     }
   };
 
-  
   if (loading) {
     return (
       <Box className="space-y-4 w-full h-2/5">
@@ -90,15 +105,20 @@ const DriverRequestDetail: React.FC<DriverRequestDetailProps> = ({
   }
   if (unpaidCashPayments.length > 0) {
     return (
-      <ScrollView className="flex-1 bg-white" contentContainerStyle={{ flexGrow: 1 }}>
-        <Box className="pt-16 px-4 pb-4 border-b border-gray-100">
-          <Text className="text-2xl font-bold text-[#1a3148]">Xác nhận thanh toán</Text>
+      <ScrollView
+        className="flex-1 bg-white"
+        contentContainerStyle={{ flexGrow: 1 }}
+      >
+        <Box className="pt-5 justify-center items-center px-4 pb-4 border-b border-gray-100">
+          <Text className="text-2xl font-bold text-[#1a3148]">
+            Xác nhận thanh toán
+          </Text>
         </Box>
-        
+
         <Box className="flex-1 flex justify-center items-center p-4">
           <Box className="bg-[#f8fafc] rounded-2xl p-5 shadow-sm w-full">
-            <UnpaidPaymentList 
-              requestId={requestDetail?.requestid || ''} 
+            <UnpaidPaymentList
+              requestId={requestDetail?.requestid || ""}
               onPaymentConfirmed={refreshPayments}
             />
           </Box>
@@ -109,12 +129,9 @@ const DriverRequestDetail: React.FC<DriverRequestDetailProps> = ({
 
   return (
     <ScrollView className="flex-1 bg-white">
-      <Box className="pt-16 px-4 pb-4 border-b border-gray-100">
-        <Box className="flex-row items-center justify-between">
-          <Text className="text-2xl font-bold text-[#1a3148]">Request Details</Text>
-          <Box className="px-3 py-1.5 bg-green-100/80 rounded-full">
-            <Text className="text-sm text-green-600 font-semibold">Completed</Text>
-          </Box>
+      <Box className="pt-5 px-4 pb-4 border-b border-gray-100">
+        <Box className="flex-1 items-center justify-between">
+          <Text className="text-2xl font-bold text-[#1a3148]">Chi tiết</Text>
         </Box>
       </Box>
 
@@ -123,9 +140,13 @@ const DriverRequestDetail: React.FC<DriverRequestDetailProps> = ({
           <Box className="bg-[#f8fafc] rounded-2xl p-5">
             <Box className="flex-row items-center justify-between mb-4">
               <Box className="flex-1">
-                <Text className="text-xs uppercase text-gray-500 tracking-wider mb-1">Khách hàng</Text>
+                <Text className="text-xs uppercase text-gray-500 tracking-wider mb-1">
+                  Khách hàng
+                </Text>
                 <Text className="text-2xl font-bold text-[#1a3148]">
-                  {requestDetail?.customername ? requestDetail?.customername : requestDetail?.receivername}
+                  {requestDetail?.customername
+                    ? requestDetail?.customername
+                    : requestDetail?.receivername}
                 </Text>
               </Box>
               <Box className="flex-row gap-3">
@@ -147,18 +168,44 @@ const DriverRequestDetail: React.FC<DriverRequestDetailProps> = ({
                 </Button>
               </Box>
             </Box>
-            <Box className="flex-row items-center p-3 bg-[#1a3148]/5 rounded-xl">
-              <Text className="text-xs uppercase tracking-wider text-gray-500">Dịch vụ:</Text>
-              <Text className="text-base font-semibold text-[#1a3148] ml-2">
-                {requestDetail?.servicepackagename}
-              </Text>
-              <Text className="text-sm text-gray-400 mx-2">•</Text>
-              <Text className="text-base font-semibold text-[#fab753]">
-                {requestDetail?.requesttype}
-              </Text>
+
+            <Box className="flex-col items-start  p-3 bg-[#1a3148]/5 rounded-xl">
+              <Box className="flex-row items-center justify-between w-full">
+                <Box className="flex-row items-center">
+
+                <Text className="text-xs uppercase tracking-wider text-gray-500">
+                  Dịch vụ:
+                </Text>
+                <Text className="text-sm font-semibold text-[#1a3148] ml-2">
+                  {requestDetail?.servicepackagename}
+                </Text>
+                <Text className="text-sm text-gray-400 mx-2">•</Text>
+                <Text className="text-sm font-semibold text-[#fab753]">
+                  {requestDetail?.requesttype}
+                </Text>
+                </Box>
+
+                 <Box className="px-3 py-1.5 bg-green-100/80 rounded-full">
+                  <Text className="text-sm text-green-600 font-semibold">
+                    {requestDetail?.requeststatus}
+                  </Text>
+                </Box>
+              </Box>
+
+
+              {/* <Box className="flex-row items-center mt-2">
+                <Text className="text-xs uppercase tracking-wider text-gray-500">
+                  Trạng thái:
+                </Text>
+                <Text className="text-sm text-gray-400 mx-2">•</Text>
+                <Box className="px-3 py-1.5 bg-green-100/80 rounded-full">
+                  <Text className="text-sm text-green-600 font-semibold">
+                    {requestDetail?.requeststatus}
+                  </Text>
+                </Box>
+              </Box> */}
             </Box>
           </Box>
-
           <Box className="bg-[#f8fafc] rounded-2xl p-5 space-y-4">
             <Text className="text-base font-semibold text-[#1a3148] mb-2">
               Chi tiết
@@ -168,7 +215,9 @@ const DriverRequestDetail: React.FC<DriverRequestDetailProps> = ({
                 <MapPin size={20} color="#1a3148" />
               </Box>
               <Box className="ml-3 flex-1">
-                <Text className="text-xs uppercase tracking-wider text-gray-500">Điểm đón</Text>
+                <Text className="text-xs uppercase tracking-wider text-gray-500">
+                  Điểm đón
+                </Text>
                 <Text className="text-base font-medium text-[#1a3148]">
                   {requestDetail?.pickuplocation}
                 </Text>
@@ -181,7 +230,9 @@ const DriverRequestDetail: React.FC<DriverRequestDetailProps> = ({
                   <MapPinCheckInsideIcon size={20} color="#fab753" />
                 </Box>
                 <Box className="ml-3 flex-1">
-                  <Text className="text-xs uppercase tracking-wider text-gray-500">Đích đến</Text>
+                  <Text className="text-xs uppercase tracking-wider text-gray-500">
+                    Đích đến
+                  </Text>
                   <Text className="text-base font-medium text-[#1a3148]">
                     {requestDetail?.destination}
                   </Text>
@@ -190,15 +241,17 @@ const DriverRequestDetail: React.FC<DriverRequestDetailProps> = ({
             )}
           </Box>
 
-          <Box className="bg-[#f8fafc] rounded-2xl p-5">
-            <Text className="text-base font-semibold text-[#1a3148] mb-4">
+          <Box className="bg-[#f8fafc] rounded-2xl mt-4 p-5">
+            {/* <Text className="text-base font-semibold text-[#1a3148] mb-4">
               Phương thức thanh toán
-            </Text>
+            </Text> */}
             <Box className="flex-row items-center justify-between">
               <Box>
                 <Box className="flex-row items-center mb-1.5">
                   <CreditCard size={18} color="#1a3148" />
-                  <Text className="text-xs uppercase tracking-wider text-gray-500 ml-2">Tổng</Text>
+                  <Text className="text-xs uppercase tracking-wider text-gray-500 ml-2">
+                    Tổng
+                  </Text>
                 </Box>
                 <Text className="text-xl font-bold text-[#1a3148]">
                   {formatMoney(requestDetail?.totalprice)}
