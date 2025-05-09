@@ -1,7 +1,22 @@
 import { AuthContext } from "@/app/context/AuthContext";
 import { useCameraZoom } from "@/app/hooks/useCameraZoom";
-import { calculateFare, createPayment, createRescueRequest, createTransaction, getServicePackageByName, RescueRequestPayload, ServicePackage, updatePaymentStatus, updateRequestStatus } from "@/app/services/beAPI";
-import { geocodeAddress, getAutocomplete, getDirections, getReverseGeocode, } from "@/app/services/goongAPI";
+import {
+  calculateFare,
+  createPayment,
+  createRescueRequest,
+  createTransaction,
+  getServicePackageByName,
+  RescueRequestPayload,
+  ServicePackage,
+  updatePaymentStatus,
+  updateRequestStatus,
+} from "@/app/services/beAPI";
+import {
+  geocodeAddress,
+  getAutocomplete,
+  getDirections,
+  getReverseGeocode,
+} from "@/app/services/goongAPI";
 import { decodePolyline } from "@/app/utils/utils";
 import TrackingActionSheet from "@/components/custom/TrackingActionSheet";
 import TripDetailsActionSheet from "@/components/custom/TripDetailsActionSheet";
@@ -14,10 +29,22 @@ import { Alert, NativeEventEmitter, NativeModules } from "react-native";
 // Các import liên quan đến PubNub và Payment
 import { useSmoothedLocation } from "@/app/hooks/useUpdateLocation";
 import { usePubNubService } from "@/app/services/pubnubService"; // ✅ Use the custom hook
-import { PayZaloEventData, processPayment, refundTransaction } from "@/app/utils/payment";
+import {
+  PayZaloEventData,
+  processPayment,
+  refundTransaction,
+} from "@/app/utils/payment";
 import { decodedToken } from "@/app/utils/utils";
-import { DestinationMarker, OriginMarker } from "../../../../../components/custom/CustomMapMarker";
-import { ActionSheetToggle, BackButton, SearchInput, SearchResults } from "../../../../../components/custom/MapUIComponents";
+import {
+  DestinationMarker,
+  OriginMarker,
+} from "../../../../../components/custom/CustomMapMarker";
+import {
+  ActionSheetToggle,
+  BackButton,
+  SearchInput,
+  SearchResults,
+} from "../../../../../components/custom/MapUIComponents";
 import MapViewComponent from "../../../../../components/custom/MapViewComponent";
 import { RequestDetail, User } from "../../../../context/formFields";
 import { LinearTransition } from "react-native-reanimated";
@@ -26,20 +53,22 @@ import axios from "axios";
 const { EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN } = process.env;
 MapboxGL.setAccessToken(`${EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN}`);
 const INITIAL_RADIUS = 5000; // 5 km
-const MAX_RADIUS = 15000;    // 15 km
+const MAX_RADIUS = 15000; // 15 km
 // Các hằng số cảnh báo khoảng cách (đơn vị mét)
-const MAX_WARN_PICKUP_DISTANCE = 500;       // 500m cho điểm đón
-const MAX_WARN_DESTINATION_DISTANCE = 10000;   // 10 km cho điểm đến
+const MAX_WARN_PICKUP_DISTANCE = 500; // 500m cho điểm đón
+const MAX_WARN_DESTINATION_DISTANCE = 10000; // 10 km cho điểm đến
 const RescueMapScreen = () => {
-  const { publishRescueRequest, subscribeToChannel, subscribeToRescueChannel, hereNow, } = usePubNubService();
+  const {
+    publishRescueRequest,
+    subscribeToChannel,
+    subscribeToRescueChannel,
+    hereNow,
+  } = usePubNubService();
   const { user, token } = useContext(AuthContext);
   const { PayZaloBridge } = NativeModules;
   const userId = decodedToken(token)?.id;
   // Các state chính
-  const {
-    latestRequestDetail,
-  } = useLatReqDetStore();
-
+  const { latestRequestDetail } = useLatReqDetStore();
 
   const [focusOnMe, setFocusOnMe] = useState<boolean>(true);
   const currentLoc = useSmoothedLocation();
@@ -48,7 +77,7 @@ const RescueMapScreen = () => {
 
   const [originCoordinates, setOriginCoordinates] = useState({
     latitude: 0,
-    longitude: 0
+    longitude: 0,
   });
 
   const [requestActive, setRequestActive] = useState<boolean>(false);
@@ -64,12 +93,17 @@ const RescueMapScreen = () => {
       setOriginCoordinates(currentLoc);
     }
   }, [currentLoc, originCoordinates]);
-  const [destinationCoordinates, setDestinationCoordinates] = useState({ latitude: 0, longitude: 0 });
+  const [destinationCoordinates, setDestinationCoordinates] = useState({
+    latitude: 0,
+    longitude: 0,
+  });
   const [originQuery, setOriginQuery] = useState("");
   const [destinationQuery, setDestinationQuery] = useState("");
   const [originResults, setOriginResults] = useState<any[]>([]);
   const [destinationResults, setDestinationResults] = useState<any[]>([]);
-  const [routeCoordinates, setRouteCoordinates] = useState<[number, number][]>([]);
+  const [routeCoordinates, setRouteCoordinates] = useState<[number, number][]>(
+    []
+  );
   const [directionsInfo, setDirectionsInfo] = useState<any>(null);
   const [fare, setFare] = useState<number>(0);
   const [fareLoading, setFareLoading] = useState<boolean>(false);
@@ -87,14 +121,13 @@ const RescueMapScreen = () => {
   // const [isCancel, setIsCancel] = useState(false);
   // const [sentDriverIds, setSentDriverIds] = useState<Set<string>>(new Set());
   const [acceptedReqDetId, setAcceptedReqDetId] = useState<string>();
-  const [acceptedReqDetStatus, setAcceptedReqDetStatus] = useState<string>('Pending');
+  const [acceptedReqDetStatus, setAcceptedReqDetStatus] =
+    useState<string>("Pending");
   // Flag đánh dấu nếu có driver chấp nhận request
   // const [driverAccepted, setDriverAccepted] = useState(false);
   const attemptedDriversRef = useRef<Set<string>>(new Set());
   //For initializing chat
-  const {
-    createDirectChannel
-  } = usePubNubService();
+  const { createDirectChannel } = usePubNubService();
   const [acceptedDriverId, setAcceptedDriverId] = useState<string | null>(null);
   // State để lưu vehicle id đã chọn
   const [selectedVehicleId, setSelectedVehicleId] = useState<string>("");
@@ -104,9 +137,9 @@ const RescueMapScreen = () => {
   }, [isSearching]);
 
   const fetchServicePackage = async () => {
-    const results = await getServicePackageByName('Cứu hộ thường');
+    const results = await getServicePackageByName("Cứu hộ thường");
     setServicePackage(results);
-  }
+  };
   // PubNub
   const [users, setUsers] = useState(new Map<string, User>());
   // Refs
@@ -114,8 +147,15 @@ const RescueMapScreen = () => {
   useCameraZoom(camera, routeCoordinates);
   // Khi originCoordinates chưa có query thì reverse geocode
   useEffect(() => {
-    if (!originQuery && originCoordinates.latitude && originCoordinates.longitude) {
-      getReverseGeocode(originCoordinates.latitude, originCoordinates.longitude).then((address) => {
+    if (
+      !originQuery &&
+      originCoordinates.latitude &&
+      originCoordinates.longitude
+    ) {
+      getReverseGeocode(
+        originCoordinates.latitude,
+        originCoordinates.longitude
+      ).then((address) => {
         if (address) {
           setOriginQuery(address);
           setOriginSelected(true);
@@ -131,7 +171,10 @@ const RescueMapScreen = () => {
       if (isOrigin) {
         // Kiểm tra khoảng cách giữa vị trí hiện tại và điểm đón mới
         if (currentLoc.latitude !== 0 && currentLoc.longitude !== 0) {
-          const distance = getDistance(currentLoc, { latitude: lat, longitude: lng });
+          const distance = getDistance(currentLoc, {
+            latitude: lat,
+            longitude: lng,
+          });
           if (distance > MAX_WARN_PICKUP_DISTANCE) {
             Alert.alert(
               "Điểm đón quá xa",
@@ -145,8 +188,14 @@ const RescueMapScreen = () => {
         setOriginSelected(true);
       } else {
         // Kiểm tra khoảng cách giữa điểm đón và điểm đến mới
-        if (originCoordinates.latitude !== 0 && originCoordinates.longitude !== 0) {
-          const distance = getDistance(originCoordinates, { latitude: lat, longitude: lng });
+        if (
+          originCoordinates.latitude !== 0 &&
+          originCoordinates.longitude !== 0
+        ) {
+          const distance = getDistance(originCoordinates, {
+            latitude: lat,
+            longitude: lng,
+          });
           if (distance > MAX_WARN_DESTINATION_DISTANCE) {
             Alert.alert(
               "Điểm đến quá xa",
@@ -205,10 +254,11 @@ const RescueMapScreen = () => {
 
   // Lấy đường đi và tính toán cước
   useEffect(() => {
-    if (acceptedDriverId === null ||
-      ((latestRequestDetail &&
+    if (
+      acceptedDriverId === null ||
+      (latestRequestDetail &&
         latestRequestDetail?.requeststatus !== "Done" &&
-        latestRequestDetail?.requeststatus !== "Cancel"))
+        latestRequestDetail?.requeststatus !== "Cancel")
     ) {
       if (
         originSelected &&
@@ -235,27 +285,32 @@ const RescueMapScreen = () => {
           .catch((error) => console.error("Error fetching directions:", error));
       }
     }
-  }, [originCoordinates, destinationCoordinates, originSelected, destinationSelected]);
+  }, [
+    originCoordinates,
+    destinationCoordinates,
+    originSelected,
+    destinationSelected,
+  ]);
 
   //Fetching route based on driver progress:
   const fetchRoute = () => {
-    console.log('one')
+    console.log("one");
     if (acceptedDriverId) {
-      console.log('two')
+      console.log("two");
       if (
         originSelected &&
         destinationSelected &&
         originCoordinates.latitude &&
         destinationCoordinates.latitude
       ) {
-        console.log('three')
+        console.log("three");
         const driverLoc = `${users.get(acceptedDriverId)?.latitude},${users.get(acceptedDriverId)?.longitude}`;
         const originStr = `${originCoordinates.latitude},${originCoordinates.longitude}`;
         const destinationStr = `${destinationCoordinates.latitude},${destinationCoordinates.longitude}`;
         let startStr = "";
         let endStr = "";
-        
-        if (acceptedReqDetStatus === 'Done') return setRouteCoordinates([]);
+
+        if (acceptedReqDetStatus === "Done") return setRouteCoordinates([]);
         switch (acceptedReqDetStatus) {
           case "Accepted":
             startStr = originStr;
@@ -296,7 +351,12 @@ const RescueMapScreen = () => {
   }, [currentLoc, acceptedReqDetStatus, acceptedDriverId]);
 
   useEffect(() => {
-    if (directionsInfo && !acceptedDriverId && !showActionsheet && servicePackage) {
+    if (
+      directionsInfo &&
+      !acceptedDriverId &&
+      !showActionsheet &&
+      servicePackage
+    ) {
       const distanceValue = directionsInfo.distance?.value || 0;
       setFareLoading(true);
       calculateFare(distanceValue, servicePackage?.rate, 0)
@@ -314,12 +374,19 @@ const RescueMapScreen = () => {
 
   // Hàm kiểm tra hợp lệ vị trí (cho nút confirm)
   const isLocationValid = () => {
-    if (originCoordinates.latitude === 0 || destinationCoordinates.latitude === 0) return false;
+    if (
+      originCoordinates.latitude === 0 ||
+      destinationCoordinates.latitude === 0
+    )
+      return false;
     if (currentLoc.latitude !== 0 && currentLoc.longitude !== 0) {
       const distanceFromCurrent = getDistance(currentLoc, originCoordinates);
       if (distanceFromCurrent > MAX_WARN_PICKUP_DISTANCE) return false;
     }
-    const distanceOriginToDest = getDistance(originCoordinates, destinationCoordinates);
+    const distanceOriginToDest = getDistance(
+      originCoordinates,
+      destinationCoordinates
+    );
     if (distanceOriginToDest > MAX_WARN_DESTINATION_DISTANCE) return false;
     return true;
   };
@@ -350,7 +417,7 @@ const RescueMapScreen = () => {
         },
         token
       );
-      console.log(payment)
+      console.log(payment);
       setShowActionsheet(true);
       // setShowCountdownSheet(true);
       setRequestDetailId(result.requestdetailid);
@@ -362,7 +429,8 @@ const RescueMapScreen = () => {
   };
 
   const handlePayment = async () => {
-    const callbackUrl = "myapp://user/customer/home/normalRescue/normalRescueMap";
+    const callbackUrl =
+      "myapp://user/customer/home/normalRescue/normalRescueMap";
     if (!token) return;
     setPaymentLoading(true);
     const payload: RescueRequestPayload = {
@@ -382,56 +450,59 @@ const RescueMapScreen = () => {
       setShowActionsheet(true);
       processPayment(fare, callbackUrl);
       const payZaloEmitter = new NativeEventEmitter(PayZaloBridge);
-      const subscription = payZaloEmitter.addListener("EventPayZalo", async (data: PayZaloEventData) => {
-        if (data.returnCode === "1") {
-          console.log("Payment successful:", data);
-          setZpTransId(data.transactionId);
-          try {
+      const subscription = payZaloEmitter.addListener(
+        "EventPayZalo",
+        async (data: PayZaloEventData) => {
+          if (data.returnCode === "1") {
+            console.log("Payment successful:", data);
+            setZpTransId(data.transactionId);
+            try {
+              const transactionResponse = await createTransaction(
+                {
+                  requestdetailid: reqId,
+                  zptransid: data.transactionId || "",
+                  totalamount: fare,
+                  paymentmethod: "ZaloPay",
+                  paymentstatus: "Success",
+                },
+                token
+              );
+              if (transactionResponse) {
+                isSearchingRef.current = true;
+                setIsSearching(true);
+                // setDriverAccepted(false);
+                sendRideRequestToDrivers(INITIAL_RADIUS, reqId);
+              }
+              console.log("Transaction created:", transactionResponse);
+            } catch (error) {
+              console.log(error);
+            }
+            // Manually trigger deep link navigation
+            // Linking.openURL("myapp://user/customer/home/normalRescue/rescueMap");
+          } else {
+            // router.navigate("/user/customer/home/normalRescue/rescueMap");
+            const updateRequest = await updateRequestStatus(
+              reqId,
+              token,
+              "Cancel"
+            );
+            console.log(updateRequest);
             const transactionResponse = await createTransaction(
               {
                 requestdetailid: reqId,
                 zptransid: data.transactionId || "",
                 totalamount: fare,
                 paymentmethod: "ZaloPay",
-                paymentstatus: "Success",
+                paymentstatus: "Failed",
               },
               token
             );
-            if (transactionResponse) {
-              isSearchingRef.current = true;
-              setIsSearching(true);
-              // setDriverAccepted(false);
-              sendRideRequestToDrivers(INITIAL_RADIUS, reqId);
-            }
-            console.log("Transaction created:", transactionResponse);
-          } catch (error) {
-            console.log(error)
+            console.log(transactionResponse);
+            alert("Thanh toán thất bại! Vui lòng thử lại sau");
           }
-          // Manually trigger deep link navigation
-          // Linking.openURL("myapp://user/customer/home/normalRescue/rescueMap");
-        } else {
-          // router.navigate("/user/customer/home/normalRescue/rescueMap");
-          const updateRequest = await updateRequestStatus(
-            reqId,
-            token,
-            "Cancel"
-          )
-          console.log(updateRequest)
-          const transactionResponse = await createTransaction(
-            {
-              requestdetailid: reqId,
-              zptransid: data.transactionId || "",
-              totalamount: fare,
-              paymentmethod: "ZaloPay",
-              paymentstatus: "Failed",
-            },
-            token
-          );
-          console.log(transactionResponse)
-          alert("Thanh toán thất bại! Vui lòng thử lại sau");
+          subscription.remove();
         }
-        subscription.remove();
-      });
+      );
     } catch (error) {
       console.error("Error during payment:", error);
     } finally {
@@ -447,7 +518,10 @@ const RescueMapScreen = () => {
 
   // 2. Cập nhật ref khi acceptedReqDetId hoặc acceptedReqDetStatus thay đổi
   useEffect(() => {
-    acceptedRequestRef.current = { id: acceptedReqDetId ?? null, status: acceptedReqDetStatus };
+    acceptedRequestRef.current = {
+      id: acceptedReqDetId ?? null,
+      status: acceptedReqDetStatus,
+    };
     // Nếu có driver chấp nhận thì update UI ngay
     if (acceptedReqDetId && acceptedReqDetStatus !== "Pending") {
       setShowActionsheet(false);
@@ -464,18 +538,23 @@ const RescueMapScreen = () => {
       return;
     }
     // Kiểm tra nếu request đã được driver chấp nhận thì dừng luôn
-    if (acceptedRequestRef.current.id === reqId && acceptedRequestRef.current.status !== "Pending") {
+    if (
+      acceptedRequestRef.current.id === reqId &&
+      acceptedRequestRef.current.status !== "Pending"
+    ) {
       console.log("Driver đã chấp nhận request, dừng tìm kiếm.");
       return;
     }
     // Nếu vượt quá bán kính tối đa, dừng tìm kiếm và kích hoạt hủy
     if (radius > MAX_RADIUS) {
-      console.log(`Đã vượt quá bán kính tối đa ${MAX_RADIUS}. Dừng tìm kiếm với reqId:`, reqId);
+      console.log(
+        `Đã vượt quá bán kính tối đa ${MAX_RADIUS}. Dừng tìm kiếm với reqId:`,
+        reqId
+      );
       Alert.alert(
         "Vui lòng thử lại sau.",
         "Hiện không có tài xế trong phạm vi phục vụ."
       );
-
 
       // Đặt UI state
       isSearchingRef.current = false;
@@ -485,22 +564,26 @@ const RescueMapScreen = () => {
       try {
         // Gọi trực tiếp API để cancel request
         const result = await updateRequestStatus(reqId, token, "Cancel");
-        console.log("Đã hủy request thành công:", result);
-        console.log("Zp tran id: " + zpTransId)
-        await refundTransaction(zpTransId, "User canceled request", fare);
         const payment = await updatePaymentStatus(
           {
-            requestDetailId: requestDetailId,
-            newStatus: "Refunded"
+            requestDetailId: reqId,
+            newStatus: "Refunded",
           },
           token
-        )
-        console.log(payment)
-        const payZaloBridgeEmitter = new NativeEventEmitter(PayZaloBridge);
-        const subscription = payZaloBridgeEmitter.addListener("EventPayZalo", async (data: PayZaloEventData) => {
-          console.log("Nhận sự kiện PayZalo:", data);
-          subscription.remove();
-        });
+        );
+        console.log(payment);
+        console.log("Đã hủy request thành công:", result);
+        if (zpTransId) {
+          await refundTransaction(zpTransId, "User canceled request", fare);
+          const payZaloBridgeEmitter = new NativeEventEmitter(PayZaloBridge);
+          const subscription = payZaloBridgeEmitter.addListener(
+            "EventPayZalo",
+            async (data: PayZaloEventData) => {
+              console.log("Nhận sự kiện PayZalo:", data);
+              subscription.remove();
+            }
+          );
+        }
       } catch (error) {
         console.error("Lỗi khi tự động hủy request:", error);
       }
@@ -515,10 +598,15 @@ const RescueMapScreen = () => {
     users.forEach((userData) => {
       if (userData.role && userData.role.toLowerCase() === "driver") {
         const distance = getDistance(
-          { latitude: baseLocation.latitude, longitude: baseLocation.longitude },
+          {
+            latitude: baseLocation.latitude,
+            longitude: baseLocation.longitude,
+          },
           { latitude: userData.latitude, longitude: userData.longitude }
         );
-        console.log(`Driver ${userData.username} (${userData.uuid}) cách ${distance} mét`);
+        console.log(
+          `Driver ${userData.username} (${userData.uuid}) cách ${distance} mét`
+        );
         if (distance <= radius) {
           nearbyDrivers.push({ ...userData, distance });
         }
@@ -526,14 +614,18 @@ const RescueMapScreen = () => {
     });
     nearbyDrivers.sort((a, b) => a.distance - b.distance);
     // Lọc ra những driver chưa nhận request
-    const newDrivers = nearbyDrivers.filter((driver) => !attemptedDriversRef.current.has(driver.uuid));
+    const newDrivers = nearbyDrivers.filter(
+      (driver) => !attemptedDriversRef.current.has(driver.uuid)
+    );
     console.log(`RequestId: ${reqId}`);
     if (newDrivers.length > 0 && reqId) {
       newDrivers.forEach((driver) => {
         attemptedDriversRef.current.add(driver.uuid);
         publishRescueRequest(driver.uuid, reqId);
       });
-      console.log(`Đã gửi request cho các driver trong bán kính ${radius} mét: ${newDrivers.map((d) => d.uuid)}`);
+      console.log(
+        `Đã gửi request cho các driver trong bán kính ${radius} mét: ${newDrivers.map((d) => d.uuid)}`
+      );
       // Đặt timeout và lưu ID vào ref
       setTimeout(() => {
         // Kiểm tra lại ngay trong callback nếu việc tìm kiếm đã bị hủy
@@ -542,8 +634,13 @@ const RescueMapScreen = () => {
           // handleCancelSearch();
           return;
         }
-        if (acceptedRequestRef.current.id === reqId && acceptedRequestRef.current.status !== "Pending") {
-          console.log("Driver đã chấp nhận request, dừng tìm kiếm (trong callback).");
+        if (
+          acceptedRequestRef.current.id === reqId &&
+          acceptedRequestRef.current.status !== "Pending"
+        ) {
+          console.log(
+            "Driver đã chấp nhận request, dừng tìm kiếm (trong callback)."
+          );
           return;
         }
         if (acceptedRequestRef.current.status === "Pending") {
@@ -556,7 +653,10 @@ const RescueMapScreen = () => {
       console.log(`Không tìm thấy driver mới trong bán kính ${radius} mét.`);
       const newRadius = radius + 2000;
       // Kiểm tra lại trạng thái trước khi gọi đệ quy
-      if (acceptedRequestRef.current.id === reqId && acceptedRequestRef.current.status !== "Pending") {
+      if (
+        acceptedRequestRef.current.id === reqId &&
+        acceptedRequestRef.current.status !== "Pending"
+      ) {
         console.log("Driver đã chấp nhận, dừng tìm kiếm.");
         return;
       }
@@ -568,7 +668,9 @@ const RescueMapScreen = () => {
       setTimeout(() => {
         // Kiểm tra lại trước khi gọi đệ quy trong callback
         if (!isSearchingRef.current) {
-          console.log("Search has been canceled (in recursion callback). Exiting.");
+          console.log(
+            "Search has been canceled (in recursion callback). Exiting."
+          );
           handleCancelSearch();
           return;
         }
@@ -606,7 +708,11 @@ const RescueMapScreen = () => {
 
     try {
       console.log("Đang hủy request với ID:", requestDetailId);
-      const result = await updateRequestStatus(requestDetailId, token, "Cancel");
+      const result = await updateRequestStatus(
+        requestDetailId,
+        token,
+        "Cancel"
+      );
       console.log("Kết quả hủy request:", result);
 
       if (paymentMethod === "Zalopay" && zpTransId) {
@@ -659,17 +765,20 @@ const RescueMapScreen = () => {
           const payment = await updatePaymentStatus(
             {
               requestDetailId: requestDetailId,
-              newStatus: "Refunded"
+              newStatus: "Refunded",
             },
             token
-          )
-          console.log(payment)
-        const payZaloBridgeEmitter = new NativeEventEmitter(PayZaloBridge);
-        const subscription = payZaloBridgeEmitter.addListener("EventPayZalo", async (data: PayZaloEventData) => {
-
-          console.log("Nhận sự kiện PayZalo:", data);
-          subscription.remove();
-        });
+          );
+          console.log(payment);
+          Alert.alert("Hoàn tiền", "Bạn đã được hoàn tiền");
+          const payZaloBridgeEmitter = new NativeEventEmitter(PayZaloBridge);
+          const subscription = payZaloBridgeEmitter.addListener(
+            "EventPayZalo",
+            async (data: PayZaloEventData) => {
+              console.log("Nhận sự kiện PayZalo:", data);
+              subscription.remove();
+            }
+          );
         }
       } catch (error) {
         console.error("Lỗi khi hủy request:", error);
@@ -690,19 +799,23 @@ const RescueMapScreen = () => {
             const updatedMap = new Map(prev);
             updatedMap.set(msg.publisher, msg.message);
             return acceptedDriverId
-              ? new Map([...updatedMap].filter(([key]) => key === acceptedDriverId))
+              ? new Map(
+                  [...updatedMap].filter(([key]) => key === acceptedDriverId)
+                )
               : updatedMap;
           });
         }
       },
       (event: any) => {
-        console.log(event)
+        console.log(event);
         if (event.action === "leave" || event.action === "timeout") {
           setUsers((prev) => {
             const updated = new Map(prev);
             updated.delete(event.uuid);
             return acceptedDriverId
-              ? new Map([...updated].filter(([key]) => key === acceptedDriverId))
+              ? new Map(
+                  [...updated].filter(([key]) => key === acceptedDriverId)
+                )
               : updated;
           });
         }
@@ -711,18 +824,20 @@ const RescueMapScreen = () => {
     subscribeToRescueChannel((msg: any) => {
       if (
         msg?.message?.requestDetailId === requestDetailId &&
-        msg?.message?.senderRole === "Driver"
-        && msg?.message?.reqStatus === "Accepted"
+        msg?.message?.senderRole === "Driver" &&
+        msg?.message?.reqStatus === "Accepted"
       ) {
         // console.log(msg)
-        console.log(msg.message.requestDetailId)
-        console.log(requestDetailId)
-        setAcceptedReqDetStatus(msg.message.reqStatus)
-        setAcceptedReqDetId(msg.message.requestDetailId)
-        console.log('Driver has accept the requet: ' + msg.message.requestDetailId)
+        console.log(msg.message.requestDetailId);
+        console.log(requestDetailId);
+        setAcceptedReqDetStatus(msg.message.reqStatus);
+        setAcceptedReqDetId(msg.message.requestDetailId);
+        console.log(
+          "Driver has accept the requet: " + msg.message.requestDetailId
+        );
         //Initializing direct chat(driverId, requestDetailId)
-        setAcceptedDriverId(msg?.publisher)
-        createDirectChannel(msg?.publisher, msg.message.requestDetailId)
+        setAcceptedDriverId(msg?.publisher);
+        createDirectChannel(msg?.publisher, msg.message.requestDetailId);
 
         //Hide input fields origin & destination
         setRequestActive(true);
@@ -742,36 +857,36 @@ const RescueMapScreen = () => {
     );
     setOriginCoordinates({
       longitude: response.data?.pickuplong || 0,
-      latitude: response.data?.pickuplat || 0
+      latitude: response.data?.pickuplat || 0,
     });
     setDestinationCoordinates({
       longitude: response.data?.deslng || 0,
-      latitude: response.data?.deslat || 0
+      latitude: response.data?.deslat || 0,
     });
     setOriginQuery(response.data?.pickuplocation);
     setDestinationQuery(response.data?.destination);
     setOriginSelected(true);
     setDestinationSelected(true);
-    setAcceptedDriverId(response.data?.driverid)
+    setAcceptedDriverId(response.data?.driverid);
     setAcceptedReqDetStatus(response.data?.requeststatus);
     console.log("Fetching request detail...");
   };
 
   useEffect(() => {
-
     hereNow();
     fetchServicePackage();
   }, []);
   useEffect(() => {
-    if (latestRequestDetail &&
+    if (
+      latestRequestDetail &&
       latestRequestDetail?.requeststatus !== "Done" &&
-      latestRequestDetail?.requeststatus !== "Cancel") {
-      setRequestDetailId(latestRequestDetail?.requestdetailid)
-      fetchRequestDetail(latestRequestDetail?.requestdetailid)
+      latestRequestDetail?.requeststatus !== "Cancel"
+    ) {
+      setRequestDetailId(latestRequestDetail?.requestdetailid);
+      fetchRequestDetail(latestRequestDetail?.requestdetailid);
       setShowTracking(true);
       setRequestActive(true);
     }
-  
   }, [latestRequestDetail]);
   return (
     <Box className="flex-1">
@@ -827,12 +942,12 @@ const RescueMapScreen = () => {
           isActionSheetOpen={showActionsheet}
           focusMode={[focusOnMe, setFocusOnMe]}
           role="Customer"
-          userId={users.get(userId ?? '')?.uuid || ''}
+          userId={users.get(userId ?? "")?.uuid || ""}
         >
           {originCoordinates.latitude !== 0 && (
             <MapboxGL.Camera
               ref={camera}
-            // centerCoordinate={[originCoordinates.longitude, originCoordinates.latitude]}
+              // centerCoordinate={[originCoordinates.longitude, originCoordinates.latitude]}
             />
           )}
           {currentLoc.latitude !== 0 && (
@@ -857,7 +972,10 @@ const RescueMapScreen = () => {
           {originCoordinates.latitude !== 0 && (
             <MapboxGL.MarkerView
               id="origin-marker"
-              coordinate={[originCoordinates.longitude, originCoordinates.latitude]}
+              coordinate={[
+                originCoordinates.longitude,
+                originCoordinates.latitude,
+              ]}
             >
               <OriginMarker size={32} />
             </MapboxGL.MarkerView>
@@ -865,7 +983,10 @@ const RescueMapScreen = () => {
           {destinationCoordinates.latitude !== 0 && (
             <MapboxGL.MarkerView
               id="destination-marker"
-              coordinate={[destinationCoordinates.longitude, destinationCoordinates.latitude]}
+              coordinate={[
+                destinationCoordinates.longitude,
+                destinationCoordinates.latitude,
+              ]}
             >
               <DestinationMarker size={32} />
             </MapboxGL.MarkerView>
@@ -878,13 +999,14 @@ const RescueMapScreen = () => {
                 type: "Feature",
                 geometry: { type: "LineString", coordinates: routeCoordinates },
                 properties: {},
-
               }}
             >
               <MapboxGL.LineLayer
                 id="routeLine"
                 style={{
-                  lineColor: "#fab753", lineWidth: 3, lineOpacity: 0.8
+                  lineColor: "#fab753",
+                  lineWidth: 3,
+                  lineOpacity: 0.8,
                 }}
               />
             </MapboxGL.ShapeSource>
@@ -893,28 +1015,31 @@ const RescueMapScreen = () => {
       </Box>
 
       {/* Trip details action sheet */}
-      {requestActive || (showActionsheet && directionsInfo && !acceptedReqDetId) && (
-        <TripDetailsActionSheet
-          isOpen={showActionsheet}
-          onClose={() => setShowActionsheet(false)}
-          onPayment={paymentMethod === "Tiền mặt" ? handleFindDriver : handlePayment}
-          onCancelSearch={handleCancelSearch}
-          fare={fare}
-          fareLoading={fareLoading}
-          paymentLoading={paymentLoading}
-          isSearching={isSearching}
-          directionsInfo={directionsInfo}
-          paymentMethodState={[paymentMethod, setPaymentMethod]}
-          selectVehicleState={[selectedVehicleId, setSelectedVehicleId]}
-          confirmDisabled={!isLocationValid()}
-          rescueType="normal"
-        />
-      )}
+      {requestActive ||
+        (showActionsheet && directionsInfo && !acceptedReqDetId && (
+          <TripDetailsActionSheet
+            isOpen={showActionsheet}
+            onClose={() => setShowActionsheet(false)}
+            onPayment={
+              paymentMethod === "Tiền mặt" ? handleFindDriver : handlePayment
+            }
+            onCancelSearch={handleCancelSearch}
+            fare={fare}
+            fareLoading={fareLoading}
+            paymentLoading={paymentLoading}
+            isSearching={isSearching}
+            directionsInfo={directionsInfo}
+            paymentMethodState={[paymentMethod, setPaymentMethod]}
+            selectVehicleState={[selectedVehicleId, setSelectedVehicleId]}
+            confirmDisabled={!isLocationValid()}
+            rescueType="normal"
+          />
+        ))}
 
       {/* Tracking action sheet */}
-      {(latestRequestDetail &&
-        latestRequestDetail?.requeststatus !== "Done" &&
-        latestRequestDetail?.requeststatus !== "Cancel") ?
+      {latestRequestDetail &&
+      latestRequestDetail?.requeststatus !== "Done" &&
+      latestRequestDetail?.requeststatus !== "Cancel" ? (
         <>
           {requestDetailId && (
             <TrackingActionSheet
@@ -929,47 +1054,52 @@ const RescueMapScreen = () => {
             />
           )}
         </>
-        :
+      ) : (
         <>
-          {showTracking && requestDetailId && acceptedReqDetId && acceptedReqDetStatus !== "Pending" && (
-            <TrackingActionSheet
-              isOpen={showTracking}
-              onClose={() => setShowTracking(false)}
-              // requestdetailid={requestDetailId}
-              eta={directionsInfo?.duration?.text}
-              distance={directionsInfo?.distance?.text}
-              driverId={acceptedDriverId}
-              setAcceptedReqDetStatus={setAcceptedReqDetStatus}
-              requestDetailIdState={[requestDetailId, setRequestDetailId]}
-            />
-          )}
+          {showTracking &&
+            requestDetailId &&
+            acceptedReqDetId &&
+            acceptedReqDetStatus !== "Pending" && (
+              <TrackingActionSheet
+                isOpen={showTracking}
+                onClose={() => setShowTracking(false)}
+                // requestdetailid={requestDetailId}
+                eta={directionsInfo?.duration?.text}
+                distance={directionsInfo?.distance?.text}
+                driverId={acceptedDriverId}
+                setAcceptedReqDetStatus={setAcceptedReqDetStatus}
+                requestDetailIdState={[requestDetailId, setRequestDetailId]}
+              />
+            )}
         </>
-      }
+      )}
 
       {/* ActionSheet Toggle buttons */}
-      {(!showActionsheet && directionsInfo) && (
+      {!showActionsheet && directionsInfo && (
         <ActionSheetToggle
           onPress={() => setShowActionsheet(true)}
           visible={!showActionsheet}
         />
       )}
-      {((!showTracking && requestDetailId && acceptedReqDetId && acceptedReqDetStatus !== "Pending")) && (
-        <ActionSheetToggle
-          onPress={() => setShowTracking(true)}
-          visible={true}
-        />
-      )}
-      {(latestRequestDetail &&
+      {!showTracking &&
+        requestDetailId &&
+        acceptedReqDetId &&
+        acceptedReqDetStatus !== "Pending" && (
+          <ActionSheetToggle
+            onPress={() => setShowTracking(true)}
+            visible={true}
+          />
+        )}
+      {latestRequestDetail &&
         latestRequestDetail?.requeststatus !== "Done" &&
-        latestRequestDetail?.requeststatus !== "Cancel") &&
-        <ActionSheetToggle
-          onPress={() => setShowTracking(true)}
-          visible={true}
-        />
-      }
+        latestRequestDetail?.requeststatus !== "Cancel" && (
+          <ActionSheetToggle
+            onPress={() => setShowTracking(true)}
+            visible={true}
+          />
+        )}
     </Box>
   );
-
 };
 
 export default RescueMapScreen;

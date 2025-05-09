@@ -9,7 +9,8 @@ import beAPI, {
   EmergencyRescueRequestPayload,
   getServicePackageByName,
   ServicePackage,
-  updateRequestStatus
+  updatePaymentStatus,
+  updateRequestStatus,
 } from "@/app/services/beAPI";
 import {
   geocodeAddress,
@@ -24,7 +25,11 @@ import {
   refundTransaction,
 } from "@/app/utils/payment";
 import { decodedToken, decodePolyline } from "@/app/utils/utils";
-import { DestinationMarker, OriginMarker, renderStationMarkers } from "@/components/custom/CustomMapMarker";
+import {
+  DestinationMarker,
+  OriginMarker,
+  renderStationMarkers,
+} from "@/components/custom/CustomMapMarker";
 import StationSelect, { Station } from "@/components/custom/StationSelect";
 import TrackingActionSheet from "@/components/custom/TrackingActionSheet";
 import TripDetailsActionSheet from "@/components/custom/TripDetailsActionSheet";
@@ -33,12 +38,13 @@ import MapboxGL from "@rnmapbox/maps";
 import { router } from "expo-router";
 import { getDistance } from "geolib";
 import React, { useContext, useEffect, useRef, useState } from "react";
+import { Alert, NativeEventEmitter, NativeModules } from "react-native";
 import {
-  Alert,
-  NativeEventEmitter,
-  NativeModules
-} from "react-native";
-import { ActionSheetToggle, BackButton, SearchInput, SearchResults } from "../../../../../components/custom/MapUIComponents";
+  ActionSheetToggle,
+  BackButton,
+  SearchInput,
+  SearchResults,
+} from "../../../../../components/custom/MapUIComponents";
 import MapViewComponent from "../../../../../components/custom/MapViewComponent";
 import VehicleAlertDialog from "../../../../../components/custom/VehicleAlertDialog";
 import { RequestDetail, User } from "../../../../context/formFields";
@@ -120,13 +126,14 @@ const EmergencyRescueMapScreen = () => {
   }, [isSearching]);
 
   const fetchServicePackage = async () => {
-    const results = await getServicePackageByName('Cứu hộ đến trạm');
+    const results = await getServicePackageByName("Cứu hộ đến trạm");
     setServicePackage(results);
-  }
+  };
 
   // State để lưu station đã chọn (ID)
   const [selectedStationId, setSelectedStationId] = useState<string>("");
-  const [selectedStationAddress, setSelectedStationAddress]= useState<string>("");
+  const [selectedStationAddress, setSelectedStationAddress] =
+    useState<string>("");
   // State để lưu vehicle id đã chọn
   const [selectedVehicleId, setSelectedVehicleId] = useState<string>("");
   // State để lưu danh sách station (fetch qua beAPI)
@@ -194,7 +201,7 @@ const EmergencyRescueMapScreen = () => {
     }
   }, [currentLoc, stations, destinationCoordinates]);
 
-// Fetch latest request detail
+  // Fetch latest request detail
   const fetchRequestDetail = async (reqDetID: string) => {
     const response = await axios.get<RequestDetail>(
       `https://motor-save-be.vercel.app/api/v1/requests/driver/${reqDetID}`,
@@ -202,23 +209,21 @@ const EmergencyRescueMapScreen = () => {
     );
     setOriginCoordinates({
       longitude: response.data?.pickuplong || 0,
-      latitude: response.data?.pickuplat || 0
+      latitude: response.data?.pickuplat || 0,
     });
     setDestinationCoordinates({
       longitude: response.data?.deslng || 0,
-      latitude: response.data?.deslat || 0
+      latitude: response.data?.deslat || 0,
     });
     setOriginQuery(response.data?.pickuplocation);
     // setStationQuery(response.data?.destination);
     setSelectedStationAddress(response.data?.destination);
     setOriginSelected(true);
     // setDestinationSelected(true);
-    setAcceptedDriverId(response.data?.driverid)
+    setAcceptedDriverId(response.data?.driverid);
     setAcceptedReqDetStatus(response.data?.requeststatus);
     console.log("Fetching request detail...");
   };
-
-
 
   // Xử lý khi người dùng chọn điểm đón (origin)
   const handleFetchOriginLocation = async (address: string) => {
@@ -272,7 +277,7 @@ const EmergencyRescueMapScreen = () => {
   useEffect(() => {
     if (
       originSelected &&
-      selectedStationAddress &&
+      // selectedStationAddress &&
       destinationCoordinates.latitude !== 0 &&
       originCoordinates.latitude !== 0
     ) {
@@ -345,66 +350,66 @@ const EmergencyRescueMapScreen = () => {
   //     }
   //   }
   // };
-   const fetchRoute = () => {
-      console.log('one')
-      if (acceptedDriverId) {
-        console.log('two')
-        if (
-          originSelected &&
-          selectedStationAddress &&
-          // destinationSelected &&
-          originCoordinates.latitude &&
-          destinationCoordinates.latitude
-        ) {
-          console.log('three')
-          const driverLoc = `${users.get(acceptedDriverId)?.latitude},${users.get(acceptedDriverId)?.longitude}`;
-          const originStr = `${originCoordinates.latitude},${originCoordinates.longitude}`;
-          const destinationStr = `${destinationCoordinates.latitude},${destinationCoordinates.longitude}`;
-          let startStr = "";
-          let endStr = "";
-          
-          if (acceptedReqDetStatus === 'Done') return setRouteCoordinates([]);
-          switch (acceptedReqDetStatus) {
-            case "Accepted":
-              startStr = originStr;
-              endStr = destinationStr;
-              break;
-            case "Pickup":
-              startStr = driverLoc;
-              endStr = originStr;
-              break;
-            case "Processing":
-              startStr = driverLoc;
-              endStr = destinationStr;
-              break;
-          }
-  
-          getDirections(startStr, endStr)
-            .then((data: any) => {
-              if (data.routes && data.routes.length > 0) {
-                const encodedPolyline = data.routes[0].overview_polyline.points;
-                const decoded = decodePolyline(encodedPolyline);
-                setRouteCoordinates(decoded);
-                if (data.routes[0].legs && data.routes[0].legs.length > 0) {
-                  setDirectionsInfo(data.routes[0].legs[0]);
-                  console.log("Switching route...");
-                }
-              } else {
-                console.log("No routes found:", data);
-              }
-            })
-            .catch((error: any) =>
-              console.error("Error fetching directions:", error)
-            );
+  const fetchRoute = () => {
+    console.log("one");
+    if (acceptedDriverId) {
+      console.log("two");
+      if (
+        originSelected &&
+        selectedStationAddress &&
+        // destinationSelected &&
+        originCoordinates.latitude &&
+        destinationCoordinates.latitude
+      ) {
+        console.log("three");
+        const driverLoc = `${users.get(acceptedDriverId)?.latitude},${users.get(acceptedDriverId)?.longitude}`;
+        const originStr = `${originCoordinates.latitude},${originCoordinates.longitude}`;
+        const destinationStr = `${destinationCoordinates.latitude},${destinationCoordinates.longitude}`;
+        let startStr = "";
+        let endStr = "";
+
+        if (acceptedReqDetStatus === "Done") return setRouteCoordinates([]);
+        switch (acceptedReqDetStatus) {
+          case "Accepted":
+            startStr = originStr;
+            endStr = destinationStr;
+            break;
+          case "Pickup":
+            startStr = driverLoc;
+            endStr = originStr;
+            break;
+          case "Processing":
+            startStr = driverLoc;
+            endStr = destinationStr;
+            break;
         }
+
+        getDirections(startStr, endStr)
+          .then((data: any) => {
+            if (data.routes && data.routes.length > 0) {
+              const encodedPolyline = data.routes[0].overview_polyline.points;
+              const decoded = decodePolyline(encodedPolyline);
+              setRouteCoordinates(decoded);
+              if (data.routes[0].legs && data.routes[0].legs.length > 0) {
+                setDirectionsInfo(data.routes[0].legs[0]);
+                console.log("Switching route...");
+              }
+            } else {
+              console.log("No routes found:", data);
+            }
+          })
+          .catch((error: any) =>
+            console.error("Error fetching directions:", error)
+          );
       }
-    };
+    }
+  };
   // useEffect(() => {
   //   fetchRoute();
   // }, [currentLoc, acceptedReqDetStatus]);
-   useEffect(() => {
-      fetchRoute();
-    }, [currentLoc, acceptedReqDetStatus, acceptedDriverId]);
+  useEffect(() => {
+    fetchRoute();
+  }, [currentLoc, acceptedReqDetStatus, acceptedDriverId]);
   // Tính toán cước phí khi có thông tin đường đi
   useEffect(() => {
     if (directionsInfo && !showActionsheet && servicePackage) {
@@ -537,7 +542,24 @@ const EmergencyRescueMapScreen = () => {
               console.error("Error creating transaction:", error);
             }
           } else {
-            Alert.alert("Payment failed!", "Return code: " + data.returnCode);
+            const updateRequest = await updateRequestStatus(
+              reqId,
+              token,
+              "Cancel"
+            );
+            console.log(updateRequest);
+            const transactionResponse = await createTransaction(
+              {
+                requestdetailid: reqId,
+                zptransid: data.transactionId || "",
+                totalamount: fare,
+                paymentmethod: "ZaloPay",
+                paymentstatus: "Failed",
+              },
+              token
+            );
+            console.log(transactionResponse);
+            alert("Thanh toán thất bại! Vui lòng thử lại sau");
           }
           subscription.remove();
         }
@@ -595,11 +617,10 @@ const EmergencyRescueMapScreen = () => {
         `Đã vượt quá bán kính tối đa ${MAX_RADIUS}. Dừng tìm kiếm với reqId:`,
         reqId
       );
-     Alert.alert(
-             "Vui lòng thử lại sau.",
-             "Hiện không có tài xế trong phạm vi phục vụ."
-           );
-     
+      Alert.alert(
+        "Vui lòng thử lại sau.",
+        "Hiện không có tài xế trong phạm vi phục vụ."
+      );
 
       // Đặt UI state
       isSearchingRef.current = false;
@@ -609,7 +630,26 @@ const EmergencyRescueMapScreen = () => {
       try {
         // Gọi trực tiếp API để cancel request
         const result = await updateRequestStatus(reqId, token, "Cancel");
-        console.log("Đã hủy request thành công:", result);
+        if (paymentMethod === "Zalopay" && zpTransId) {
+          const payment = await updatePaymentStatus(
+            {
+              requestDetailId: reqId,
+              newStatus: "Refunded",
+            },
+            token
+          );
+          console.log(payment);
+          console.log("Đã hủy request thành công:", result);
+          await refundTransaction(zpTransId, "User canceled request", fare);
+          const payZaloBridgeEmitter = new NativeEventEmitter(PayZaloBridge);
+          const subscription = payZaloBridgeEmitter.addListener(
+            "EventPayZalo",
+            async (data: PayZaloEventData) => {
+              console.log("Nhận sự kiện PayZalo:", data);
+              subscription.remove();
+            }
+          );
+        }
       } catch (error) {
         console.error("Lỗi khi tự động hủy request:", error);
       }
@@ -680,7 +720,10 @@ const EmergencyRescueMapScreen = () => {
       console.log(`Không tìm thấy driver mới trong bán kính ${radius} mét.`);
       const newRadius = radius + 2000;
       // Kiểm tra lại trạng thái trước khi gọi đệ quy
-      if (acceptedRequestRef.current.id === reqId && acceptedRequestRef.current.status !== "Pending") {
+      if (
+        acceptedRequestRef.current.id === reqId &&
+        acceptedRequestRef.current.status !== "Pending"
+      ) {
         setSelectedVehicleId("");
         console.log("Driver đã chấp nhận, dừng tìm kiếm.");
         return;
@@ -767,9 +810,25 @@ const EmergencyRescueMapScreen = () => {
     if (idToCancel) {
       try {
         await updateRequestStatus(idToCancel, token, "Cancel");
-        handleCancel();
         if (paymentMethod === "Zalopay" && zpTransId) {
           await refundTransaction(zpTransId, "User canceled request", fare);
+          const payment = await updatePaymentStatus(
+            {
+              requestDetailId: requestDetailId,
+              newStatus: "Refunded",
+            },
+            token
+          );
+          console.log(payment);
+          Alert.alert("Hoàn tiền", "Bạn đã được hoàn tiền");
+          const payZaloBridgeEmitter = new NativeEventEmitter(PayZaloBridge);
+          const subscription = payZaloBridgeEmitter.addListener(
+            "EventPayZalo",
+            async (data: PayZaloEventData) => {
+              console.log("Nhận sự kiện PayZalo:", data);
+              subscription.remove();
+            }
+          );
         }
       } catch (error) {
         console.error("Error cancelling search:", error);
@@ -800,9 +859,9 @@ const EmergencyRescueMapScreen = () => {
     );
     subscribeToRescueChannel((msg: any) => {
       if (
-        msg?.message?.requestDetailId === requestDetailId
-        && msg?.message?.senderRole === "Driver"
-        && msg?.message?.reqStatus === "Accepted"
+        msg?.message?.requestDetailId === requestDetailId &&
+        msg?.message?.senderRole === "Driver" &&
+        msg?.message?.reqStatus === "Accepted"
       ) {
         setAcceptedReqDetStatus(msg.message.reqStatus);
         setAcceptedReqDetId(msg.message.requestDetailId);
@@ -813,7 +872,7 @@ const EmergencyRescueMapScreen = () => {
         setRequestActive(true);
       }
     });
-    return () => { };
+    return () => {};
   }, [requestDetailId]);
 
   useEffect(() => {
@@ -831,36 +890,36 @@ const EmergencyRescueMapScreen = () => {
       {/* Input container with enhanced styling */}
       <Box className="absolute top-0 left-0 w-full z-10 px-4 pt-16">
         {!requestActive && (
-        <Box className="bg-white/95 rounded-xl p-3 shadow-md">
-          {/* Origin search with improved UI */}
-          <SearchInput
-            value={originQuery}
-            onChangeText={handleOriginChange}
-            placeholder="Vui lòng nhập điểm đón"
-            onClear={() => setOriginQuery("")}
-          />
-
-          {/* Search results */}
-          <SearchResults
-            data={originResults}
-            onSelectItem={(item) => {
-              setOriginQuery(item.description);
-              handleFetchOriginLocation(item.description);
-            }}
-            visible={originResults.length > 0 && !originSelected}
-          />
-
-          {/* StationSelect with improved UI */}
-          <Box className="mt-3">
-            <StationSelect
-              onSelectStation={handleStationSelect}
-              currentLocation={currentLoc}
-              maxDistance={SERVICE_STATION_RADIUS}
-              stations={stations}
-              selectedStationId={selectedStationId}
+          <Box className="bg-white/95 rounded-xl p-3 shadow-md">
+            {/* Origin search with improved UI */}
+            <SearchInput
+              value={originQuery}
+              onChangeText={handleOriginChange}
+              placeholder="Vui lòng nhập điểm đón"
+              onClear={() => setOriginQuery("")}
             />
+
+            {/* Search results */}
+            <SearchResults
+              data={originResults}
+              onSelectItem={(item) => {
+                setOriginQuery(item.description);
+                handleFetchOriginLocation(item.description);
+              }}
+              visible={originResults.length > 0 && !originSelected}
+            />
+
+            {/* StationSelect with improved UI */}
+            <Box className="mt-3">
+              <StationSelect
+                onSelectStation={handleStationSelect}
+                currentLocation={currentLoc}
+                maxDistance={SERVICE_STATION_RADIUS}
+                stations={stations}
+                selectedStationId={selectedStationId}
+              />
+            </Box>
           </Box>
-        </Box>
         )}
       </Box>
 
@@ -870,14 +929,11 @@ const EmergencyRescueMapScreen = () => {
           users={users}
           currentLoc={currentLoc}
           isActionSheetOpen={showActionsheet}
-          focusMode={[focusOnMe, setFocusOnMe]} 
-          role={"Customer"} userId={users.get(userId ?? '')?.uuid || ''}      
-          >
-          {originCoordinates.latitude !== 0 && (
-            <MapboxGL.Camera
-              ref={camera}
-            />
-          )}
+          focusMode={[focusOnMe, setFocusOnMe]}
+          role={"Customer"}
+          userId={users.get(userId ?? "")?.uuid || ""}
+        >
+          {originCoordinates.latitude !== 0 && <MapboxGL.Camera ref={camera} />}
 
           {/* Current location puck */}
           {currentLoc.latitude !== 0 && (
@@ -896,7 +952,10 @@ const EmergencyRescueMapScreen = () => {
           {originCoordinates.latitude !== 0 && (
             <MapboxGL.MarkerView
               id="origin-marker"
-              coordinate={[originCoordinates.longitude, originCoordinates.latitude]}
+              coordinate={[
+                originCoordinates.longitude,
+                originCoordinates.latitude,
+              ]}
             >
               <Box className="items-center justify-center">
                 <OriginMarker size={32} />
@@ -908,7 +967,10 @@ const EmergencyRescueMapScreen = () => {
           {destinationCoordinates.latitude !== 0 && (
             <MapboxGL.MarkerView
               id="destination-marker"
-              coordinate={[destinationCoordinates.longitude, destinationCoordinates.latitude]}
+              coordinate={[
+                destinationCoordinates.longitude,
+                destinationCoordinates.latitude,
+              ]}
             >
               <Box className="items-center justify-center">
                 <DestinationMarker size={32} />
@@ -935,7 +997,7 @@ const EmergencyRescueMapScreen = () => {
                   lineColor: "#3B82F6",
                   lineWidth: 4,
                   lineCap: "round",
-                  lineJoin: "round"
+                  lineJoin: "round",
                 }}
               />
               {/* Add a glow effect for 3D look */}
@@ -947,7 +1009,7 @@ const EmergencyRescueMapScreen = () => {
                   lineBlur: 2,
                   lineCap: "round",
                   lineJoin: "round",
-                  lineOpacity: 0.4
+                  lineOpacity: 0.4,
                 }}
               />
             </MapboxGL.ShapeSource>
@@ -960,7 +1022,9 @@ const EmergencyRescueMapScreen = () => {
         <TripDetailsActionSheet
           isOpen={showActionsheet}
           onClose={() => setShowActionsheet(false)}
-          onPayment={paymentMethod === "Tiền mặt" ? handleFindDriver : handlePayment}
+          onPayment={
+            paymentMethod === "Tiền mặt" ? handleFindDriver : handlePayment
+          }
           onCancelSearch={handleCancelSearch}
           fare={fare}
           fareLoading={fareLoading}
@@ -970,20 +1034,24 @@ const EmergencyRescueMapScreen = () => {
           paymentMethodState={[paymentMethod, setPaymentMethod]}
           selectVehicleState={[selectedVehicleId, setSelectedVehicleId]}
           confirmDisabled={!isLocationValid()}
-          rescueType="emergency" />
-      )}
-
-      {showTracking && requestDetailId && acceptedReqDetId && acceptedReqDetStatus !== "Pending" && (
-        <TrackingActionSheet
-          isOpen={showTracking}
-          onClose={() => setShowTracking(false)}
-          requestDetailIdState={[requestDetailId, setRequestDetailId]}
-          eta={directionsInfo?.duration?.text}
-          distance={directionsInfo?.distance?.text}
-          driverId={acceptedDriverId}
-          setAcceptedReqDetStatus={setAcceptedReqDetStatus}
+          rescueType="emergency"
         />
       )}
+
+      {showTracking &&
+        requestDetailId &&
+        acceptedReqDetId &&
+        acceptedReqDetStatus !== "Pending" && (
+          <TrackingActionSheet
+            isOpen={showTracking}
+            onClose={() => setShowTracking(false)}
+            requestDetailIdState={[requestDetailId, setRequestDetailId]}
+            eta={directionsInfo?.duration?.text}
+            distance={directionsInfo?.distance?.text}
+            driverId={acceptedDriverId}
+            setAcceptedReqDetStatus={setAcceptedReqDetStatus}
+          />
+        )}
 
       {/* Action sheet toggle buttons */}
 
@@ -995,20 +1063,22 @@ const EmergencyRescueMapScreen = () => {
           onPress={() => setShowActionsheet(true)}
           visible={!showActionsheet && directionsInfo}
         />
-
       )}
-      {!showTracking && requestDetailId && acceptedReqDetId && acceptedReqDetStatus !== "Pending" && (
-        // <Pressable
-        //   onPress={() => setShowTracking(true)}
-        //   className="absolute bottom-20 right-2 w-10 h-10 bg-white rounded-full items-center justify-center shadow-sm"
-        // >
-        //   <ChevronUp size={24} color="#3B82F6" />
-        // </Pressable>
-        <ActionSheetToggle
-          onPress={() => setShowTracking(true)}
-          visible={true} 
-        />
-      )}
+      {!showTracking &&
+        requestDetailId &&
+        acceptedReqDetId &&
+        acceptedReqDetStatus !== "Pending" && (
+          // <Pressable
+          //   onPress={() => setShowTracking(true)}
+          //   className="absolute bottom-20 right-2 w-10 h-10 bg-white rounded-full items-center justify-center shadow-sm"
+          // >
+          //   <ChevronUp size={24} color="#3B82F6" />
+          // </Pressable>
+          <ActionSheetToggle
+            onPress={() => setShowTracking(true)}
+            visible={true}
+          />
+        )}
       <VehicleAlertDialog
         isOpen={showVehicleAlert}
         onClose={() => setShowVehicleAlert(false)}
