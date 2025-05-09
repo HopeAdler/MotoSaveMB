@@ -15,7 +15,7 @@ export const VehicleInfoBox = ({ repairRequestDetail }: any) => {
       </Text>
 
       <View className="flex-row">
-        {repairRequestDetail?.vehiclephoto ? (
+        {/* {repairRequestDetail?.vehiclephoto ? (
           <Image
             source={{ uri: repairRequestDetail.vehiclephoto }}
             className="w-32 h-32 rounded-xl shadow-sm"
@@ -26,7 +26,7 @@ export const VehicleInfoBox = ({ repairRequestDetail }: any) => {
             <Car size={40} color="#1a3148" />
             <Text className="text-gray-500 mt-2 text-sm">Không có ảnh</Text>
           </View>
-        )}
+        )} */}
 
         <View className="ml-4 flex-1 justify-center">
           <View className="mb-3">

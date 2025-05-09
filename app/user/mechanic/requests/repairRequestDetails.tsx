@@ -215,16 +215,16 @@ export default function RepairDetailsScreen() {
       prev.map((item) =>
         item.index === index
           ? {
-            ...item,
-            repairname: selectedRepair.name,
-            repaircostpreviewid: parseInt(selectedRepair.id),
-            // min: selectedRepair.min,
-            // max: selectedRepair.max,
-            cost: accessory?.cost || 0,
-            accessoryid: accessory?.id || null,
-            wage: wage ?? selectedRepair.wage,
-            total: total ?? selectedRepair.wage,
-          }
+              ...item,
+              repairname: selectedRepair.name,
+              repaircostpreviewid: parseInt(selectedRepair.id),
+              // min: selectedRepair.min,
+              // max: selectedRepair.max,
+              cost: accessory?.cost || 0,
+              accessoryid: accessory?.id || null,
+              wage: wage ?? selectedRepair.wage,
+              total: total ?? selectedRepair.wage,
+            }
           : item
       )
     );
@@ -301,7 +301,9 @@ export default function RepairDetailsScreen() {
     try {
       let newRepairQuotes = repairQuotes;
       if (repairQuotes.length >= 4) {
-        newRepairQuotes = repairQuotes.filter(item => (item.wagerate ?? 0) > 0);
+        newRepairQuotes = repairQuotes.filter(
+          (item) => (item.wagerate ?? 0) > 0
+        );
         if (newRepairQuotes.length >= 3) {
           removeBasicItems();
         }
@@ -326,12 +328,12 @@ export default function RepairDetailsScreen() {
   const handleUpdateGuestQuote = async () => {
     try {
       await Promise.all(repairQuotes.map(sendRepairQuote));
-      const result = await updateRepairRequestStatus(requestDetailId, token, "Waiting");
-      await updateRepairRequestStatus(
+      const result = await updateRepairRequestStatus(
         requestDetailId,
         token,
-        "Done"
+        "Waiting"
       );
+      await updateRepairRequestStatus(requestDetailId, token, "Done");
       console.log(result);
       const payment = await createPayment(
         {
@@ -441,17 +443,17 @@ export default function RepairDetailsScreen() {
               <VehicleInfoBox repairRequestDetail={repairRequestDetail} />
             </Box>
           </Box>
-          {repairRequestDetail?.licenseplate &&
+          {repairRequestDetail?.licenseplate && (
             <Box className="mt-4 bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
               <Box className="flex-row items-center justify-between mb-5">
                 <Text className="text-lg font-bold text-[#1a3148]">
                   Báo giá sửa chữa
                 </Text>
-                {isNew && (
-                  <Text className="text-sm text-gray-500">
-                    {repairQuotes.length} items
-                  </Text>
-                )}
+                {/* {isNew && ( */}
+                <Text className="text-sm text-gray-500">
+                  {repairQuotes.length || 0} linh kiện
+                </Text>
+                {/* )} */}
               </Box>
 
               <FlatList
@@ -521,33 +523,44 @@ export default function RepairDetailsScreen() {
                         )}
                       </Box>
                     ) : (
-                      <Box className="flex-row flex-wrap gap-2 mt-4">
-                        <Text className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
-                          Giá: {formatMoney(item.cost)}
-                        </Text>
-                        <Text className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
+                      <Box className="flex-row flex-wrap gap-2 mt-3">
+                        <Box className="flex-1 items-start justify-between gap-1">
+                          <Text className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
+                            Giá: {formatMoney(item.cost)}
+                          </Text>
+                          <Text className="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full">
+                            Phụ thu: {formatMoney(item.wage)}
+                          </Text>
+                        </Box>
+                        {/* <Text className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
                           Rate: {item.wagerate}x
-                        </Text>
-                        <Text className="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full">
-                          Phụ thu: {formatMoney(item.wage)}
-                        </Text>
-                        <Text className="bg-orange-100 text-orange-800 text-sm font-medium px-3 py-1 rounded-full">
-                          Tổng: {formatMoney(item.total)}
-                        </Text>
+                        </Text> */}
+                        <Box className="mt-3">
+                          <Text className="bg-orange-100 text-orange-800 text-sm font-medium px-3 py-1 rounded-full">
+                            Tổng: {formatMoney(item.total)}
+                          </Text>
+                        </Box>
                       </Box>
                     )}
                   </Box>
                 )}
               />
-              <Box className="flex-row items-center mt-5">
-                <CreditCard size={18} color="#1a3148" />
-                <Text className="text-xs uppercase tracking-wider text-gray-500 ml-2">
-                  Tổng chi phí
-                </Text>
-                <Text className="text-xs uppercase tracking-wider text-gray-500 ml-2">
-                  {formatMoney(repairQuotes.reduce((sum, r) => sum + r.total, 0))}
-                </Text>
-              </Box>
+              {repairRequestDetail?.requeststatus !== "Done" &&
+                repairRequestDetail?.requeststatus !== "Repairing" && (
+                  <Box className="flex-1 items-start justify-between mt-5">
+                    <Box className="flex-row items-center">
+                      <CreditCard size={18} color="#1a3148" />
+                      <Text className="text-base uppercase tracking-wider text-gray-500 ml-2">
+                        Tổng chi phí
+                      </Text>
+                      <Text className="text-base uppercase tracking-wider text-gray-500 ml-2">
+                        {formatMoney(
+                          repairQuotes.reduce((sum, r) => sum + r.total, 0)
+                        )}
+                      </Text>
+                    </Box>
+                  </Box>
+                )}
 
               {isNew && (
                 <Box className="mt-6">
@@ -555,8 +568,9 @@ export default function RepairDetailsScreen() {
                     <Button
                       onPress={addRepairItem}
                       disabled={isAddDisabled}
-                      className={`h-12 rounded-xl ${isAddDisabled ? "bg-gray-200" : "bg-[#fab753]"
-                        }`}
+                      className={`h-12 rounded-xl ${
+                        isAddDisabled ? "bg-gray-200" : "bg-[#fab753]"
+                      }`}
                     >
                       <Text className="text-white font-bold">
                         + Thêm linh kiện sửa chữa
@@ -564,12 +578,13 @@ export default function RepairDetailsScreen() {
                     </Button>
 
                     {repairQuotes.length > 0 &&
-                      repairRequestDetail.receivername ? (
+                    repairRequestDetail.receivername ? (
                       <Button
                         onPress={handleDone}
                         disabled={isSubmitDisabled}
-                        className={`h-12 rounded-xl ${isSubmitDisabled ? "bg-gray-200" : "bg-[#1a3148]"
-                          }`}
+                        className={`h-12 rounded-xl ${
+                          isSubmitDisabled ? "bg-gray-200" : "bg-[#1a3148]"
+                        }`}
                       >
                         <Text className="text-white font-bold">
                           Xác nhận báo giá
@@ -579,35 +594,40 @@ export default function RepairDetailsScreen() {
                       <Button
                         onPress={handleConfirmSend}
                         disabled={isSubmitDisabled}
-                        className={`h-12 rounded-xl ${isSubmitDisabled ? "bg-gray-200" : "bg-[#1a3148]"
-                          }`}
+                        className={`h-12 rounded-xl ${
+                          isSubmitDisabled ? "bg-gray-200" : "bg-[#1a3148]"
+                        }`}
                       >
-                        <Text className="text-white font-bold">Gửi báo giá</Text>
+                        <Text className="text-white font-bold">
+                          Gửi báo giá
+                        </Text>
                       </Button>
                     )}
                   </Box>
                 </Box>
               )}
             </Box>
-          }
+          )}
 
           {repairRequestDetail?.paymentmethod && (
             <Box className="mt-4 bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
               <Box className="flex-row items-center justify-between mb-4">
                 <Text className="text-lg font-bold text-[#1a3148]">
-                  Chi tiết thanh toán
+                  Trạng thái
                 </Text>
                 <Box
-                  className={`px-3 py-1.5 rounded-full ${repairRequestDetail.paymentstatus === "Success"
-                    ? "bg-green-100"
-                    : "bg-red-100"
-                    }`}
+                  className={`px-3 py-1.5 rounded-full ${
+                    repairRequestDetail.paymentstatus === "Success"
+                      ? "bg-green-100"
+                      : "bg-red-100"
+                  }`}
                 >
                   <Text
-                    className={`text-sm font-semibold ${repairRequestDetail.paymentstatus === "Success"
-                      ? "text-green-600"
-                      : "text-red-600"
-                      }`}
+                    className={`text-sm font-semibold ${
+                      repairRequestDetail.paymentstatus === "Success"
+                        ? "text-green-600"
+                        : "text-red-600"
+                    }`}
                   >
                     {repairRequestDetail.paymentstatus === "Success"
                       ? "Đã thanh toán"
@@ -638,9 +658,8 @@ export default function RepairDetailsScreen() {
               </Box>
 
               {repairRequestDetail?.paymentstatus === "Unpaid" &&
-                (repairRequestDetail?.paymentmethod === "Tiền mặt" ||
-                  repairRequestDetail?.paymentmethod === "Cash") &&
-                (repairRequestDetail?.requeststatus === "Repairing" ||
+                ((repairRequestDetail?.paymentmethod === "Tiền mặt" &&
+                  repairRequestDetail?.requeststatus === "Repairing") ||
                   repairRequestDetail?.requeststatus === "Done") && (
                   <Button
                     onPress={() => {
@@ -657,10 +676,11 @@ export default function RepairDetailsScreen() {
                       );
                     }}
                     disabled={repairRequestDetail?.requeststatus !== "Done"}
-                    className={`h-12 rounded-xl mt-4 ${repairRequestDetail?.requeststatus === "Done"
-                      ? "bg-[#fab753]"
-                      : "bg-gray-200"
-                      }`}
+                    className={`h-12 rounded-xl mt-4 ${
+                      repairRequestDetail?.requeststatus === "Done"
+                        ? "bg-[#fab753]"
+                        : "bg-gray-200"
+                    }`}
                   >
                     <Text className="text-white font-bold">
                       Xác nhận thanh toán
@@ -680,12 +700,13 @@ export default function RepairDetailsScreen() {
                       repairRequestDetail.requeststatus
                     )
                   }
-                  className={`h-14 rounded-xl ${["Accepted", "Repairing"].includes(
-                    repairRequestDetail.requeststatus
-                  )
-                    ? "bg-green-500 shadow-sm shadow-green-500/20"
-                    : "bg-gray-200"
-                    }`}
+                  className={`h-14 rounded-xl ${
+                    ["Accepted", "Repairing"].includes(
+                      repairRequestDetail.requeststatus
+                    )
+                      ? "bg-green-500 shadow-sm shadow-green-500/20"
+                      : "bg-gray-200"
+                  }`}
                 >
                   <Text className="text-white text-base font-bold">
                     {repairRequestDetail?.requeststatus === "Repairing"

@@ -304,7 +304,7 @@ export default function RequestDetailsScreen() {
                     >
                       <MessageSquare size={20} color="#fab753" />
                       <Text className="ml-2 text-[#fab753] font-medium">
-                        Nhắn tin
+                        Chat
                       </Text>
                     </Pressable>
                   </Box>
