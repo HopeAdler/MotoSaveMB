@@ -532,10 +532,10 @@ export default function RepairDetailsScreen() {
                             Phụ thu: {formatMoney(item.wage)}
                           </Text>
                         </Box>
-                        {/* <Text className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
+                        <Box className="flex-1 justify-between gap-1">
+                        <Text className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
                           Rate: {item.wagerate}x
-                        </Text> */}
-                        <Box className="mt-3">
+                        </Text>
                           <Text className="bg-orange-100 text-orange-800 text-sm font-medium px-3 py-1 rounded-full">
                             Tổng: {formatMoney(item.total)}
                           </Text>
