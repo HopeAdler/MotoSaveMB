@@ -4,7 +4,7 @@ import { useCurrentLocStore } from "@/app/hooks/currentLocStore";
 import { useUsersStore } from "@/app/hooks/usersStore";
 import { createRepairRequest, fetchRescueRequestDetail, getUndoneRequestDetailIds, getUnpaidPaymentsByRequestId, updatePaymentTotal, updateRequestStatus } from "@/app/services/beAPI";
 import { getDirections } from "@/app/services/goongAPI";
-import { decodedToken, decodePolyline, formatMoney, handlePhoneCall } from "@/app/utils/utils";
+import { decodedToken, decodePolyline, formatMoney, handlePhoneCall, roundToThousand } from "@/app/utils/utils";
 import { DestinationMarker, OriginMarker } from "@/components/custom/CustomMapMarker";
 import DriverRequestDetail from "@/components/custom/DriverRequestDetail";
 import MapViewComponent from "@/components/custom/MapViewComponent";
@@ -161,9 +161,11 @@ const GenMap: React.FC = () => {
     if (!curReqDetId) return;
     const payload = {
       requestDetailId: curReqDetId,
-      newTotal: trip?.fare || 0,
+      newTotal: roundToThousand(trip?.fare) || 0,
     };
+    console.log(trip?.fare)
     const result = await updatePaymentTotal(payload, token);
+    console.log(result)
     setLoading(true)
     if (result) fetchUnpaidPayments();
   };
@@ -360,19 +362,21 @@ const GenMap: React.FC = () => {
   }, [currentLoc]);
 
   useEffect(() => {
-    if (routeCoordinates.length > 0 && camera.current) {
-      const lats = routeCoordinates.map((coord) => coord[1]);
-      const lngs = routeCoordinates.map((coord) => coord[0]);
-      const bounds = {
-        ne: [Math.max(...lngs), Math.max(...lats)] as [number, number],
-        sw: [Math.min(...lngs), Math.min(...lats)] as [number, number],
-      };
-      camera.current.setCamera({
-        bounds,
-        zoomLevel: 14,
-        animationDuration: 1000,
-      });
+    if (!(routeCoordinates.length > 0 && camera.current)) {
+      return;
     }
+    const lats = routeCoordinates.map((coord) => coord[1]);
+    const lngs = routeCoordinates.map((coord) => coord[0]);
+    const bounds = {
+      ne: [Math.max(...lngs), Math.max(...lats)] as [number, number],
+      sw: [Math.min(...lngs), Math.min(...lats)] as [number, number],
+    };
+    // camera.current.setCamera({
+    //   bounds,
+    //   zoomLevel: 14,
+    //   animationDuration: 1000,
+    // });
+    camera.current.zoomTo(14, 1000);
   }, [routeCoordinates]);
 
   const toChatScreen = () => {
@@ -468,6 +472,7 @@ const GenMap: React.FC = () => {
             {routeCoordinates.length > 0 && (
               <MapboxGL.ShapeSource
                 id="routeSource"
+                lineMetrics={true}
                 shape={{
                   type: "Feature",
                   geometry: { type: "LineString", coordinates: routeCoordinates },
@@ -476,7 +481,11 @@ const GenMap: React.FC = () => {
               >
                 <MapboxGL.LineLayer
                   id="routeLine"
-                  style={{ lineColor: "#007AFF", lineWidth: 4 }}
+                  style={{
+                    lineColor: "#fab753",
+                    lineWidth: 4,
+                    lineOpacity: 1,
+                  }}
                 />
               </MapboxGL.ShapeSource>
             )}

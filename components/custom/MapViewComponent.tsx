@@ -39,7 +39,7 @@ const MapViewComponent: React.FC<MapViewComponentProps> = ({
   const [is3DMode, setIs3DMode] = useState(false);
   const [hasInitialized, setHasInitialized] = useState(false);
   const [showToggle, setShowToggle] = useState(false);
-  
+
   const slideAnim = useRef(new Animated.Value(100)).current;
 
   MapboxGL.setAccessToken(EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN!);
@@ -47,7 +47,7 @@ const MapViewComponent: React.FC<MapViewComponentProps> = ({
   const toggleViewPanel = () => {
     const newShowToggle = !showToggle;
     setShowToggle(newShowToggle);
-    
+
     // Animate the panel
     Animated.timing(slideAnim, {
       toValue: newShowToggle ? 0 : 100, // 0 = visible, 100 = hidden
@@ -76,6 +76,8 @@ const MapViewComponent: React.FC<MapViewComponentProps> = ({
       cameraRef.current.setCamera({
         centerCoordinate: [currentLoc.longitude, currentLoc.latitude],
         zoomLevel: 14,
+        pitch: 0,
+        heading: 0,
         animationMode: "easeTo",
         animationDuration: 500,
       });
@@ -127,31 +129,30 @@ const MapViewComponent: React.FC<MapViewComponentProps> = ({
           paddingLeft: 20,
           paddingRight: 20,
         },
-        heading: 0,
         animationDuration: 800,
-        type: "CameraStop"
+        // type: "CameraStop"
       });
     } else {
-      cameraRef.current.setCamera({
-        centerCoordinate: [currentLoc.longitude, currentLoc.latitude],
-        zoomLevel: 20,
-        pitch: 60,
-        heading,
-        bounds: {
-          ne: [currentLoc.longitude + 0.01, currentLoc.latitude + 0.01],
-          sw: [currentLoc.longitude - 0.01, currentLoc.latitude - 0.01],
-          paddingBottom: 200,
-          paddingTop: 2000,
-          paddingLeft: 20,
-          paddingRight: 20,
-        },
-        animationMode: "easeTo",
-        animationDuration: 800,
-      });
+      // cameraRef.current.setCamera({
+      //   // centerCoordinate: [currentLoc.longitude, currentLoc.latitude],
+      //   // zoomLevel: 20,
+      //   pitch: 60,
+      //   // heading: heading,
+      //   bounds: {
+      //     ne: [currentLoc.longitude + 0.01, currentLoc.latitude + 0.01],
+      //     sw: [currentLoc.longitude - 0.01, currentLoc.latitude - 0.01],
+      //     paddingBottom: 200,
+      //     paddingTop: 2000,
+      //     paddingLeft: 20,
+      //     paddingRight: 20,
+      //   },
+      //   animationMode: "easeTo",
+      //   animationDuration: 800,
+      // });
     }
   }, [role, is3DMode, users, userId, currentLoc]);
 
-return (
+  return (
     <View style={{ flex: 1 }}>
       <MapboxGL.MapView
         styleURL={loadMap}
@@ -163,20 +164,56 @@ return (
         attributionEnabled={false}
         onDidFinishLoadingMap={handleMapLoad}
         compassEnabled={true}
-        compassViewMargins={{x: 0, y: 180}}
+        compassViewMargins={{ x: 0, y: 180 }}
         scaleBarEnabled={false}
         rotateEnabled={!is3DMode}
         pitchEnabled={!is3DMode}
       >
-        <MapboxGL.Camera ref={cameraRef} />
-        {Array.from(users.entries()).map(([key, u]) => (
-          <UserMarker
-            key={key}
-            user={u}
-            // chỉ xoay icon khi ở 2D và là driver
-            heading={!is3DMode && u.role === "Driver" ? u.heading : 0}
-          />
-        ))}
+
+        <MapboxGL.Camera
+          ref={is3DMode ? null : cameraRef}
+          followUserLocation={is3DMode}
+          followZoomLevel={17}
+          // followHeading={users.get(userId)?.heading ?? 0}
+          // followUserMode='course'
+          followUserMode="course"
+          followUserLocationAnimationDuration={1000}
+          followPitch={60}
+          followPadding={{
+            // ne: [currentLoc.longitude + 0.01, currentLoc.latitude + 0.01],
+            // sw: [currentLoc.longitude - 0.01, currentLoc.latitude - 0.01],
+            paddingBottom: 200,
+            paddingTop: 700,
+            paddingLeft: 20,
+            paddingRight: 20,
+          }}
+        />
+
+
+        <MapboxGL.LocationPuck
+          pulsing="default"
+          puckBearingEnabled={true}
+          puckBearing="course"
+          key={currentLoc.latitude + currentLoc.longitude}
+          // shadowImage="../../assets/images/truck.png"
+          // bearingImage="../../assets/images/truck.png"
+          visible
+        />
+        {role === "Customer" && (
+
+          Array.from(users.entries()).map(([key, u]) => (
+            <UserMarker
+              key={key}
+              user={u}
+              // chỉ xoay icon khi ở 2D và là driver
+              heading={!is3DMode && u.role === "Driver" ? u.heading : 0}
+            />
+          ))
+
+
+        )
+        }
+
         {children}
       </MapboxGL.MapView>
 
@@ -217,7 +254,7 @@ return (
                 <ChevronLeft size={24} color="#1a3148" />
               )}
             </Pressable>
-            
+
             <HStack space="xs" style={styles.switchContainer} className="items-center">
               <Text size="sm" className="mr-2 text-[#1a3148] font-medium">
                 {is3DMode ? "3D View" : "2D View"}
@@ -226,8 +263,8 @@ return (
                 size="md"
                 value={is3DMode}
                 onValueChange={(val) => setIs3DMode(val)}
-                thumbColor={is3DMode ? "#fab753" : "#3B82F6"}
-                trackColor={{ true: "#fab75360", false: "#3B82F630" }}
+                thumbColor={is3DMode ? "#fab753" : "#959595"}
+                trackColor={{ true: "#fab75360", false: "#95959530" }}
               />
             </HStack>
           </Animated.View>

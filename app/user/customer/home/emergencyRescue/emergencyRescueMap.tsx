@@ -877,7 +877,7 @@ const EmergencyRescueMapScreen = () => {
         setRequestActive(true);
       }
     });
-    return () => {};
+    return () => { };
   }, [requestDetailId]);
 
   useEffect(() => {
@@ -1003,6 +1003,7 @@ const EmergencyRescueMapScreen = () => {
           {routeCoordinates.length > 0 && (
             <MapboxGL.ShapeSource
               id="routeSource"
+              lineMetrics={true}
               shape={{
                 type: "Feature",
                 geometry: { type: "LineString", coordinates: routeCoordinates },
@@ -1012,22 +1013,9 @@ const EmergencyRescueMapScreen = () => {
               <MapboxGL.LineLayer
                 id="routeLine"
                 style={{
-                  lineColor: "#3B82F6",
+                  lineColor: "#fab753",
                   lineWidth: 4,
-                  lineCap: "round",
-                  lineJoin: "round",
-                }}
-              />
-              {/* Add a glow effect for 3D look */}
-              <MapboxGL.LineLayer
-                id="routeGlow"
-                style={{
-                  lineColor: "#93C5FD",
-                  lineWidth: 8,
-                  lineBlur: 2,
-                  lineCap: "round",
-                  lineJoin: "round",
-                  lineOpacity: 0.4,
+                  lineOpacity: 1,
                 }}
               />
             </MapboxGL.ShapeSource>

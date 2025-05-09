@@ -155,7 +155,7 @@ export default function DriverLayout() {
     let locationSubscription: any;
 
     updateLocation(locationSubscription);
-    const intervalId = setInterval(updateLocation, 5000);
+    const intervalId = setInterval(updateLocation, 1000);
 
     return () => {
       clearInterval(intervalId);

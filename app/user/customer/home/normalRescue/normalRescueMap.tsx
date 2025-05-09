@@ -801,8 +801,8 @@ const RescueMapScreen = () => {
             updatedMap.set(msg.publisher, msg.message);
             return acceptedDriverId
               ? new Map(
-                  [...updatedMap].filter(([key]) => key === acceptedDriverId)
-                )
+                [...updatedMap].filter(([key]) => key === acceptedDriverId)
+              )
               : updatedMap;
           });
         }
@@ -815,8 +815,8 @@ const RescueMapScreen = () => {
             updated.delete(event.uuid);
             return acceptedDriverId
               ? new Map(
-                  [...updated].filter(([key]) => key === acceptedDriverId)
-                )
+                [...updated].filter(([key]) => key === acceptedDriverId)
+              )
               : updated;
           });
         }
@@ -948,7 +948,7 @@ const RescueMapScreen = () => {
           {originCoordinates.latitude !== 0 && (
             <MapboxGL.Camera
               ref={camera}
-              // centerCoordinate={[originCoordinates.longitude, originCoordinates.latitude]}
+            // centerCoordinate={[originCoordinates.longitude, originCoordinates.latitude]}
             />
           )}
           {currentLoc.latitude !== 0 && (
@@ -1006,7 +1006,7 @@ const RescueMapScreen = () => {
                 id="routeLine"
                 style={{
                   lineColor: "#fab753",
-                  lineWidth: 3,
+                  lineWidth: 4,
                   lineOpacity: 1,
                 }}
               />
