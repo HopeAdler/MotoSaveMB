@@ -1,27 +1,27 @@
-import React, { useContext, useEffect, useState } from "react";
-import {
-  Modal,
-  ModalBackdrop,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  ModalCloseButton,
-} from "@/components/ui/modal";
-import { Button, ButtonText } from "@/components/ui/button";
-import { Heading } from "@/components/ui/heading";
-import { Icon, CloseIcon } from "@/components/ui/icon";
-import { Alert, Text, TextInput, View } from "react-native";
-import StationSelect from "./StationSelect";
+import AuthContext from "@/app/context/AuthContext";
+import { useCurrentLocStore } from "@/app/hooks/currentLocStore";
 import {
   calculateFare,
   createEmergencyRequestForGuest,
   createPayment,
   fetchStationOfAStaff,
 } from "@/app/services/beAPI";
-import AuthContext from "@/app/context/AuthContext";
 import { getDirections, getReverseGeocode } from "@/app/services/goongAPI";
 import { formatMoney } from "@/app/utils/utils";
+import { Button, ButtonText } from "@/components/ui/button";
+import { Heading } from "@/components/ui/heading";
+import { CloseIcon, Icon } from "@/components/ui/icon";
+import {
+  Modal,
+  ModalBackdrop,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+} from "@/components/ui/modal";
+import React, { useContext, useEffect, useState } from "react";
+import { Alert, Text, TextInput, View } from "react-native";
 
 type CreateGuestRequestForm = {
   receivername: string;
@@ -45,12 +45,12 @@ interface Station {
 }
 
 interface CreateGuestRequestProps {
-  currentLoc: { latitude: number; longitude: number; heading: number };
+  // currentLoc: { latitude: number; longitude: number; heading: number };
 }
 export const CreateGuestRequest: React.FC<CreateGuestRequestProps> = ({
-  currentLoc,
 }) => {
   const { token } = useContext(AuthContext);
+  const { currentLoc } = useCurrentLocStore();
   const [originQuery, setOriginQuery] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [myStation, setMyStation] = useState<Station | null>();
@@ -179,7 +179,7 @@ export const CreateGuestRequest: React.FC<CreateGuestRequestProps> = ({
       Alert.alert("Error", "Failed to submit request");
     }
   };
-  
+
   const handleCancel = () => {
     setFormErrors({}); // Clear previous errors
     setShowModal(false)
