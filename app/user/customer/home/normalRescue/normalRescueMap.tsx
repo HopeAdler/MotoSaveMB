@@ -1,6 +1,6 @@
 import { AuthContext } from "@/app/context/AuthContext";
 import { useCameraZoom } from "@/app/hooks/useCameraZoom";
-import { calculateFare, createPayment, createRescueRequest, createTransaction, getServicePackageByName, RescueRequestPayload, ServicePackage, updateRequestStatus } from "@/app/services/beAPI";
+import { calculateFare, createPayment, createRescueRequest, createTransaction, getServicePackageByName, RescueRequestPayload, ServicePackage, updatePaymentStatus, updateRequestStatus } from "@/app/services/beAPI";
 import { geocodeAddress, getAutocomplete, getDirections, getReverseGeocode, } from "@/app/services/goongAPI";
 import { decodePolyline } from "@/app/utils/utils";
 import TrackingActionSheet from "@/components/custom/TrackingActionSheet";
@@ -82,7 +82,7 @@ const RescueMapScreen = () => {
   const [requestDetailId, setRequestDetailId] = useState<string | null>(null);
   const [showTracking, setShowTracking] = useState(false);
   // const [countdown, setCountdown] = useState(10);
-  const [zpTransId, setZpTransId] = useState<string | null>(null);
+  const [zpTransId, setZpTransId] = useState<string | any>(null);
   const [isSearching, setIsSearching] = useState(false);
   // const [isCancel, setIsCancel] = useState(false);
   // const [sentDriverIds, setSentDriverIds] = useState<Set<string>>(new Set());
@@ -385,7 +385,7 @@ const RescueMapScreen = () => {
       const subscription = payZaloEmitter.addListener("EventPayZalo", async (data: PayZaloEventData) => {
         if (data.returnCode === "1") {
           console.log("Payment successful:", data);
-          setZpTransId(data.transactionId || null);
+          setZpTransId(data.transactionId);
           try {
             const transactionResponse = await createTransaction(
               {
@@ -405,13 +405,30 @@ const RescueMapScreen = () => {
             }
             console.log("Transaction created:", transactionResponse);
           } catch (error) {
-            console.error("Error creating transaction:", error);
+            console.log(error)
           }
           // Manually trigger deep link navigation
           // Linking.openURL("myapp://user/customer/home/normalRescue/rescueMap");
         } else {
           // router.navigate("/user/customer/home/normalRescue/rescueMap");
-          alert("Payment failed! Return code: " + data.returnCode);
+          const updateRequest = await updateRequestStatus(
+            reqId,
+            token,
+            "Cancel"
+          )
+          console.log(updateRequest)
+          const transactionResponse = await createTransaction(
+            {
+              requestdetailid: reqId,
+              zptransid: data.transactionId || "",
+              totalamount: fare,
+              paymentmethod: "ZaloPay",
+              paymentstatus: "Failed",
+            },
+            token
+          );
+          console.log(transactionResponse)
+          alert("Thanh toán thất bại! Vui lòng thử lại sau");
         }
         subscription.remove();
       });
@@ -469,6 +486,21 @@ const RescueMapScreen = () => {
         // Gọi trực tiếp API để cancel request
         const result = await updateRequestStatus(reqId, token, "Cancel");
         console.log("Đã hủy request thành công:", result);
+        console.log("Zp tran id: " + zpTransId)
+        await refundTransaction(zpTransId, "User canceled request", fare);
+        const payment = await updatePaymentStatus(
+          {
+            requestDetailId: requestDetailId,
+            newStatus: "Refunded"
+          },
+          token
+        )
+        console.log(payment)
+        const payZaloBridgeEmitter = new NativeEventEmitter(PayZaloBridge);
+        const subscription = payZaloBridgeEmitter.addListener("EventPayZalo", async (data: PayZaloEventData) => {
+          console.log("Nhận sự kiện PayZalo:", data);
+          subscription.remove();
+        });
       } catch (error) {
         console.error("Lỗi khi tự động hủy request:", error);
       }
@@ -580,11 +612,6 @@ const RescueMapScreen = () => {
       if (paymentMethod === "Zalopay" && zpTransId) {
         console.log("Đang hoàn tiền cho giao dịch:", zpTransId);
         await refundTransaction(zpTransId, "User canceled request", fare);
-        const payZaloBridgeEmitter = new NativeEventEmitter(PayZaloBridge);
-        const subscription = payZaloBridgeEmitter.addListener("EventPayZalo", async (data: PayZaloEventData) => {
-          console.log("Nhận sự kiện PayZalo:", data);
-          subscription.remove();
-        });
       }
 
       console.log("Request đã được hủy thành công");
@@ -625,10 +652,24 @@ const RescueMapScreen = () => {
         // Gọi trực tiếp hàm cancel với ID
         await updateRequestStatus(idToCancel, token, "Cancel");
         console.log("Đã hủy request thành công với ID:", idToCancel);
-        handleCancel();
+        // handleCancel();
         // Xử lý hoàn tiền nếu cần
         if (paymentMethod === "Zalopay" && zpTransId) {
           await refundTransaction(zpTransId, "User canceled request", fare);
+          const payment = await updatePaymentStatus(
+            {
+              requestDetailId: requestDetailId,
+              newStatus: "Refunded"
+            },
+            token
+          )
+          console.log(payment)
+        const payZaloBridgeEmitter = new NativeEventEmitter(PayZaloBridge);
+        const subscription = payZaloBridgeEmitter.addListener("EventPayZalo", async (data: PayZaloEventData) => {
+
+          console.log("Nhận sự kiện PayZalo:", data);
+          subscription.remove();
+        });
         }
       } catch (error) {
         console.error("Lỗi khi hủy request:", error);
