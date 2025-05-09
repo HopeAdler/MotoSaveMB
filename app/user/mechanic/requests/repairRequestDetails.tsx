@@ -151,8 +151,8 @@ export default function RepairDetailsScreen() {
     }
     // Only poll if in Waiting status
     // if (repairRequestDetail?.requeststatus === "Waiting") {
-      const interval = setInterval(() => fetchData(false), 5000);
-      return () => clearInterval(interval);
+    const interval = setInterval(() => fetchData(false), 5000);
+    return () => clearInterval(interval);
     // }
   }, [requestDetailId, repairRequestDetail?.requeststatus]);
 
@@ -192,6 +192,10 @@ export default function RepairDetailsScreen() {
     setRepairQuotes((prev) => prev.filter((item) => item.index !== index));
   };
 
+  const removeBasicItems = () => {
+    setRepairQuotes((prev) => prev.filter((item) => item.wagerate !== 0));
+  };
+
   const isAddDisabled = repairQuotes.some(
     (item) => item.total === 0 || !item.repairname
   );
@@ -211,33 +215,20 @@ export default function RepairDetailsScreen() {
       prev.map((item) =>
         item.index === index
           ? {
-              ...item,
-              repairname: selectedRepair.name,
-              repaircostpreviewid: parseInt(selectedRepair.id),
-              // min: selectedRepair.min,
-              // max: selectedRepair.max,
-              cost: accessory?.cost || 0,
-              accessoryid: accessory?.id || null,
-              wage: wage ?? selectedRepair.wage,
-              total: total ?? selectedRepair.wage,
-            }
+            ...item,
+            repairname: selectedRepair.name,
+            repaircostpreviewid: parseInt(selectedRepair.id),
+            // min: selectedRepair.min,
+            // max: selectedRepair.max,
+            cost: accessory?.cost || 0,
+            accessoryid: accessory?.id || null,
+            wage: wage ?? selectedRepair.wage,
+            total: total ?? selectedRepair.wage,
+          }
           : item
       )
     );
   };
-
-  // useEffect(() => {
-  //   console.log(repairQuotes)
-  // }, [repairQuotes])
-
-  const handlePriceChange = useCallback((index: number, costStr: string) => {
-    const parsedCost = costStr === "" ? 0 : parseInt(costStr) || 0;
-    setRepairQuotes((prev) =>
-      prev.map((item) =>
-        item.index === index ? { ...item, cost: parsedCost } : item
-      )
-    );
-  }, []);
 
   // When the input loses focus, round the value and validate.
   // const handlePriceBlur = useCallback((index: number) => {
@@ -308,7 +299,14 @@ export default function RepairDetailsScreen() {
 
   const handleSendRepairQuote = async () => {
     try {
-      await Promise.all(repairQuotes.map(sendRepairQuote));
+      let newRepairQuotes = repairQuotes;
+      if (repairQuotes.length >= 4) {
+        newRepairQuotes = repairQuotes.filter(item => (item.wagerate ?? 0) > 0);
+        if (newRepairQuotes.length >= 3) {
+          removeBasicItems();
+        }
+      }
+      await Promise.all(newRepairQuotes.map(sendRepairQuote));
       await updateRepairRequestStatus(requestDetailId, token, "Waiting");
 
       fetchData();
@@ -444,156 +442,153 @@ export default function RepairDetailsScreen() {
             </Box>
           </Box>
           {repairRequestDetail?.licenseplate &&
-          <Box className="mt-4 bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-            <Box className="flex-row items-center justify-between mb-5">
-              <Text className="text-lg font-bold text-[#1a3148]">
-                Báo giá sửa chữa
-              </Text>
-              {isNew && (
-                <Text className="text-sm text-gray-500">
-                  {repairQuotes.length} items
+            <Box className="mt-4 bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+              <Box className="flex-row items-center justify-between mb-5">
+                <Text className="text-lg font-bold text-[#1a3148]">
+                  Báo giá sửa chữa
                 </Text>
-              )}
-            </Box>
+                {isNew && (
+                  <Text className="text-sm text-gray-500">
+                    {repairQuotes.length} items
+                  </Text>
+                )}
+              </Box>
 
-            <FlatList
-              scrollEnabled={false}
-              data={repairQuotes}
-              keyExtractor={(item) => item?.index.toString()}
-              ItemSeparatorComponent={() => <Box className="h-4" />}
-              renderItem={({ item }) => (
-                <Box className="bg-[#f8fafc] rounded-xl p-4">
-                  <Box className="mb-3">
-                    {isNew ? (
-                      <RepairCostPreviewSelect
-                        brandId={repairRequestDetail?.brandid}
-                        repairOptions={repairCostPreviews.filter(
-                          (repair) =>
-                            !repairQuotes.some(
-                              (quote) => quote.repairname === repair.name
+              <FlatList
+                scrollEnabled={false}
+                data={repairQuotes}
+                keyExtractor={(item) => item?.index.toString()}
+                ItemSeparatorComponent={() => <Box className="h-4" />}
+                renderItem={({ item }) => (
+                  <Box className="bg-[#f8fafc] rounded-xl p-4">
+                    <Box className="mb-3">
+                      {isNew ? (
+                        <RepairCostPreviewSelect
+                          brandId={repairRequestDetail?.brandid}
+                          repairOptions={repairCostPreviews.filter(
+                            (repair) =>
+                              !repairQuotes.some(
+                                (quote) => quote.repairname === repair.name
+                              )
+                          )}
+                          selectedRepair={item.detail}
+                          onSelectRepair={(
+                            repair: RepairCostPreview,
+                            accessory?: Accessory,
+                            wage?: number,
+                            total?: number
+                          ) =>
+                            handleRepairSelection(
+                              item.index,
+                              repair,
+                              accessory,
+                              wage,
+                              total
                             )
-                        )}
-                        selectedRepair={item.detail}
-                        onSelectRepair={(
-                          repair: RepairCostPreview,
-                          accessory?: Accessory,
-                          wage?: number,
-                          total?: number
-                        ) =>
-                          handleRepairSelection(
-                            item.index,
-                            repair,
-                            accessory,
-                            wage,
-                            total
-                          )
-                        }
-                      />
-                    ) : (
-                      <Box>
-                        <Text className="text-base font-semibold text-[#1a3148]">
-                          {item.repairname || "No repair name found"}
-                        </Text>
-                        {item.accessoryname && (
+                          }
+                        />
+                      ) : (
+                        <Box>
                           <Text className="text-base font-semibold text-[#1a3148]">
-                            {item.accessoryname || "No repair name found"}
+                            {item.repairname || "No repair name found"}
                           </Text>
-                        )}
-                      </Box>
-                    )}
-                  </Box>
+                          {item.accessoryname && (
+                            <Text className="text-base font-semibold text-[#1a3148]">
+                              {item.accessoryname || "No repair name found"}
+                            </Text>
+                          )}
+                        </Box>
+                      )}
+                    </Box>
 
-                  {isNew ? (
-                    <Box className="flex-row items-center">
-                      {/* <PriceInput
+                    {isNew ? (
+                      <Box className="flex-row items-center">
+                        {/* <PriceInput
                         key={item.index}
                         item={item}
                         onPriceChange={handlePriceChange}
                         onBlur={handlePriceBlur}
                       /> */}
-                      {repairQuotes.length > 1 && (
-                        <Button
-                          className="bg-red-500 h-12 w-full rounded-xl items-center justify-center"
-                          onPress={() => removeRepairItem(item.index)}
-                        >
-                          <Text className="text-white text-xl font-bold">
-                            ×
-                          </Text>
-                        </Button>
-                      )}
-                    </Box>
-                  ) : (
-                    <Box className="flex-row flex-wrap gap-2 mt-4">
-                      <Text className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
-                        Giá: {formatMoney(item.cost)}
-                      </Text>
-                      <Text className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
-                        Rate: {item.wagerate}x
-                      </Text>
-                      <Text className="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full">
-                        Phụ thu: {formatMoney(item.wage)}
-                      </Text>
-                      <Text className="bg-orange-100 text-orange-800 text-sm font-medium px-3 py-1 rounded-full">
-                        Tổng: {formatMoney(item.total)}
-                      </Text>
-                    </Box>
-                  )}
-                </Box>
-              )}
-            />
-            <Box className="flex-row items-center mt-5">
-              <CreditCard size={18} color="#1a3148" />
-              <Text className="text-xs uppercase tracking-wider text-gray-500 ml-2">
-                Tổng chi phí
-              </Text>
-              <Text className="text-xs uppercase tracking-wider text-gray-500 ml-2">
-                {formatMoney(repairQuotes.reduce((sum, r) => sum + r.total, 0))}
-              </Text>
-            </Box>
+                        {repairQuotes.length > 1 && (
+                          <Button
+                            className="bg-red-500 h-12 w-full rounded-xl items-center justify-center"
+                            onPress={() => removeRepairItem(item.index)}
+                          >
+                            <Text className="text-white text-xl font-bold">
+                              ×
+                            </Text>
+                          </Button>
+                        )}
+                      </Box>
+                    ) : (
+                      <Box className="flex-row flex-wrap gap-2 mt-4">
+                        <Text className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
+                          Giá: {formatMoney(item.cost)}
+                        </Text>
+                        <Text className="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
+                          Rate: {item.wagerate}x
+                        </Text>
+                        <Text className="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full">
+                          Phụ thu: {formatMoney(item.wage)}
+                        </Text>
+                        <Text className="bg-orange-100 text-orange-800 text-sm font-medium px-3 py-1 rounded-full">
+                          Tổng: {formatMoney(item.total)}
+                        </Text>
+                      </Box>
+                    )}
+                  </Box>
+                )}
+              />
+              <Box className="flex-row items-center mt-5">
+                <CreditCard size={18} color="#1a3148" />
+                <Text className="text-xs uppercase tracking-wider text-gray-500 ml-2">
+                  Tổng chi phí
+                </Text>
+                <Text className="text-xs uppercase tracking-wider text-gray-500 ml-2">
+                  {formatMoney(repairQuotes.reduce((sum, r) => sum + r.total, 0))}
+                </Text>
+              </Box>
 
-            {isNew && (
-              <Box className="mt-6">
-                <Box className="flex flex-col gap-4">
-                  <Button
-                    onPress={addRepairItem}
-                    disabled={isAddDisabled}
-                    className={`h-12 rounded-xl ${
-                      isAddDisabled ? "bg-gray-200" : "bg-[#fab753]"
-                    }`}
-                  >
-                    <Text className="text-white font-bold">
-                      + Thêm linh kiện sửa chữa
-                    </Text>
-                  </Button>
-
-                  {repairQuotes.length > 0 &&
-                  repairRequestDetail.receivername ? (
+              {isNew && (
+                <Box className="mt-6">
+                  <Box className="flex flex-col gap-4">
                     <Button
-                      onPress={handleDone}
-                      disabled={isSubmitDisabled}
-                      className={`h-12 rounded-xl ${
-                        isSubmitDisabled ? "bg-gray-200" : "bg-[#1a3148]"
-                      }`}
+                      onPress={addRepairItem}
+                      disabled={isAddDisabled}
+                      className={`h-12 rounded-xl ${isAddDisabled ? "bg-gray-200" : "bg-[#fab753]"
+                        }`}
                     >
                       <Text className="text-white font-bold">
-                        Xác nhận báo giá
+                        + Thêm linh kiện sửa chữa
                       </Text>
                     </Button>
-                  ) : (
-                    <Button
-                      onPress={handleConfirmSend}
-                      disabled={isSubmitDisabled}
-                      className={`h-12 rounded-xl ${
-                        isSubmitDisabled ? "bg-gray-200" : "bg-[#1a3148]"
-                      }`}
-                    >
-                      <Text className="text-white font-bold">Gửi báo giá</Text>
-                    </Button>
-                  )}
+
+                    {repairQuotes.length > 0 &&
+                      repairRequestDetail.receivername ? (
+                      <Button
+                        onPress={handleDone}
+                        disabled={isSubmitDisabled}
+                        className={`h-12 rounded-xl ${isSubmitDisabled ? "bg-gray-200" : "bg-[#1a3148]"
+                          }`}
+                      >
+                        <Text className="text-white font-bold">
+                          Xác nhận báo giá
+                        </Text>
+                      </Button>
+                    ) : (
+                      <Button
+                        onPress={handleConfirmSend}
+                        disabled={isSubmitDisabled}
+                        className={`h-12 rounded-xl ${isSubmitDisabled ? "bg-gray-200" : "bg-[#1a3148]"
+                          }`}
+                      >
+                        <Text className="text-white font-bold">Gửi báo giá</Text>
+                      </Button>
+                    )}
+                  </Box>
                 </Box>
-              </Box>
-            )}
-          </Box>
+              )}
+            </Box>
           }
 
           {repairRequestDetail?.paymentmethod && (
@@ -603,18 +598,16 @@ export default function RepairDetailsScreen() {
                   Chi tiết thanh toán
                 </Text>
                 <Box
-                  className={`px-3 py-1.5 rounded-full ${
-                    repairRequestDetail.paymentstatus === "Success"
-                      ? "bg-green-100"
-                      : "bg-red-100"
-                  }`}
+                  className={`px-3 py-1.5 rounded-full ${repairRequestDetail.paymentstatus === "Success"
+                    ? "bg-green-100"
+                    : "bg-red-100"
+                    }`}
                 >
                   <Text
-                    className={`text-sm font-semibold ${
-                      repairRequestDetail.paymentstatus === "Success"
-                        ? "text-green-600"
-                        : "text-red-600"
-                    }`}
+                    className={`text-sm font-semibold ${repairRequestDetail.paymentstatus === "Success"
+                      ? "text-green-600"
+                      : "text-red-600"
+                      }`}
                   >
                     {repairRequestDetail.paymentstatus === "Success"
                       ? "Đã thanh toán"
@@ -664,11 +657,10 @@ export default function RepairDetailsScreen() {
                       );
                     }}
                     disabled={repairRequestDetail?.requeststatus !== "Done"}
-                    className={`h-12 rounded-xl mt-4 ${
-                      repairRequestDetail?.requeststatus === "Done"
-                        ? "bg-[#fab753]"
-                        : "bg-gray-200"
-                    }`}
+                    className={`h-12 rounded-xl mt-4 ${repairRequestDetail?.requeststatus === "Done"
+                      ? "bg-[#fab753]"
+                      : "bg-gray-200"
+                      }`}
                   >
                     <Text className="text-white font-bold">
                       Confirm Payment
@@ -688,13 +680,12 @@ export default function RepairDetailsScreen() {
                       repairRequestDetail.requeststatus
                     )
                   }
-                  className={`h-14 rounded-xl ${
-                    ["Accepted", "Repairing"].includes(
-                      repairRequestDetail.requeststatus
-                    )
-                      ? "bg-green-500 shadow-sm shadow-green-500/20"
-                      : "bg-gray-200"
-                  }`}
+                  className={`h-14 rounded-xl ${["Accepted", "Repairing"].includes(
+                    repairRequestDetail.requeststatus
+                  )
+                    ? "bg-green-500 shadow-sm shadow-green-500/20"
+                    : "bg-gray-200"
+                    }`}
                 >
                   <Text className="text-white text-base font-bold">
                     {repairRequestDetail?.requeststatus === "Repairing"

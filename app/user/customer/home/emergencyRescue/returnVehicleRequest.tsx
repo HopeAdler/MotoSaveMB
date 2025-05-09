@@ -334,7 +334,7 @@ const ReturnVehicleRequestScreen = () => {
               <CreditCard size={24} color="#6B7280" />
             </Box>
           </Box>
-          <Box className="mt-3">
+          {/* <Box className="mt-3">
             <Text className="text-base font-semibold text-gray-900 mb-2">
               Payment Method
             </Text>
@@ -357,8 +357,8 @@ const ReturnVehicleRequestScreen = () => {
                 </SelectContent>
               </SelectPortal>
             </Select>
-          </Box>
-          {paymentMethod === "Zalopay" && transactionSuccess === false && (
+          </Box> */}
+          {/* {paymentMethod === "Zalopay" && transactionSuccess === false && (
             <Button
               variant="solid"
               size="lg"
@@ -374,7 +374,7 @@ const ReturnVehicleRequestScreen = () => {
                 </ButtonText>
               </Box>
             </Button>
-          )}
+          )} */}
         </Box>
       </Box>
     </ScrollView>
