@@ -58,7 +58,7 @@ export interface Payment {
 }
 
 export interface UpdatedPayment {
-  requestDetailId: string;
+  requestDetailId: string | any;
   newStatus: string;
 }
 export interface UpdatedPaymentTotal {
