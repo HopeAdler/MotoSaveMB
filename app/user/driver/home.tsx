@@ -60,7 +60,7 @@ export default function DHomeScreen() {
   const checkUndoneRequest = async () => {
     try {
       const results = await getUndoneRequestDetailIds(token);
-      console.log(results)
+      // console.log(results)
       return results.length > 1 ? true : false;
     } catch (error) {
       console.error("Error fetching undone request details:", error);
@@ -69,11 +69,11 @@ export default function DHomeScreen() {
 
   const fetchPendingRescueRequests = async () => {
     try {
-      console.log('Fetching...')
-      console.log(pendingReqDetailIds)
+      // console.log('Fetching...')
+      // console.log(pendingReqDetailIds)
       const requests = await Promise.all(
         Array.from(pendingReqDetailIds.values()).map(async (id) => {
-          console.log(id);
+          // console.log(id);
           const response = await axios.get(
             `https://motor-save-be.vercel.app/api/v1/requests/driver/${id}`,
             { headers: { Authorization: "Bearer " + token } }
@@ -121,9 +121,9 @@ export default function DHomeScreen() {
   useEffect(() => {
     const interval = setInterval(async () => {
       const result = await checkUndoneRequest();
-      console.log(result)
+      // console.log(result)
       if (!result) {
-        console.log(pendingReqDetailIds.size);
+        // console.log(pendingReqDetailIds.size);
         fetchPendingReturnRequest(); // Fetch initially
         // if (pendingReqDetailIds.size === 0) return; // No requests, skip API calls
         fetchPendingRescueRequests(); // Fetch every 5 seconds
@@ -268,7 +268,7 @@ export default function DHomeScreen() {
               )}
             </Box>
 
-            <CreateGuestRequest currentLoc={currentLoc} />
+            <CreateGuestRequest />
             {/* <Box className="bg-white rounded-2xl p-4 mt-4 shadow-sm">
               <Text className="text-lg font-bold text-gray-800 mb-4">
                 Thao tác nhanh

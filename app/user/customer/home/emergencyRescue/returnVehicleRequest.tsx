@@ -1,42 +1,31 @@
-import { router } from "expo-router";
-import React, { useContext, useEffect, useRef, useState } from "react";
+import AuthContext from "@/app/context/AuthContext";
+import { RequestDetail } from "@/app/context/formFields";
+import { RequestContext } from "@/app/context/RequestContext";
+import { createTransaction, updatePaymentInfo } from "@/app/services/beAPI";
+import { usePubNubService } from "@/app/services/pubnubService";
+import { PayZaloEventData, processPayment } from "@/app/utils/payment";
+import { decodedToken, formatMoney, handlePhoneCall } from "@/app/utils/utils";
 import { Box } from "@/components/ui/box";
+import { Button, ButtonText } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
+import axios from "axios";
+import { router } from "expo-router";
 import {
   AlertCircle,
   CheckCircle2,
-  ChevronDownIcon,
   ChevronLeft,
   CreditCard,
   MapPin,
   MessageSquare,
-  Phone,
+  Phone
 } from "lucide-react-native";
-import axios from "axios";
-import AuthContext from "@/app/context/AuthContext";
-import { RequestDetail } from "@/app/context/formFields";
+import React, { useContext, useEffect, useState } from "react";
 import {
-  ActivityIndicator,
   NativeEventEmitter,
   NativeModules,
   Pressable,
-  ScrollView,
+  ScrollView
 } from "react-native";
-import {
-  Select,
-  SelectTrigger,
-  SelectInput,
-  SelectIcon,
-  SelectPortal,
-  SelectBackdrop,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
-import { Button, ButtonText } from "@/components/ui/button";
-import { decodedToken, formatMoney, handlePhoneCall } from "@/app/utils/utils";
-import { PayZaloEventData, processPayment } from "@/app/utils/payment";
-import { createPayment, createTransaction, updatePaymentInfo } from "@/app/services/beAPI";
-import { RequestContext } from "@/app/context/RequestContext";
 import { Avatar } from "react-native-elements";
 
 const ReturnVehicleRequestScreen = () => {
@@ -54,6 +43,9 @@ const ReturnVehicleRequestScreen = () => {
   const [requestDetail, setRequestDetail] = useState<RequestDetail | null>(
     null
   );
+  const {
+    createDirectChannel,
+  } = usePubNubService();
   const fetchRequestDetail = async () => {
     try {
       const response = await axios.get<RequestDetail>(
@@ -75,6 +67,13 @@ const ReturnVehicleRequestScreen = () => {
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    console.log(requestDetail?.requeststatus)
+    console.log(requestDetail?.driverid)
+    if(requestDetail?.requeststatus !== "Pending" && requestDetail?.driverid) {
+      createDirectChannel(requestDetail?.driverid, requestDetail?.requestdetailid);
+    }
+  }, [requestDetail?.requeststatus]);
   // const cashPayment = async () => {
   //   try {
   //     const payment = await createPayment(
