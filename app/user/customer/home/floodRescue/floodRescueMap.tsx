@@ -784,7 +784,10 @@ const FloodRescueMapScreen = () => {
         originCoordinates.latitude
       ) {
         console.log('three')
+        console.log(users)
         const driverLoc = `${users.get(acceptedDriverId)?.latitude},${users.get(acceptedDriverId)?.longitude}`;
+        console.log("hjjjjjjjjjjj" + driverLoc)
+        console.log("acceptedDriverId" + acceptedDriverId)
         const originStr = `${originCoordinates.latitude},${originCoordinates.longitude}`;
         let startStr = "";
         let endStr = "";
@@ -908,13 +911,14 @@ const FloodRescueMapScreen = () => {
                 type: "Feature",
                 geometry: { type: "LineString", coordinates: routeCoordinates },
                 properties: {},
-
               }}
             >
               <MapboxGL.LineLayer
                 id="routeLine"
                 style={{
-                  lineColor: "#fab753", lineWidth: 3, lineOpacity: 0.8
+                  lineColor: "#fab753",
+                  lineWidth: 4,
+                  lineOpacity: 1,
                 }}
               />
             </MapboxGL.ShapeSource>
