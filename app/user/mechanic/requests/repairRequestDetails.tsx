@@ -22,7 +22,7 @@ import { Box } from "@/components/ui/box";
 import { Button } from "@/components/ui/button";
 import { router, useLocalSearchParams } from "expo-router";
 import { CreditCard } from "lucide-react-native";
-import React, { useCallback, useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import {
   Alert,
   FlatList,
