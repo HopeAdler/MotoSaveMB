@@ -1,39 +1,46 @@
-import React, { useContext, useEffect, useState } from "react";
-import { Avatar } from "react-native-elements";
-import { Box } from "@/components/ui/box";
-import { Text } from "@/components/ui/text";
-import { Button, ButtonText } from "@/components/ui/button";
+import AuthContext from "@/app/context/AuthContext";
 import {
   Actionsheet,
+  ActionsheetBackdrop,
   ActionsheetContent,
   ActionsheetDragIndicator,
   ActionsheetDragIndicatorWrapper,
-  ActionsheetBackdrop,
 } from "@/components/ui/actionsheet";
-import {
-  Phone,
-  MessageSquare,
-  AlertCircle,
-  Clock,
-  Navigation2,
-  CheckCircle2,
-  MapPin,
-} from "lucide-react-native";
-import AuthContext from "@/app/context/AuthContext";
+import { Box } from "@/components/ui/box";
+import { Button, ButtonText } from "@/components/ui/button";
+import { Text } from "@/components/ui/text";
 import { router } from "expo-router";
+import {
+  CheckCircle2,
+  Clock,
+  MapPin,
+  MessageSquare,
+  Navigation2,
+  Phone
+} from "lucide-react-native";
+import React, { useContext, useEffect, useState } from "react";
 import { Alert } from "react-native";
+import { Avatar } from "react-native-elements";
 
 // Import các component cho form
+import { decodedToken, formatMoney, handlePhoneCall } from "@/app/utils/utils";
+import {
+  AlertDialog,
+  AlertDialogBackdrop,
+  AlertDialogBody,
+  AlertDialogContent,
+  AlertDialogFooter,
+  AlertDialogHeader,
+} from "@/components/ui/alert-dialog";
 import {
   FormControl,
-  FormControlLabel,
-  FormControlLabelText,
   FormControlError,
   FormControlErrorIcon,
   FormControlErrorText,
+  FormControlLabel,
+  FormControlLabelText,
 } from "@/components/ui/form-control";
 import { Input, InputField } from "@/components/ui/input";
-import { VStack } from "@/components/ui/vstack";
 import {
   Radio,
   RadioGroup,
@@ -41,30 +48,22 @@ import {
   RadioIndicator,
   RadioLabel,
 } from "@/components/ui/radio";
-import {
-  AlertDialog,
-  AlertDialogBackdrop,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogBody,
-  AlertDialogFooter,
-} from "@/components/ui/alert-dialog";
-import { decodedToken, formatMoney, handlePhoneCall } from "@/app/utils/utils";
+import { VStack } from "@/components/ui/vstack";
 
 // Import interface RequestDetail từ formFields (với các interface khác được đặt trong file formFields)
 import { RequestDetail } from "@/app/context/formFields";
 // Import hàm cancelRequest từ beAPI
-import { cancelRequest } from "@/app/services/beAPI";
-import axios from "axios";
 import { RequestContext } from "@/app/context/RequestContext";
 import { useLatReqDetStore } from "@/app/hooks/useLatReqDetStore";
-import { CircleIcon } from "../ui/icon";
+import { cancelRequest } from "@/app/services/beAPI";
 import { usePubNubService } from "@/app/services/pubnubService";
+import axios from "axios";
+import { CircleIcon } from "../ui/icon";
 const cancelReasons = [
-  "Driver delayed",
-  "Driver behavior not acceptable",
-  "Change of plans",
-  "Other",
+  "Tài xế tới muộn",
+  "Tài xế có hành vi không chuẩn mực",
+  "Kế hoạch có thay đổi",
+  "Khác",
 ];
 
 interface TrackingActionSheetProps {
@@ -503,7 +502,7 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
               <FormControl isRequired>
                 <FormControlLabel>
                   <FormControlLabelText className="text-[#1a3148] font-medium">
-                    Select a reason for cancellation
+                    Chọn lý do bạn hủy chuyến
                   </FormControlLabelText>
                 </FormControlLabel>
                 <RadioGroup
@@ -528,7 +527,7 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
                 <FormControl isRequired isInvalid={!customReason.trim()}>
                   <FormControlLabel>
                     <FormControlLabelText className="text-[#1a3148] font-medium">
-                      Enter custom reason
+                      Nhập lý do khác
                     </FormControlLabelText>
                   </FormControlLabel>
                   <Input
@@ -546,7 +545,7 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
                     <FormControlError>
                       <FormControlErrorIcon />
                       <FormControlErrorText>
-                        Reason is required.
+                      Vui lòng nhập lý do
                       </FormControlErrorText>
                     </FormControlError>
                   )}
@@ -558,7 +557,7 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
                 size="lg"
               >
                 <ButtonText className="font-bold text-lg text-[#1a3148]">
-                  Submit Cancellation
+                  Xác nhận hủy
                 </ButtonText>
               </Button>
             </VStack>
