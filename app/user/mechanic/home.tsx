@@ -188,7 +188,7 @@ export default function MHomeScreen() {
         </Box>
 
         {/* Related Services */}
-        <Box className="p-4">
+        {/* <Box className="p-4">
           <Text className="text-lg font-bold mb-4">Nghiệp vụ liên quan</Text>
           <Box className="flex flex-row flex-wrap gap-4">
             <ServiceCard icon={Wrench} title="Sửa xe" color="#8b5cf6" />
@@ -198,7 +198,7 @@ export default function MHomeScreen() {
               color="#ff0000"
             />
           </Box>
-        </Box>
+        </Box> */}
 
         {/* My Station */}
         <Box className="p-4">

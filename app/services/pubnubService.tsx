@@ -53,12 +53,13 @@ export const usePubNubService = () => {
     });
   };
 
-  const publishCancelRescueForCust = (requestDetailId: string, reason: string): Promise<any> => {
+  const publishCancelRescueForCust = (driverId: string | null, reason: string): Promise<any> => {
     return pubnub.publish({
       channel: "rescue-service",
       message: {
         senderRole: "Customer",
-        requestDetailId,
+        // requestDetailId,
+        driverId,
         reqStatus: 'Cancel',
         reason,
       },

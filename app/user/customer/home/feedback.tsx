@@ -25,7 +25,7 @@ const FeedbackScreen = () => {
     try {
       const result = await createFeedback(requestdetailid, payload, token);
       console.log(result);
-      alert("Create feedback success!")
+      alert("Cảm ơn phản hồi của quý khách!")
       router.navigate("/user/customer/home/homepage")
     } catch (error) {
       console.error("Error creating request:", error);
@@ -35,7 +35,7 @@ const FeedbackScreen = () => {
   return (
     <Box className="flex-1 items-center justify-center bg-white px-6">
       <Text className="text-2xl font-bold text-center">
-        Your feedback make will improve our service
+        Góp ý của bạn sẽ giúp chúng tôi cải thiện dịch vụ
       </Text>
       {/* Star Rating */}
       <Box className="flex-row my-4">
@@ -66,13 +66,13 @@ const FeedbackScreen = () => {
         className="w-full bg-green-500 rounded-xl p-2 mt-4"
         onPress={handleSubmit}
       >
-        <ButtonText className="text-white text-lg">Submit</ButtonText>
+        <ButtonText className="text-white text-lg">Gửi</ButtonText>
       </Button>
       <Button
         className="w-full bg-red-500 rounded-xl p-2 mt-4"
         onPress={() => router.navigate("/user/customer/home/homepage")}
       >
-        <ButtonText className="text-white text-lg">Cancel</ButtonText>
+        <ButtonText className="text-white text-lg">Huỷ</ButtonText>
       </Button>
     </Box>
   );

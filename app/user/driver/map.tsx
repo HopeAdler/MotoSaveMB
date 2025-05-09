@@ -548,7 +548,7 @@ const GenMap: React.FC = () => {
                               <Navigation2 size={24} color="#1a3148" />
                             </Box>
                             <Box className="ml-3">
-                              <Text className="text-sm text-gray-500">Distance</Text>
+                              <Text className="text-sm text-gray-500">Khoảng cách</Text>
                               <Text className="text-xl font-bold text-[#1a3148]">
                                 {directionsInfo?.distance?.text}
                               </Text>
@@ -564,7 +564,7 @@ const GenMap: React.FC = () => {
                               <Clock size={24} color="#1a3148" />
                             </Box>
                             <Box className="ml-3">
-                              <Text className="text-sm text-gray-500">Duration</Text>
+                              <Text className="text-sm text-gray-500">Thời gian</Text>
                               <Text className="text-xl font-bold text-[#1a3148]">
                                 {directionsInfo?.duration?.text}
                               </Text>
@@ -583,7 +583,7 @@ const GenMap: React.FC = () => {
                           <MapPin size={20} color="#1a3148" />
                         </Box>
                         <Box className="ml-3 flex-1">
-                          <Text className="text-sm text-gray-500">Pickup Location</Text>
+                          <Text className="text-sm text-gray-500">Điểm đón</Text>
                           <Text className="text-base font-medium text-[#1a3148]">
                             {requestDetail?.pickuplocation}
                           </Text>
@@ -600,7 +600,7 @@ const GenMap: React.FC = () => {
                             )}
                           </Box>
                           <Box className="ml-3 flex-1">
-                            <Text className="text-sm text-gray-500">Destination</Text>
+                            <Text className="text-sm text-gray-500">Đích đến</Text>
                             <Text className="text-base font-medium text-[#1a3148]">
                               {requestDetail?.destination}
                             </Text>
@@ -614,7 +614,7 @@ const GenMap: React.FC = () => {
                         <Box>
                           <Box className="flex-row items-center mb-1">
                             <CreditCard size={18} color="#1a3148" />
-                            <Text className="text-sm text-gray-500 ml-2">Total Price</Text>
+                            <Text className="text-sm text-gray-500 ml-2">Tổng</Text>
                           </Box>
                           <Text className="text-xl font-bold text-[#1a3148]">
                             <Text className="text-2xl font-bold">

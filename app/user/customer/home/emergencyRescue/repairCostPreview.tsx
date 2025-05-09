@@ -1,3 +1,4 @@
+import { formatMoney } from "@/app/utils/utils";
 import { GoBackButton } from "@/components/custom/GoBackButton";
 import { Box } from "@/components/ui/box";
 import { Text } from "@/components/ui/text";
@@ -45,7 +46,8 @@ const RepairCostPreviewScreen = () => {
       <Box className="flex-row items-center justify-between">
         <Text className="text-base font-medium text-gray-900">Chi phí sửa chữa:</Text>
         <Text className="text-base font-semibold text-gray-900">
-          {item?.min.toLocaleString()}VNĐ - {item?.max.toLocaleString()}VNĐ
+          {/* {item?.min.toLocaleString()}VNĐ - {item?.max.toLocaleString()}VNĐ */}
+          {formatMoney(item?.min)} - {formatMoney(item?.max)}
         </Text>
       </Box>
     </Box>

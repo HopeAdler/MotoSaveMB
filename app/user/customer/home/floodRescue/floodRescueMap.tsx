@@ -97,6 +97,7 @@ const FloodRescueMapScreen = () => {
   const [originSelected, setOriginSelected] = useState(false);
   // const [destinationSelected, setDestinationSelected] = useState(false);
   const [showActionsheet, setShowActionsheet] = useState(false);
+  const [showTracking2, setShowTracking2] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("Tiền mặt");
   // const [showCountdownSheet, setShowCountdownSheet] = useState(false);
   const [requestDetailId, setRequestDetailId] = useState<string | null>(null);
@@ -199,7 +200,7 @@ const FloodRescueMapScreen = () => {
 
   useEffect(() => {
     const timeout = setTimeout(() => {
-      if (originQuery.trim()) {
+      if (originQuery?.trim()) {
         getAutocomplete(
           originQuery,
           originCoordinates.latitude && originCoordinates.longitude
@@ -943,14 +944,14 @@ const FloodRescueMapScreen = () => {
       )}
 
       {/* Tracking action sheet */}
-      {(latestRequestDetail &&
+      {(showTracking2 && latestRequestDetail &&
         latestRequestDetail?.requeststatus !== "Done" &&
         latestRequestDetail?.requeststatus !== "Cancel") ?
         <>
           {requestDetailId && (
             <TrackingActionSheet
-              isOpen={showTracking}
-              onClose={() => setShowTracking(false)}
+              isOpen={showTracking2}
+              onClose={() => setShowTracking2(false)}
               // requestdetailid={requestDetailId}
               eta={directionsInfo?.duration?.text}
               distance={directionsInfo?.distance?.text}
@@ -990,11 +991,11 @@ const FloodRescueMapScreen = () => {
           visible={true}
         />
       )}
-      {(latestRequestDetail &&
-        latestRequestDetail?.requeststatus !== "Done" &&
+      {latestRequestDetail &&
+        (latestRequestDetail?.requeststatus !== "Done" &&
         latestRequestDetail?.requeststatus !== "Cancel") &&
         <ActionSheetToggle
-          onPress={() => setShowTracking(true)}
+          onPress={() => setShowTracking2(true)}
           visible={true}
         />
       }

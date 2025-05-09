@@ -34,7 +34,13 @@ import {
 } from "@/components/ui/form-control";
 import { Input, InputField } from "@/components/ui/input";
 import { VStack } from "@/components/ui/vstack";
-import { Radio, RadioGroup, RadioIcon, RadioIndicator, RadioLabel } from "@/components/ui/radio";
+import {
+  Radio,
+  RadioGroup,
+  RadioIcon,
+  RadioIndicator,
+  RadioLabel,
+} from "@/components/ui/radio";
 import {
   AlertDialog,
   AlertDialogBackdrop,
@@ -64,11 +70,15 @@ const cancelReasons = [
 interface TrackingActionSheetProps {
   isOpen: boolean;
   onClose: () => void;
-  requestDetailIdState: [string, React.Dispatch<React.SetStateAction<string | null>>];
+  requestDetailIdState: [
+    string,
+    React.Dispatch<React.SetStateAction<string | null>>,
+  ];
   eta: string;
   distance: string;
   driverId: string | null;
   setAcceptedReqDetStatus: React.Dispatch<React.SetStateAction<string>>;
+  // latestStatus: string;
 }
 
 const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
@@ -79,21 +89,18 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
   distance,
   driverId,
   setAcceptedReqDetStatus,
+  //  latestStatus
 }) => {
   const { token } = useContext(AuthContext);
   const userId = decodedToken(token)?.id;
   const [requestDetail, setRequestDetail] = useState<RequestDetail | null>(
     null
   );
-  const { setRequestId } = useContext(RequestContext);
+  const { requestId,setRequestId } = useContext(RequestContext);
   const [loading, setLoading] = useState<boolean>(true);
 
-  const {
-    latestRequestDetail,
-  } = useLatReqDetStore();
-  const {
-    publishCancelRescueForCust,
-  } = usePubNubService();
+  const { latestRequestDetail } = useLatReqDetStore();
+  const { publishCancelRescueForCust } = usePubNubService();
 
   // State cho cancellation actionsheet và alert confirmation
   const [showCancelActionsheet, setShowCancelActionsheet] = useState(false);
@@ -103,14 +110,18 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
 
   const fetchRequestDetail = async () => {
     try {
-      const latReqDetId = requestdetailid ? requestdetailid : latestRequestDetail?.requestdetailid
+      const latReqDetId = requestdetailid
+        ? requestdetailid
+        : latestRequestDetail?.requestdetailid;
       const response = await axios.get<RequestDetail>(
         `https://motor-save-be.vercel.app/api/v1/requests/driver/${latReqDetId}`,
         { headers: { Authorization: "Bearer " + token } }
       );
       setRequestDetail(response.data);
-      setRequestId(response.data?.requestid)
+      setRequestId(response.data?.requestid);
       setAcceptedReqDetStatus(response.data?.requeststatus);
+      console.log("Request Status:", response.data?.requeststatus);
+
       console.log("Fetching request detail...");
     } catch (error) {
       console.error("Error fetching request details:", error);
@@ -120,26 +131,31 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
   };
   useEffect(() => {
     fetchRequestDetail();
-    const interval = setInterval(fetchRequestDetail, 5000);
+    const interval = setInterval(fetchRequestDetail, 3000);
     return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
+    console.log(requestDetail);
     if (requestDetail?.requeststatus === "Done") {
-      console.log(requestDetail);
-      setRequestId(null);
+      // if (latestStatus === "Done") {
       const timer = setTimeout(() => {
         if (requestDetail?.servicepackagename === "Cứu hộ đến trạm") {
-          router.navigate("/user/customer/home/emergencyRescue/repairRequest");
+          // router.navigate("/user/customer/home/emergencyRescue/repairRequest");
+          router.push({
+            pathname: "/user/customer/home/emergencyRescue/repairRequest",
+            params: { requestId: requestDetail?.requestid }
+          });
         } else {
           router.push({
             pathname: "/user/customer/home/feedback",
             params: { requestdetailid },
           });
         }
+        setRequestId(null);
         setRequestDetailId(null);
         onClose();
-      }, 3000);
+      }, 1000);
       return () => clearTimeout(timer);
     }
   }, [requestDetail?.requeststatus]);
@@ -198,7 +214,8 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
                 <Box
                   className={`w-8 h-8 rounded-full items-center justify-center`}
                   style={{
-                    backgroundColor: index <= currentStepIndex ? getStatusColor() : "#E5E7EB"
+                    backgroundColor:
+                      index <= currentStepIndex ? getStatusColor() : "#E5E7EB",
                   }}
                 >
                   <CheckCircle2 size={16} color="white" />
@@ -206,10 +223,11 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
               </Box>
               <Box className="h-12 justify-start pt-2">
                 <Text
-                  className={`text-xs text-center px-1 ${index <= currentStepIndex
-                    ? "text-gray-900"
-                    : "text-gray-500"
-                    }`}
+                  className={`text-xs text-center px-1 ${
+                    index <= currentStepIndex
+                      ? "text-gray-900"
+                      : "text-gray-500"
+                  }`}
                   numberOfLines={2}
                 >
                   {step.title}
@@ -258,7 +276,7 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
         token,
         reasonToSend
       );
-      if (response) await publishCancelRescueForCust(requestdetailid,reasonToSend);
+      if (response) await publishCancelRescueForCust(driverId, reasonToSend);
       console.log("Cancel response:", response);
       Alert.alert("Ride has been cancelled", response.message);
       onClose();
@@ -312,12 +330,16 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
               <Avatar
                 size={80}
                 rounded
-                source={{ uri: requestDetail?.driverimage || "https://example.com/default-avatar.png" }}
+                source={{
+                  uri:
+                    requestDetail?.driverimage ||
+                    "https://example.com/default-avatar.png",
+                }}
                 containerStyle={{ borderWidth: 2, borderColor: "#f2f2f2" }}
               />
               <Box className="ml-4 flex-1">
                 <Text className="text-xl font-bold text-[#1a3148]">
-                  {requestDetail?.drivername || "Awaiting Driver"}
+                  {requestDetail?.drivername || "Đang đợi tài xế"}
                 </Text>
                 <Text className="text-gray-600 mt-1">
                   {requestDetail?.brandname} {requestDetail?.licenseplate}
@@ -328,25 +350,39 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
                 <Button
                   variant="solid"
                   onPress={handleCall}
-                  className={`rounded-xl h-12 w-12 items-center justify-center ${requestDetail?.requeststatus === "Done" ? "bg-gray-200" : "bg-[#1a3148]"
-                    }`}
+                  className={`rounded-xl h-12 w-12 items-center justify-center ${
+                    requestDetail?.requeststatus === "Done"
+                      ? "bg-gray-200"
+                      : "bg-[#1a3148]"
+                  }`}
                   disabled={requestDetail?.requeststatus === "Done"}
                 >
                   <Phone
                     size={22}
-                    color={requestDetail?.requeststatus === "Done" ? "#9CA3AF" : "white"}
+                    color={
+                      requestDetail?.requeststatus === "Done"
+                        ? "#9CA3AF"
+                        : "white"
+                    }
                   />
                 </Button>
                 <Button
                   variant="solid"
                   onPress={toChatScreen}
-                  className={`rounded-xl h-12 w-12 items-center justify-center ${requestDetail?.requeststatus === "Done" ? "bg-gray-200" : "bg-[#fab753]"
-                    }`}
+                  className={`rounded-xl h-12 w-12 items-center justify-center ${
+                    requestDetail?.requeststatus === "Done"
+                      ? "bg-gray-200"
+                      : "bg-[#fab753]"
+                  }`}
                   disabled={requestDetail?.requeststatus === "Done"}
                 >
                   <MessageSquare
                     size={22}
-                    color={requestDetail?.requeststatus === "Done" ? "#9CA3AF" : "white"}
+                    color={
+                      requestDetail?.requeststatus === "Done"
+                        ? "#9CA3AF"
+                        : "white"
+                    }
                   />
                 </Button>
               </Box>
@@ -360,9 +396,7 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
                       <Navigation2 size={24} color="#1a3148" />
                     </Box>
                     <Box className="ml-3">
-                      <Text className="text-sm text-gray-500">
-                        Khoảng cách
-                      </Text>
+                      <Text className="text-sm text-gray-500">Khoảng cách</Text>
                       <Text className="text-xl font-bold text-[#1a3148]">
                         {distance}
                       </Text>
@@ -378,9 +412,7 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
                       <Clock size={24} color="#1a3148" />
                     </Box>
                     <Box className="ml-3">
-                      <Text className="text-sm text-gray-500">
-                        Thời gian
-                      </Text>
+                      <Text className="text-sm text-gray-500">Thời gian</Text>
                       <Text className="text-xl font-bold text-[#1a3148]">
                         {eta}
                       </Text>
@@ -397,9 +429,7 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
                   <MapPin size={20} color="#1a3148" />
                 </Box>
                 <Box className="ml-3 flex-1">
-                  <Text className="text-sm text-gray-500">
-                    Điểm đón
-                  </Text>
+                  <Text className="text-sm text-gray-500">Điểm đón</Text>
                   <Text className="text-base font-medium text-[#1a3148]">
                     {requestDetail?.pickuplocation}
                   </Text>
@@ -412,9 +442,7 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
                     <Navigation2 size={20} color="#fab753" />
                   </Box>
                   <Box className="ml-3 flex-1">
-                    <Text className="text-sm text-gray-500">
-                      Điểm đến
-                    </Text>
+                    <Text className="text-sm text-gray-500">Điểm đến</Text>
                     <Text className="text-base font-medium text-[#1a3148]">
                       {requestDetail?.destination}
                     </Text>
@@ -425,23 +453,27 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
 
             {renderProgressSteps()}
 
-            {requestDetail?.totalprice &&
+            {requestDetail?.totalprice && (
               <Box className="flex-row items-center justify-center w-full">
                 <Text className="text-green-600 font-bold">Tổng tiền:</Text>
-                <Text className="text-green-600 font-bold">{formatMoney(requestDetail?.totalprice)}</Text>
+                <Text className="text-green-600 font-bold">
+                  {formatMoney(requestDetail?.totalprice)}
+                </Text>
               </Box>
-            }
+            )}
 
             {(requestDetail?.requeststatus === "Accepted" ||
               requestDetail?.requeststatus === "Pickup") && (
-                <Button
-                  onPress={() => setShowCancelActionsheet(true)}
-                  className="bg-red-50 border border-red-200 h-14 rounded-xl active:opacity-80 shadow-sm mt-5"
-                  size="lg"
-                >
-                  <ButtonText className="text-red-600 font-bold">Huỷ chuyến</ButtonText>
-                </Button>
-              )}
+              <Button
+                onPress={() => setShowCancelActionsheet(true)}
+                className="bg-red-50 border border-red-200 h-14 rounded-xl active:opacity-80 shadow-sm mt-5"
+                size="lg"
+              >
+                <ButtonText className="text-red-600 font-bold">
+                  Huỷ chuyến
+                </ButtonText>
+              </Button>
+            )}
           </Box>
         </ActionsheetContent>
       </Actionsheet>
@@ -485,7 +517,9 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
                       <RadioIndicator>
                         <RadioIcon as={CircleIcon} />
                       </RadioIndicator>
-                      <RadioLabel className="text-[#1a3148]">{reason}</RadioLabel>
+                      <RadioLabel className="text-[#1a3148]">
+                        {reason}
+                      </RadioLabel>
                     </Radio>
                   ))}
                 </RadioGroup>
@@ -497,7 +531,11 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
                       Enter custom reason
                     </FormControlLabelText>
                   </FormControlLabel>
-                  <Input variant="outline" size="md" className="border-gray-200">
+                  <Input
+                    variant="outline"
+                    size="md"
+                    className="border-gray-200"
+                  >
                     <InputField
                       placeholder="Enter reason..."
                       value={customReason}
@@ -519,7 +557,9 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
                 className="bg-[#fab753] h-14 rounded-xl active:opacity-80 shadow-sm"
                 size="lg"
               >
-                <ButtonText className="font-bold text-lg text-[#1a3148]">Submit Cancellation</ButtonText>
+                <ButtonText className="font-bold text-lg text-[#1a3148]">
+                  Submit Cancellation
+                </ButtonText>
               </Button>
             </VStack>
           </Box>
@@ -535,10 +575,14 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
         <AlertDialogBackdrop />
         <AlertDialogContent>
           <AlertDialogHeader>
-            <Text className="text-lg font-bold text-[#1a3148]">Xác nhận hủy chuyến</Text>
+            <Text className="text-lg font-bold text-[#1a3148]">
+              Xác nhận hủy chuyến
+            </Text>
           </AlertDialogHeader>
           <AlertDialogBody>
-            <Text className="text-gray-600">Bạn có chắc là muốn hủy chuyến?</Text>
+            <Text className="text-gray-600">
+              Bạn có chắc là muốn hủy chuyến?
+            </Text>
           </AlertDialogBody>
           <AlertDialogFooter>
             <Button
@@ -550,8 +594,14 @@ const TrackingActionSheet: React.FC<TrackingActionSheetProps> = ({
             >
               <ButtonText className="text-gray-700">Huỷ</ButtonText>
             </Button>
-            <Button size="sm" className="bg-[#fab753]" onPress={handleSubmitCancellation}>
-              <ButtonText className="text-[#1a3148] font-bold">Xác nhận</ButtonText>
+            <Button
+              size="sm"
+              className="bg-[#fab753]"
+              onPress={handleSubmitCancellation}
+            >
+              <ButtonText className="text-[#1a3148] font-bold">
+                Xác nhận
+              </ButtonText>
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>

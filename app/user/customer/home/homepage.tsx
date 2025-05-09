@@ -11,6 +11,7 @@ import { Avatar } from "react-native-elements";
 import LoadingScreen from "../../../loading/loading";
 import { LatestRequestDetail } from "@/app/context/formFields";
 import { useLatReqDetStore } from "@/app/hooks/useLatReqDetStore";
+import { useIsFocused } from "@react-navigation/native";
 
 interface ServiceCardProps {
   icon: React.ElementType;
@@ -65,6 +66,7 @@ export default function CHomeScreen() {
   const {
     latestRequestDetail,
     setLatReqDet,
+    getLatReqDet
   } = useLatReqDetStore();
 
 
@@ -75,7 +77,6 @@ export default function CHomeScreen() {
         `https://motor-save-be.vercel.app/api/v1/requests/latestRequestDetail/${requestId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      setLatReqDet(response.data);
       setLatReqDet(response.data);
       setIsLoading(false);
     } catch (error) {
@@ -91,10 +92,6 @@ export default function CHomeScreen() {
     } else {
       setLatReqDet(null);
     }
-  }, [requestId]);
-  useEffect(() => {
-    console.log(latestRequestDetail)
-    console.log(requestId)
   }, [requestId]);
 
   if (!user) {
@@ -127,7 +124,10 @@ export default function CHomeScreen() {
       latestRequestDetail?.servicepackagename === "Cứu hộ đến trạm" &&
       latestRequestDetail?.requesttype === "Sửa xe"
     ) {
-      router.navigate("/user/customer/home/emergencyRescue/repairRequest");
+      router.push({
+        pathname: "/user/customer/home/emergencyRescue/repairRequest",
+        params: { requestId: getLatReqDet()?.requestid },
+      });
     } else {
       router.navigate(
         "/user/customer/home/emergencyRescue/returnVehicleRequest"

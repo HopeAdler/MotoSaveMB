@@ -663,7 +663,7 @@ export default function RepairDetailsScreen() {
                       }`}
                   >
                     <Text className="text-white font-bold">
-                      Confirm Payment
+                      Xác nhận thanh toán
                     </Text>
                   </Button>
                 )}
@@ -689,8 +689,8 @@ export default function RepairDetailsScreen() {
                 >
                   <Text className="text-white text-base font-bold">
                     {repairRequestDetail?.requeststatus === "Repairing"
-                      ? "Complete Repair"
-                      : "Start Repair"}
+                      ? "Hoàn tất sửa chữa"
+                      : "Bắt đầu sửa chữa"}
                   </Text>
                 </Button>
               )}

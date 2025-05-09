@@ -21,9 +21,10 @@ import {
   DollarSign,
   House,
   List,
-  MapIcon
+  MapIcon,
 } from "lucide-react-native";
 import { useContext, useEffect, useRef } from "react";
+import { Alert } from "react-native";
 
 const SMOOTHING_FACTOR = 0.1;
 
@@ -37,18 +38,9 @@ export default function DriverLayout() {
     hereNow,
   } = usePubNubService(); // ✅ Get service functions
 
-  const {
-    pendingReqDetailIds,
-    setPendingReqDetailIds,
-  } = usePendingReqStore();
-  const {
-    currentLoc,
-    setCurrentLoc,
-  } = useCurrentLocStore();
-  const {
-    getUsers,
-    setUsers,
-  } = useUsersStore();
+  const { pendingReqDetailIds, setPendingReqDetailIds } = usePendingReqStore();
+  const { currentLoc, setCurrentLoc } = useCurrentLocStore();
+  const { getUsers, setUsers } = useUsersStore();
 
   const { user, token } = useContext(AuthContext);
 
@@ -122,11 +114,11 @@ export default function DriverLayout() {
         const smoothedLatitude =
           lastLocation.current.latitude +
           SMOOTHING_FACTOR *
-          (updatedLocation.latitude - lastLocation.current.latitude);
+            (updatedLocation.latitude - lastLocation.current.latitude);
         const smoothedLongitude =
           lastLocation.current.longitude +
           SMOOTHING_FACTOR *
-          (updatedLocation.longitude - lastLocation.current.longitude);
+            (updatedLocation.longitude - lastLocation.current.longitude);
 
         const smoothedUpdatedLocation = {
           latitude: smoothedLatitude,
@@ -137,7 +129,7 @@ export default function DriverLayout() {
         if (
           smoothedUpdatedLocation.latitude !== lastLocation.current.latitude ||
           smoothedUpdatedLocation.longitude !==
-          lastLocation.current.longitude ||
+            lastLocation.current.longitude ||
           smoothedUpdatedLocation.heading !== lastLocation.current.heading
         ) {
           lastLocation.current = smoothedUpdatedLocation;
@@ -185,7 +177,7 @@ export default function DriverLayout() {
         }
       },
       (event: any) => {
-        if (event.action === 'leave' || event.action === 'timeout') {
+        if (event.action === "leave" || event.action === "timeout") {
           const currentUsers = getUsers();
           const updatedUsers = new Map(currentUsers);
           updatedUsers.delete(event.uuid);
@@ -194,7 +186,6 @@ export default function DriverLayout() {
       }
     );
 
-
     // Listen to requests from PubNub
     subscribeToRescueChannel((msg: any) => {
       if (
@@ -202,9 +193,18 @@ export default function DriverLayout() {
         msg.message.driverId === userId
       ) {
         const updatedMap = pendingReqDetailIds;
-        console.log(updatedMap)
+        console.log(updatedMap);
         updatedMap.set(msg.publisher, msg.message.requestDetailId);
         setPendingReqDetailIds(updatedMap);
+      }
+      if (
+        msg.message.senderRole === "Customer" &&
+        msg.message.driverId === userId &&
+        msg.message.reqStatus === "Cancel"
+      ) {
+        Alert.alert(
+          `Khách hàng đã hủy yêu cầu cứu hộ, lý do: ${msg.message.reason} `
+        );
       }
     });
 
@@ -274,7 +274,9 @@ export default function DriverLayout() {
                 style={{
                   padding: 8,
                   borderRadius: 12,
-                  backgroundColor: tabInfo.focused ? 'rgba(250, 183, 83, 0.1)' : 'transparent',
+                  backgroundColor: tabInfo.focused
+                    ? "rgba(250, 183, 83, 0.1)"
+                    : "transparent",
                 }}
               >
                 <MapIcon
@@ -296,7 +298,9 @@ export default function DriverLayout() {
                 style={{
                   padding: 8,
                   borderRadius: 12,
-                  backgroundColor: tabInfo.focused ? 'rgba(250, 183, 83, 0.1)' : 'transparent',
+                  backgroundColor: tabInfo.focused
+                    ? "rgba(250, 183, 83, 0.1)"
+                    : "transparent",
                 }}
               >
                 <List
@@ -329,7 +333,9 @@ export default function DriverLayout() {
                 style={{
                   padding: 8,
                   borderRadius: 12,
-                  backgroundColor: tabInfo.focused ? 'rgba(250, 183, 83, 0.1)' : 'transparent',
+                  backgroundColor: tabInfo.focused
+                    ? "rgba(250, 183, 83, 0.1)"
+                    : "transparent",
                 }}
               >
                 <CircleUserRound

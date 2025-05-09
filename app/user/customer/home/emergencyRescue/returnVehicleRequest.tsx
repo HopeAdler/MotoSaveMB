@@ -33,7 +33,7 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { Button, ButtonText } from "@/components/ui/button";
-import { decodedToken, handlePhoneCall } from "@/app/utils/utils";
+import { decodedToken, formatMoney, handlePhoneCall } from "@/app/utils/utils";
 import { PayZaloEventData, processPayment } from "@/app/utils/payment";
 import { createPayment, createTransaction, updatePaymentInfo } from "@/app/services/beAPI";
 import { RequestContext } from "@/app/context/RequestContext";
@@ -42,6 +42,7 @@ import { Avatar } from "react-native-elements";
 const ReturnVehicleRequestScreen = () => {
   const { PayZaloBridge } = NativeModules;
   const { requestId } = useContext(RequestContext);
+  const { setRequestId } = useContext(RequestContext);
   const [paymentLoading, setPaymentLoading] = useState<boolean>(false);
   const [paymentMethod, setPaymentMethod] = useState("Tiền mặt");
   const [transactionSuccess, setTransactionSuccess] = useState<boolean>(false);
@@ -101,6 +102,7 @@ const ReturnVehicleRequestScreen = () => {
           pathname: "/user/customer/home/feedback",
           params: { requestdetailid },
         });
+        setRequestId(null);
       }, 3000);
       return () => clearTimeout(timer);
     }
@@ -159,7 +161,8 @@ const ReturnVehicleRequestScreen = () => {
               console.error("Error creating transaction:", error);
             }
           } else {
-            alert("Payment failed! Return code: " + data.returnCode);
+            // alert("Payment failed! Return code: " + data.returnCode);
+            alert("Thanh toán thất bại!")
           }
           subscription.remove();
         }
@@ -188,10 +191,10 @@ const ReturnVehicleRequestScreen = () => {
 
   const renderProgressSteps = () => {
     const steps = [
-      { title: "Pending", status: "Pending" },
-      { title: "Driver Accepted", status: "Accepted" },
-      { title: "Return Vehicle Processing", status: "Processing" },
-      { title: "Completed", status: "Done" },
+      { title: "Đang chờ", status: "Pending" },
+      { title: "Tài xế được nhận", status: "Accepted" },
+      { title: "Đang xử lý", status: "Processing" },
+      { title: "Hoàn thành", status: "Done" },
     ];
 
     const currentStepIndex = steps.findIndex(
@@ -252,7 +255,7 @@ const ReturnVehicleRequestScreen = () => {
             <ChevronLeft size={24} color="#374151" />
           </Pressable>
           <Text bold size="xl" className="flex-1 text-center mr-10">
-            Return Vehicle Request
+            Yêu cầu trả xe
           </Text>
         </Box>
         <Box className="bg-white rounded-2xl shadow-sm p-4 mb-4">
@@ -265,14 +268,14 @@ const ReturnVehicleRequestScreen = () => {
             />
             <Box className="ml-4">
               <Text className="text-xl font-bold">
-                {requestDetail?.drivername || "Awaiting Driver"}
+                {requestDetail?.drivername || "Đang đợi tài xế"}
               </Text>
               <Text className="text-gray-600 mt-1">
-                License plate: {requestDetail?.brandname}{" "}
+                Biển số: {requestDetail?.brandname}{" "}
                 {requestDetail?.licenseplate}
               </Text>
               <Text className="text-gray-600 mt-1">
-                Phone: {requestDetail?.driverphone}
+                Số điện thoại: {requestDetail?.driverphone}
               </Text>
             </Box>
           </Box>
@@ -285,7 +288,7 @@ const ReturnVehicleRequestScreen = () => {
             >
               <ButtonText>
                 <Phone size={18} color="#4B5563" style={{ marginTop: 2 }} />{" "}
-                Call
+                Gọi
               </ButtonText>
             </Button>
             <Button variant="outline" size="md" onPress={toChatScreen}>
@@ -307,7 +310,7 @@ const ReturnVehicleRequestScreen = () => {
           <Box className="flex-row items-center">
             <MapPin size={20} color="#6B7280" />
             <Box className="ml-3 flex-1">
-              <Text className="text-sm text-gray-500">Pickup Location</Text>
+              <Text className="text-sm text-gray-500">Điểm đón</Text>
               <Text className="text-base text-gray-900">
                 {requestDetail?.pickuplocation}
               </Text>
@@ -317,7 +320,7 @@ const ReturnVehicleRequestScreen = () => {
           <Box className="flex-row items-center">
             <AlertCircle size={20} color="#6B7280" />
             <Box className="ml-3 flex-1">
-              <Text className="text-sm text-gray-500">Destination</Text>
+              <Text className="text-sm text-gray-500">Đích đến</Text>
               <Text className="text-base text-gray-900">
                 {requestDetail?.destination}
               </Text>
@@ -326,9 +329,10 @@ const ReturnVehicleRequestScreen = () => {
           <Box className="mt-3">
             <Box className="flex-row items-center justify-between bg-gray-50 p-4 rounded-xl">
               <Box>
-                <Text className="text-sm text-gray-500">Total Price</Text>
+                <Text className="text-sm text-gray-500">Tổng tiền</Text>
                 <Text className="text-xl font-bold text-gray-900">
-                  {requestDetail?.totalprice.toLocaleString()} VND
+                  {/* {requestDetail?.totalprice.toLocaleString()} VND */}
+                  {formatMoney(requestDetail?.totalprice || 0)}
                 </Text>
               </Box>
               <CreditCard size={24} color="#6B7280" />
@@ -336,7 +340,7 @@ const ReturnVehicleRequestScreen = () => {
           </Box>
           {/* <Box className="mt-3">
             <Text className="text-base font-semibold text-gray-900 mb-2">
-              Payment Method
+              Phương thức thanh toán
             </Text>
             <Select
               selectedValue={paymentMethod}
@@ -344,7 +348,7 @@ const ReturnVehicleRequestScreen = () => {
             >
               <SelectTrigger className="border border-gray-200 rounded-xl p-5 flex-row items-center justify-between bg-gray-50 h-13">
                 <SelectInput
-                  placeholder="Select payment method"
+                  placeholder="Chọn phương thức thanh toán"
                   className="text-lg flex-1"
                 />
                 <SelectIcon as={ChevronDownIcon} />
